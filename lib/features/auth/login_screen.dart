@@ -232,8 +232,16 @@ class _PhoneTextField extends StatelessWidget {
   }
 }
 
-class _PasswordTextField extends StatelessWidget {
+class _PasswordTextField extends StatefulWidget {
   const _PasswordTextField();
+
+  @override
+  State<_PasswordTextField> createState() => _PasswordTextFieldState();
+}
+
+class _PasswordTextFieldState extends State<_PasswordTextField> {
+  // Variabel untuk mengingat apakah sandi sedang disensor atau tidak
+  bool _isObscured = true;
 
   @override
   Widget build(BuildContext context) {
@@ -253,13 +261,16 @@ class _PasswordTextField extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text('Lupa Sandi?', style: AppTextStyles.linkUppercase),
+              child: const Text(
+                'Lupa Sandi?',
+                style: AppTextStyles.linkUppercase,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         TextField(
-          obscureText: true,
+          obscureText: _isObscured, // Menggunakan variabel state di sini
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••••',
@@ -269,10 +280,22 @@ class _PasswordTextField extends StatelessWidget {
               color: AppColors.textHint,
               size: 20,
             ),
-            suffixIcon: const Icon(
-              Icons.visibility_outlined,
-              color: AppColors.textHint,
-              size: 20,
+            // Ubah Icon biasa menjadi IconButton biar bisa diklik
+            suffixIcon: IconButton(
+              icon: Icon(
+                // Ikon berubah tergantung status disensor atau tidak
+                _isObscured
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: AppColors.textHint,
+                size: 20,
+              ),
+              onPressed: () {
+                // setState memerintahkan layar untuk dirender ulang saat diklik
+                setState(() {
+                  _isObscured = !_isObscured;
+                });
+              },
             ),
             filled: true,
             fillColor: AppColors.inputBackground,
