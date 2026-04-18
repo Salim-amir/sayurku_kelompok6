@@ -25,12 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
         useMaterial3: true,
       ),
-
-      // UBAH BAGIAN INI:
-      // Arahkan ke SplashScreen sebagai halaman pertama
-      home: const SplashScreen(), 
-      
-      // Opsional: Kamu bisa mendaftarkan rute di sini agar navigasi lebih rapi
+home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
       },
