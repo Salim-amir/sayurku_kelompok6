@@ -1,9 +1,83 @@
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
+import '../../services/auth_service.dart'; // Import service Firebase kita
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  // 1. Siapkan Controller untuk menangkap teks
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // 2. Variabel Loading
+  bool _isLoading = false;
+
+  // Jangan lupa matikan controller kalau layar ditutup biar memori HP nggak bocor
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // 3. Fungsi Utama Mendaftar ke Firebase
+  void _prosesDaftar() async {
+    // A. Cek apakah ada kolom yang kosong
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Harap isi semua data!')));
+      return;
+    }
+
+    // B. Nyalakan efek loading
+    setState(() {
+      _isLoading = true;
+    });
+
+    // C. Panggil AuthService
+    String? pesanError = await AuthService().registerUser(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      namaLengkap: _nameController.text.trim(),
+      nomorHp: _phoneController.text.trim(),
+    );
+
+    // D. Matikan efek loading
+    setState(() {
+      _isLoading = false;
+    });
+
+    // E. Cek Hasilnya
+    if (pesanError == null) {
+      // SUKSES! Tampilkan pesan dan tutup layar daftar (kembali ke Login)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Akun berhasil dibuat! Silakan masuk.'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+      if (mounted) Navigator.pop(context);
+    } else {
+      // GAGAL! Tampilkan pesan error dari Firebase
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(pesanError), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +89,6 @@ class RegisterScreen extends StatelessWidget {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryGreen),
-          // Fungsi pop untuk kembali ke halaman Login tanpa menumpuk layar
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('SayurKu', style: AppTextStyles.appName),
@@ -24,16 +97,14 @@ class RegisterScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 1. Gambar Hero dengan efek Gradasi Memudar di bawahnya
             Stack(
               children: [
                 Image.asset(
-                  'assets/images/hero_carrots.png', // Gambar sayur/wortel
+                  'assets/images/hero_carrots.png',
                   width: double.infinity,
                   height: 240,
                   fit: BoxFit.cover,
                 ),
-                // Gradasi dari transparan ke warna background aplikasi
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -45,10 +116,8 @@ class RegisterScreen extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          AppColors.background.withValues(
-                            alpha: 0.0,
-                          ), // Transparan
-                          AppColors.background, // Solid
+                          AppColors.background.withValues(alpha: 0.0),
+                          AppColors.background,
                         ],
                       ),
                     ),
@@ -56,8 +125,6 @@ class RegisterScreen extends StatelessWidget {
                 ),
               ],
             ),
-
-            // 2. Konten Form (diberi padding agar ke tengah)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
@@ -72,52 +139,64 @@ class RegisterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Field Nama Lengkap
-                  const _NameTextField(),
+                  // Masukkan controller ke masing-masing sub-widget
+                  _NameTextField(controller: _nameController),
                   const SizedBox(height: 16),
 
-                  // Field Nomor HP
-                  const _PhoneTextField(),
+                  // NEW: Field Email
+                  _EmailTextField(controller: _emailController),
                   const SizedBox(height: 16),
 
-                  // Field Kata Sandi
-                  const _PasswordTextField(),
+                  _PhoneTextField(controller: _phoneController),
+                  const SizedBox(height: 16),
+
+                  _PasswordTextField(controller: _passwordController),
                   const SizedBox(height: 32),
 
-                  // Tombol Daftar
+                  // Tombol Daftar (Bisa berubah jadi Loading)
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: () {
-                        print('Daftar ditekan');
-                      },
+                      // Jika lagi loading, matikan tombol (null)
+                      onPressed: _isLoading ? null : _prosesDaftar,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        // Biar warnanya agak pudar kalau tombol dimatikan
+                        disabledBackgroundColor: AppColors.primaryGreen
+                            .withValues(alpha: 0.6),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Daftar Sekarang',
-                            style: AppTextStyles.buttonPrimary,
-                          ),
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Daftar Sekarang',
+                                  style: AppTextStyles.buttonPrimary,
+                                ),
+                                SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Teks bawah (Login)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -126,10 +205,7 @@ class RegisterScreen extends StatelessWidget {
                         style: AppTextStyles.labelLink,
                       ),
                       InkWell(
-                        onTap: () {
-                          // Karena asalnya dari Login, kita cukup pop (tutup) halaman ini
-                          Navigator.pop(context);
-                        },
+                        onTap: () => Navigator.pop(context),
                         child: const Text(
                           'Masuk di sini',
                           style: AppTextStyles.link,
@@ -148,10 +224,11 @@ class RegisterScreen extends StatelessWidget {
   }
 }
 
-// ─── Sub-widgets untuk TextField (Biar kodingan rapi) ──────────────
+// ─── SUB-WIDGETS ───────────────────────────────────────────────
 
 class _NameTextField extends StatelessWidget {
-  const _NameTextField();
+  final TextEditingController controller;
+  const _NameTextField({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -161,26 +238,38 @@ class _NameTextField extends StatelessWidget {
         const Text('NAMA LENGKAP', style: AppTextStyles.labelUppercase),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           keyboardType: TextInputType.name,
           style: AppTextStyles.inputText,
-          decoration: InputDecoration(
+          decoration: _buildInputDecoration(
             hintText: 'John Doe',
-            hintStyle: AppTextStyles.inputHint,
-            prefixIcon: const Icon(
-              Icons.person_outline_rounded,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
+            icon: Icons.person_outline_rounded,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Sub-widget baru untuk Email
+class _EmailTextField extends StatelessWidget {
+  final TextEditingController controller;
+  const _EmailTextField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('ALAMAT EMAIL', style: AppTextStyles.labelUppercase),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          style: AppTextStyles.inputText,
+          decoration: _buildInputDecoration(
+            hintText: 'john@gmail.com',
+            icon: Icons.email_outlined,
           ),
         ),
       ],
@@ -189,7 +278,8 @@ class _NameTextField extends StatelessWidget {
 }
 
 class _PhoneTextField extends StatelessWidget {
-  const _PhoneTextField();
+  final TextEditingController controller;
+  const _PhoneTextField({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -199,26 +289,12 @@ class _PhoneTextField extends StatelessWidget {
         const Text('NOMOR HP', style: AppTextStyles.labelUppercase),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           keyboardType: TextInputType.phone,
           style: AppTextStyles.inputText,
-          decoration: InputDecoration(
+          decoration: _buildInputDecoration(
             hintText: '0812 XXXX XXXX',
-            hintStyle: AppTextStyles.inputHint,
-            prefixIcon: const Icon(
-              Icons.phone_outlined,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
+            icon: Icons.phone_outlined,
           ),
         ),
       ],
@@ -227,14 +303,14 @@ class _PhoneTextField extends StatelessWidget {
 }
 
 class _PasswordTextField extends StatefulWidget {
-  const _PasswordTextField();
+  final TextEditingController controller;
+  const _PasswordTextField({required this.controller});
 
   @override
   State<_PasswordTextField> createState() => _PasswordTextFieldState();
 }
 
 class _PasswordTextFieldState extends State<_PasswordTextField> {
-  // Variabel pengingat (state)
   bool _isObscured = true;
 
   @override
@@ -242,11 +318,11 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bedanya dengan Login: Di sini cuma ada teks label, tanpa tombol Lupa Sandi
         const Text('BUAT KATA SANDI', style: AppTextStyles.labelUppercase),
         const SizedBox(height: 8),
         TextField(
-          obscureText: _isObscured, // Gunakan variabel di sini
+          controller: widget.controller,
+          obscureText: _isObscured,
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••',
@@ -256,7 +332,6 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
               color: AppColors.textHint,
               size: 20,
             ),
-            // Ubah Icon jadi IconButton
             suffixIcon: IconButton(
               icon: Icon(
                 _isObscured
@@ -266,7 +341,6 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
                 size: 20,
               ),
               onPressed: () {
-                // Perbarui tampilan saat diklik
                 setState(() {
                   _isObscured = !_isObscured;
                 });
@@ -278,7 +352,6 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
-            // Biar garis pinggirnya hijau pas diklik (sama kyk di Login)
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -299,4 +372,31 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
       ],
     );
   }
+}
+
+// Fungsi pembantu agar kodingan dekorasi TextField tidak berulang-ulang
+InputDecoration _buildInputDecoration({
+  required String hintText,
+  required IconData icon,
+}) {
+  return InputDecoration(
+    hintText: hintText,
+    hintStyle: AppTextStyles.inputHint,
+    prefixIcon: Icon(icon, color: AppColors.textHint, size: 20),
+    filled: true,
+    fillColor: AppColors.inputBackground,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+    ),
+    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+  );
 }
