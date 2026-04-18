@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "215020353331",
+    "project_id": "sayurku-firebase",
+    "storage_bucket": "sayurku-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:215020353331:android:e4042746a0ca0fd6b17046",
+        "android_client_info": {
+          "package_name": "com.example.sayurku_kelompok6"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNUIV_zKqI7pADupMbTqlFm735PExRlGY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

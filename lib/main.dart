@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; 
+import 'firebase_options.dart'; 
 import 'core/colors.dart';
-// Import kedua halaman auth kamu
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
 
-void main() {
-  // Jika nanti sudah pakai Firebase, inisialisasi dilakukan di sini
+void main() async { 
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
