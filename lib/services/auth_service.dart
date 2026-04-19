@@ -45,4 +45,22 @@ class AuthService {
       return "Terjadi kesalahan: ${e.toString()}";
     }
   }
+
+  // --- FUNGSI LOGIN ---
+  // Sama seperti register, mengembalikan String error jika gagal, dan null jika sukses.
+  Future<String?> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      // Perintah bawaan Firebase untuk mengecek kecocokan email & password
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return null; // Sukses! Tidak ada pesan error.
+    } on FirebaseAuthException catch (e) {
+      // Tangkap error dari Firebase (misal: "user-not-found" atau "wrong-password")
+      return e.message;
+    } catch (e) {
+      return "Terjadi kesalahan sistem: ${e.toString()}";
+    }
+  }
 }

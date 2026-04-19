@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
+import '../../core/constants.dart';
+import '../../widgets/custom_button.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,11 +16,10 @@ class _SplashScreenState extends State<SplashScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // Data untuk 3 slide
   final List<Map<String, dynamic>> _splashData = [
     {
-      "title": "SayurKu",
-      "subtitle": "Segar Langsung ke Rumah",
+      "title": AppConstants.appName,
+      "subtitle": AppConstants.appTagline,
       "bottomLabel": "KUALITAS KEBUN TERBAIK",
       "icon": Icons.eco_rounded,
     },
@@ -44,13 +45,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _onNextPressed() {
     if (_currentPage == _splashData.length - 1) {
-      // Jika di slide terakhir, pindah ke Login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     } else {
-      // Geser ke slide berikutnya
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeIn,
@@ -59,7 +58,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _onSkipPressed() {
-    // Langsung lompat ke Login
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -81,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accentGreen.withOpacity(0.08),
+                color: AppColors.accentGreen.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -93,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accentGreen.withOpacity(0.07),
+                color: AppColors.accentGreen.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -102,9 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
           PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
+              setState(() => _currentPage = index);
             },
             itemCount: _splashData.length,
             itemBuilder: (context, index) {
@@ -115,15 +111,15 @@ class _SplashScreenState extends State<SplashScreen> {
           // --- NAVIGASI BAWAH ---
           Positioned(
             bottom: 40,
-            left: 24,
-            right: 24,
+            left: AppConstants.paddingLG,
+            right: AppConstants.paddingLG,
             child: Column(
               children: [
                 Text(
                   _splashData[_currentPage]["bottomLabel"],
                   style: AppTextStyles.labelUppercase,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.paddingMD),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -132,43 +128,27 @@ class _SplashScreenState extends State<SplashScreen> {
                     (index) => _buildDotIndicator(index == _currentPage),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppConstants.paddingXL),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton(
+                    // Ganti dengan AppTextButton
+                    AppTextButton(
+                      label: "Lewati",
                       onPressed: _onSkipPressed,
-                      child: Text(
-                        "Lewati",
-                        style: TextStyle(
-                          color: AppColors.textHint,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                      style: const TextStyle(
+                        color: AppColors.textHint,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    ElevatedButton(
+                    
+                    // Ganti dengan AppPrimaryButton (dengan width custom)
+                    AppPrimaryButton(
+                      width: 140, // Atur lebar khusus biar gak kepanjangan
+                      label: _currentPage == _splashData.length - 1 ? "Mulai" : "Selanjutnya",
                       onPressed: _onNextPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Text(
-                        _currentPage == _splashData.length - 1
-                            ? "Mulai"
-                            : "Selanjutnya",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -190,11 +170,11 @@ class _SplashScreenState extends State<SplashScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryGreen.withOpacity(0.15),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.15),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -202,18 +182,10 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             child: Icon(data["icon"], color: AppColors.primaryGreen, size: 52),
           ),
-          const SizedBox(height: 32),
-          Text(
-            data["title"],
-            style: AppTextStyles.appName,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            data["subtitle"],
-            style: AppTextStyles.appTagline.copyWith(fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
+          const SizedBox(height: AppConstants.paddingXL),
+          Text(data["title"], style: AppTextStyles.appName, textAlign: TextAlign.center),
+          const SizedBox(height: AppConstants.paddingSM),
+          Text(data["subtitle"], style: AppTextStyles.appTagline.copyWith(fontSize: 16), textAlign: TextAlign.center),
           const SizedBox(height: 60),
         ],
       ),
@@ -227,10 +199,8 @@ class _SplashScreenState extends State<SplashScreen> {
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.primaryGreen
-            : AppColors.primaryGreen.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(4),
+        color: isActive ? AppColors.primaryGreen : AppColors.primaryGreen.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(AppConstants.radiusXS),
       ),
     );
   }
