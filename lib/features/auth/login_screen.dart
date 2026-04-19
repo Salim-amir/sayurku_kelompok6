@@ -1,11 +1,74 @@
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
+import '../../core/constants.dart';
+import '../../widgets/custom_textfield.dart';
+import '../../widgets/custom_button.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import '../../services/auth_service.dart'; // Buka komen ini kalau Auth sudah siap dipanggil
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  // Controller untuk menangkap teks (Kita pakai Email karena Firebase Auth butuh Email)
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _prosesLogin() async {
+    // 1. Cek apakah ada kolom yang kosong
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan kata sandi harus diisi!')),
+      );
+      return;
+    }
+
+    // 2. Nyalakan efek muter-muter (loading)
+    setState(() => _isLoading = true);
+
+    // 3. Panggil mesin Firebase yang baru saja kita buat di Langkah 1!
+    String? pesanError = await AuthService().loginUser(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    // 4. Matikan efek loading
+    setState(() => _isLoading = false);
+
+    // 5. Cek Hasilnya
+    if (pesanError == null) {
+      // SUKSES LOGIN
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil Masuk!'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+      print("Sukses login, siap pindah ke Home!");
+
+      // TODO: Nanti di sini kita pasang Navigator.pushReplacement ke HomeScreen
+    } else {
+      // GAGAL LOGIN (Munculkan pop-up merah dari bawah)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(pesanError), backgroundColor: AppColors.error),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,29 +76,75 @@ class LoginScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingLG,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: AppConstants.paddingXL),
               _buildLogo(),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppConstants.paddingLG),
               _buildHeroImage(),
               const SizedBox(height: 28),
               _buildWelcomeText(),
               const SizedBox(height: 28),
-              const _PhoneTextField(),
-              const SizedBox(height: 16),
-              const _PasswordTextField(),
+
+              // ─── PENGGUNAAN CUSTOM WIDGET ───
+              AppTextField(
+                controller: _emailController,
+                label: 'ALAMAT EMAIL',
+                hintText: 'nama@email.com',
+                prefixIcon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: AppConstants.paddingMD),
+
+              AppPasswordField(
+                controller: _passwordController,
+                label: 'KATA SANDI',
+                hintText: '••••••••••',
+                trailingAction: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Lupa Sandi?',
+                    style: AppTextStyles.linkUppercase,
+                  ),
+                ),
+                textInputAction: TextInputAction.done,
+                onEditingComplete: _prosesLogin,
+              ),
               const SizedBox(height: 28),
-              _buildLoginButton(),
-              const SizedBox(height: 24),
+
+              AppPrimaryButton(
+                label: 'Masuk',
+                isLoading: _isLoading,
+                trailingIcon: Icons.arrow_forward_rounded,
+                onPressed: _prosesLogin,
+              ),
+              const SizedBox(height: AppConstants.paddingLG),
+
               _buildDivider(),
               const SizedBox(height: 20),
-              _buildGoogleButton(),
+
+              // Cukup panggil AppGoogleButton!
+              AppGoogleButton(
+                onPressed: () {
+                  print('Google login ditekan');
+                },
+              ),
               const SizedBox(height: 28),
+
               _buildRegisterRow(context),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppConstants.paddingXL),
             ],
           ),
         ),
@@ -56,25 +165,22 @@ class LoginScreen extends StatelessWidget {
           child: const Icon(
             Icons.eco_rounded,
             color: AppColors.primaryGreen,
-            size: 32,
+            size: AppConstants.iconXL,
           ),
         ),
         const SizedBox(height: 10),
-        const Text('SayurKu', style: AppTextStyles.appName),
+        const Text(AppConstants.appName, style: AppTextStyles.appName),
         const SizedBox(height: 4),
-        const Text(
-          'Segar langsung dari petani',
-          style: AppTextStyles.appTagline,
-        ),
+        const Text(AppConstants.appTagline, style: AppTextStyles.appTagline),
       ],
     );
   }
 
   Widget _buildHeroImage() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppConstants.radiusLG),
       child: Image.asset(
-        'assets/images/hero_vegetables.jpg',
+        AppConstants.heroImage,
         width: double.infinity,
         height: 200,
         fit: BoxFit.cover,
@@ -96,69 +202,16 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          print('Login ditekan');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryGreen,
-          foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Masuk', style: AppTextStyles.buttonPrimary),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward_rounded, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDivider() {
     return const Row(
       children: [
         Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMD),
           child: Text('ATAU', style: AppTextStyles.dividerLabel),
         ),
         Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
       ],
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    return SizedBox(
-      width: 200,
-      height: 48,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          print('Google login ditekan');
-        },
-        icon: Image.asset(
-          'assets/images/google_logo.png',
-          width: 42,
-          height: 42,
-        ),
-        label: const Text('Google', style: AppTextStyles.buttonSecondary),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.inputBorder),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: AppColors.white,
-        ),
-      ),
     );
   }
 
@@ -175,150 +228,6 @@ class LoginScreen extends StatelessWidget {
             );
           },
           child: const Text('Daftar Sekarang', style: AppTextStyles.link),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Sub-widgets ───────────────────────────────────────────────
-
-class _PhoneTextField extends StatelessWidget {
-  const _PhoneTextField();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('NOMOR HP', style: AppTextStyles.labelUppercase),
-        const SizedBox(height: 8),
-        TextField(
-          keyboardType: TextInputType.phone,
-          style: AppTextStyles.inputText,
-          decoration: InputDecoration(
-            hintText: '08xx xxxx xxxx',
-            hintStyle: AppTextStyles.inputHint,
-            prefixIcon: const Icon(
-              Icons.phone_android_rounded,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryGreen,
-                width: 1.5,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PasswordTextField extends StatefulWidget {
-  const _PasswordTextField();
-
-  @override
-  State<_PasswordTextField> createState() => _PasswordTextFieldState();
-}
-
-class _PasswordTextFieldState extends State<_PasswordTextField> {
-  // Variabel untuk mengingat apakah sandi sedang disensor atau tidak
-  bool _isObscured = true;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('KATA SANDI', style: AppTextStyles.labelUppercase),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ForgotPasswordScreen(),
-                  ),
-                );
-              },
-              child: const Text(
-                'Lupa Sandi?',
-                style: AppTextStyles.linkUppercase,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          obscureText: _isObscured, // Menggunakan variabel state di sini
-          style: AppTextStyles.inputText,
-          decoration: InputDecoration(
-            hintText: '••••••••••',
-            hintStyle: AppTextStyles.inputHint.copyWith(fontSize: 18),
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.textHint,
-              size: 20,
-            ),
-            // Ubah Icon biasa menjadi IconButton biar bisa diklik
-            suffixIcon: IconButton(
-              icon: Icon(
-                // Ikon berubah tergantung status disensor atau tidak
-                _isObscured
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: AppColors.textHint,
-                size: 20,
-              ),
-              onPressed: () {
-                // setState memerintahkan layar untuk dirender ulang saat diklik
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
-            ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryGreen,
-                width: 1.5,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
-          ),
         ),
       ],
     );
