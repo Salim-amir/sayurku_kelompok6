@@ -1,3 +1,4 @@
+import '../customer/shop/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
@@ -59,9 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: AppColors.primaryGreen,
         ),
       );
-      print("Sukses login, siap pindah ke Home!");
 
-      // TODO: Nanti di sini kita pasang Navigator.pushReplacement ke HomeScreen
+      // MENGHANCURKAN HALAMAN LOGIN DAN PINDAH KE HOME
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     } else {
       // GAGAL LOGIN (Munculkan pop-up merah dari bawah)
       ScaffoldMessenger.of(context).showSnackBar(
