@@ -3,6 +3,9 @@ import 'detail_produk_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
+import '../../../../widgets/product_card.dart';
+import '../../../../widgets/custom_button.dart';
+import '../../../../core/constants.dart';
 
 class KatalogProdukScreen extends StatefulWidget {
   const KatalogProdukScreen({super.key});
@@ -147,81 +150,18 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
   }
 
 Widget _buildProductCard(Map<String, dynamic> produk) {
-  return GestureDetector(
+  return ProductCard(
+    name: produk['nama'],
+    price: produk['harga'],
+    unit: produk['satuan'],
+    isAvailable: true,
     onTap: () => Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DetailProdukScreen(produk: produk),
       ),
     ),
-    child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Foto produk
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Container(
-              height: 130,
-              width: double.infinity,
-              color: AppColors.inputBackground,
-              child: const Icon(Icons.image_rounded,
-                  color: AppColors.textHint, size: 48),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  produk['kategori'],
-                  style: AppTextStyles.labelUppercase.copyWith(
-                    color: AppColors.primaryGreen,
-                    fontSize: 9,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(produk['nama'], style: AppTextStyles.h3),
-                Text(produk['satuan'], style: AppTextStyles.bodySmall),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Rp ${_formatHarga(produk['harga'])}',
-                      style: AppTextStyles.h3
-                          .copyWith(color: AppColors.primaryGreen),
-                    ),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.add_rounded,
-                          color: AppColors.white, size: 20),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
+    onAddToCart: () {},
   );
 }
 
