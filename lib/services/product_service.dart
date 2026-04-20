@@ -51,5 +51,24 @@ class ProductService {
             .where((produk) =>
                 produk.nama.toLowerCase().contains(keyword.toLowerCase()))
             .toList());
+
+  
   }
+  Future<void> addProduct({
+  required String nama,
+  required int harga,
+  required int stok,
+  required String kategori,
+  required String imageUrl,
+   }) async {
+  await _db.collection(AppConstants.colProducts).add({
+    'nama': nama,
+    'harga': harga,
+    'stok': stok,
+    'kategori': kategori,
+    'imageUrl': imageUrl,
+    'tersedia': true,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+}
 }
