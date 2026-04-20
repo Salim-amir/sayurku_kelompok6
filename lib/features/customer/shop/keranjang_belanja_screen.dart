@@ -2,6 +2,7 @@ import 'checkout_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
+import '../../../../widgets/product_card.dart';
 
 class KeranjangBelanjaScreen extends StatefulWidget {
   const KeranjangBelanjaScreen({super.key});
@@ -87,17 +88,20 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
     final item = _keranjang[index];
     return Row(
       children: [
-        // Foto produk
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: 90,
-            height: 90,
-            color: AppColors.inputBackground,
-            child: const Icon(Icons.image_rounded,
-                color: AppColors.textHint, size: 36),
-          ),
-        ),
+// GANTI jadi ini
+ClipRRect(
+  borderRadius: BorderRadius.circular(14),
+  child: Container(
+    width: 90,
+    height: 90,
+    color: AppColors.inputBackground,
+    child: const Icon(
+      Icons.eco_rounded,
+      color: AppColors.primaryGreen,
+      size: 36,
+    ),
+  ),
+),
         const SizedBox(width: 14),
         // Info produk
         Expanded(
