@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
-import '../../services/auth_service.dart'; // Import service Firebase kita
+import '../../services/auth_service.dart'; 
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,14 +22,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // 2. Variabel Loading
   bool _isLoading = false;
 
-  // Jangan lupa matikan controller kalau layar ditutup biar memori HP nggak bocor
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose(); // Jangan lupa di-dispose
+    _confirmPasswordController.dispose(); 
     super.dispose();
   }
 
@@ -48,7 +47,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // TAMBAHAN 2: Validasi Sandi Harus Sama
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -170,6 +168,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   _ConfirmPasswordTextField(
                     controller: _confirmPasswordController,
+                    originalPasswordController:
+                        _passwordController,
                   ),
                   const SizedBox(height: 32),
 
@@ -501,7 +501,13 @@ InputDecoration _buildInputDecoration({
 
 class _ConfirmPasswordTextField extends StatefulWidget {
   final TextEditingController controller;
-  const _ConfirmPasswordTextField({required this.controller});
+  final TextEditingController originalPasswordController;
+
+  const _ConfirmPasswordTextField({
+    super.key,
+    required this.controller,
+    required this.originalPasswordController, 
+  });
 
   @override
   State<_ConfirmPasswordTextField> createState() =>
@@ -510,6 +516,34 @@ class _ConfirmPasswordTextField extends StatefulWidget {
 
 class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
   bool _isObscured = true;
+
+  // Variabel untuk indikator kecocokan
+  String _matchText = '';
+  Color _matchColor = Colors.transparent;
+
+  // Ini "otak" yang kelupaan tadi, Lim!
+  void _checkMatch(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _matchText = '';
+        _matchColor = Colors.transparent;
+      });
+      return;
+    }
+
+    // Cek apakah ketikan sama dengan sandi pertama
+    if (value == widget.originalPasswordController.text) {
+      setState(() {
+        _matchText = 'Sandi Cocok';
+        _matchColor = AppColors.primaryGreen;
+      });
+    } else {
+      setState(() {
+        _matchText = 'Sandi Tidak Cocok';
+        _matchColor = AppColors.error; // Warna merah
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -524,6 +558,7 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
         TextField(
           controller: widget.controller,
           obscureText: _isObscured,
+          onChanged: _checkMatch, // Deteksi ketikan secara real-time
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••',
@@ -559,8 +594,10 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryGreen,
+              borderSide: BorderSide(
+                color: _matchColor == Colors.transparent
+                    ? AppColors.primaryGreen
+                    : _matchColor, // Garis tepi ikut berubah warna
                 width: 1.5,
               ),
             ),
@@ -570,6 +607,32 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
             ),
           ),
         ),
+
+        // --- TEXT INDIKATOR KECOCOKAN ---
+        if (_matchText.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+            child: Row(
+              children: [
+                Icon(
+                  _matchText == 'Sandi Cocok'
+                      ? Icons.check_circle
+                      : Icons.cancel,
+                  color: _matchColor,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _matchText,
+                  style: TextStyle(
+                    color: _matchColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
