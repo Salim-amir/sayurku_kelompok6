@@ -1,12 +1,14 @@
-import 'keranjang_belanja_screen.dart';
-import 'katalog_produk_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
-import '../../../../widgets/product_card.dart';
-import '../../../../widgets/custom_button.dart';
 import '../../../../core/constants.dart';
+import '../../../../models/product_model.dart';
+import '../../../../services/product_service.dart';
+import '../../../../widgets/product_card.dart';
+import 'katalog_produk_screen.dart';
 import 'detail_produk_screen.dart';
+import 'keranjang_belanja_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,19 +18,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ProductService _productService = ProductService();
+  final user = FirebaseAuth.instance.currentUser;
 
   final List<Map<String, dynamic>> _kategori = const [
     {'label': 'Sayur Hijau', 'icon': Icons.eco_rounded, 'color': Color(0xFFE8F5E9)},
     {'label': 'Buah', 'icon': Icons.circle_rounded, 'color': Color(0xFFFFF3E0)},
     {'label': 'Bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
     {'label': 'Umbi-umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
-  ];
-
-  final List<Map<String, dynamic>> _produk = const [
-    {'nama': 'Bayam Hijau', 'satuan': '250g', 'harga': 12000, 'stok': 10},
-    {'nama': 'Tomat Merah', 'satuan': '500g', 'harga': 15000, 'stok': 5},
-    {'nama': 'Cabai Rawit', 'satuan': '100g', 'harga': 18000, 'stok': 8},
-    {'nama': 'Wortel Lokal', 'satuan': '500g', 'harga': 10500, 'stok': 3},
   ];
 
   @override
@@ -64,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── HEADER ──────────────────────────────────────────
   Widget _buildHeader() {
+    final namaUser = user?.displayName ?? user?.email?.split('@')[0] ?? 'Pengguna';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -75,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.person_rounded, color: AppColors.primaryGreen),
             ),
             const SizedBox(width: 12),
-            Text('Halo, Ibu Sari', style: AppTextStyles.h2),
+            Text('Halo, $namaUser', style: AppTextStyles.h2),
           ],
         ),
         IconButton(
@@ -105,31 +103,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── KATEGORI ────────────────────────────────────────
-Widget _buildKategoriSection() {
-  return Column(
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Kategori', style: AppTextStyles.h3),
-TextButton(
-  onPressed: () => Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
-  ),
-  child: Text('Lihat Semua',
-      style: AppTextStyles.link.copyWith(fontSize: 13)),
-),
-        ],
-      ),
-      const SizedBox(height: 14),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: _kategori.map((k) => _buildKategoriItem(k)).toList(),
-      ),
-    ],
-  );
-}
+  Widget _buildKategoriSection() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Kategori', style: AppTextStyles.h3),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
+              ),
+              child: Text('Lihat Semua',
+                  style: AppTextStyles.link.copyWith(fontSize: 13)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: _kategori.map((k) => _buildKategoriItem(k)).toList(),
+        ),
+      ],
+    );
+  }
 
   Widget _buildKategoriItem(Map<String, dynamic> data) {
     return Column(
@@ -191,7 +189,7 @@ TextButton(
     );
   }
 
-  // ── PRODUK SECTION ──────────────────────────────────
+  // ── PRODUK SECTION (FIREBASE) ───────────────────────
   Widget _buildProdukSection() {
     return Column(
       children: [
@@ -204,38 +202,74 @@ TextButton(
           ],
         ),
         const SizedBox(height: 14),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
-            childAspectRatio: 0.72,
-          ),
-          itemCount: _produk.length,
-          itemBuilder: (context, index) =>
-              _buildProductCard(_produk[index]),
+        StreamBuilder<List<ProductModel>>(
+          stream: _productService.getSemuaProduk(),
+          builder: (context, snapshot) {
+            // Loading
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryGreen,
+                ),
+              );
+            }
+            // Error
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('Gagal memuat produk',
+                    style: AppTextStyles.bodyMedium),
+              );
+            }
+            // Kosong
+            final produkList = snapshot.data ?? [];
+            if (produkList.isEmpty) {
+              return Center(
+                child: Text('Belum ada produk tersedia',
+                    style: AppTextStyles.bodyMedium),
+              );
+            }
+            // Tampilkan produk
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                childAspectRatio: 0.72,
+              ),
+              itemCount: produkList.length,
+              itemBuilder: (context, index) {
+                final produk = produkList[index];
+                return ProductCard(
+                  name: produk.nama,
+                  price: produk.harga.toInt(),
+                  unit: produk.satuan,
+                  isAvailable: produk.tersedia,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DetailProdukScreen(
+                        produk: {
+                          'id': produk.id,
+                          'nama': produk.nama,
+                          'harga': produk.harga.toInt(),
+                          'satuan': produk.satuan,
+                          'fotoUrl': produk.fotoUrl,
+                          'tersedia': produk.tersedia,
+                        },
+                      ),
+                    ),
+                  ),
+                  onAddToCart: () {},
+                );
+              },
+            );
+          },
         ),
       ],
     );
   }
-
- Widget _buildProductCard(Map<String, dynamic> produk) {
-  return ProductCard(
-    name: produk['nama'],
-    price: produk['harga'],
-    unit: produk['satuan'],
-    isAvailable: true,
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DetailProdukScreen(produk: produk),
-      ),
-    ),
-    onAddToCart: () {},
-  );
-}
 
   // ── BOTTOM NAV ──────────────────────────────────────
   Widget _buildBottomNav() {
@@ -283,7 +317,7 @@ TextButton(
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Text('3',
+              child: Text('0',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -293,11 +327,5 @@ TextButton(
         ),
       ],
     );
-  }
-
-  // ── HELPER ──────────────────────────────────────────
-  String _formatHarga(int harga) {
-    return harga.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
   }
 }
