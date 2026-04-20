@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart'; // Import cetakan yang baru kita buat
+import '../models/user_model.dart';
+import '../core/constants.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,12 +16,25 @@ class AuthService {
     required String nomorHp,
   }) async {
     try {
-      print("1. Mulai daftar ke Auth...");
+      // ─── 1. VALIDASI NOMOR HP GANDA ───
+      print("1. Cek apakah Nomor HP sudah terdaftar...");
+      QuerySnapshot cekHp = await _firestore
+          .collection(AppConstants.colUsers) // Menggunakan variabel constant
+          .where('nomorHp', isEqualTo: nomorHp)
+          .get();
+
+      if (cekHp.docs.isNotEmpty) {
+        // Jika ada data yang cocok, hentikan pendaftaran!
+        return "Nomor HP ini sudah terdaftar. Silakan gunakan nomor lain!";
+      }
+
+      // ─── 2. DAFTAR KE FIREBASE AUTH ───
+      print("2. Mulai daftar ke Auth...");
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      print("2. Sukses Auth! UID: ${credential.user!.uid}");
+      print("3. Sukses Auth! UID: ${credential.user!.uid}");
 
       UserModel newUser = UserModel(
         uid: credential.user!.uid,
@@ -29,17 +43,22 @@ class AuthService {
         email: email,
       );
 
-      print("3. Mulai simpan ke Firestore...");
-      await _firestore
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set(newUser.toMap());
+      // ─── 3. SIMPAN KE FIRESTORE DENGAN ROLE ───
+      print("4. Mulai simpan ke Firestore...");
+      
+      // Kita ubah newUser.toMap() untuk menambahkan role default (Customer)
+      Map<String, dynamic> userData = newUser.toMap();
+      userData['role'] = AppConstants.roleCustomer; 
 
-      print("4. SUKSES SIMPAN KE FIRESTORE!");
+      await _firestore
+          .collection(AppConstants.colUsers)
+          .doc(credential.user!.uid)
+          .set(userData);
+
+      print("5. SUKSES SIMPAN KE FIRESTORE!");
 
       return null;
     } on FirebaseAuthException catch (e) {
-      // Tangkap error spesifik dari Firebase (misal: email sudah dipakai, password kelemahan)
       return e.message;
     } catch (e) {
       return "Terjadi kesalahan: ${e.toString()}";
