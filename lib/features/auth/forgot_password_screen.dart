@@ -3,6 +3,8 @@ import '../../core/colors.dart';
 import '../../core/text_styles.dart';
 import '../../core/constants.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/custom_textfield.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -19,7 +21,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   // ─── State ────────────────────────────────────────────────────────────────
   bool _isLoading = false;
   String? _errorText;
-  bool _isSent = false; // Menandai link sudah berhasil dikirim
+  bool _isSent = false;
 
   @override
   void dispose() {
@@ -43,12 +45,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   // ─── Fungsi Kirim Reset ───────────────────────────────────────────────────
   Future<void> _kirimReset() async {
-    // Tutup keyboard
     FocusScope.of(context).unfocus();
 
     final phone = _phoneController.text.trim();
 
-    // Validasi lokal dulu
     final validasiError = _validatePhone(phone);
     if (validasiError != null) {
       setState(() => _errorText = validasiError);
@@ -60,7 +60,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _errorText = null;
     });
 
-    // Panggil service
     final error = await _authService.resetPassword(nomorHp: phone);
 
     if (!mounted) return;
@@ -68,10 +67,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = false);
 
     if (error != null) {
-      // Gagal → tampilkan error di bawah field
       setState(() => _errorText = error);
     } else {
-      // Berhasil → tampilkan state sukses
       setState(() => _isSent = true);
       _tampilkanSnackbar(
         'Link reset berhasil dikirim ke email terdaftar.',
@@ -80,13 +77,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  // ─── Helper Snackbar ─────────────────────────────────────────────────────
+  // ─── Helper Snackbar ──────────────────────────────────────────────────────
   void _tampilkanSnackbar(String pesan, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(pesan, style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.white,
-        )),
+        content: Text(
+          pesan,
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.white),
+        ),
         backgroundColor: isError ? Colors.redAccent : AppColors.primaryGreen,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -119,7 +117,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingLG,
+          ),
           child: _isSent ? _buildSuksesView() : _buildFormView(),
         ),
       ),
@@ -158,121 +158,38 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 40),
 
-        // TextField Nomor HP
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Nomor HP', style: AppTextStyles.labelLink),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              style: AppTextStyles.inputText,
-              enabled: !_isLoading,
-              onChanged: (_) {
-                // Hapus error saat user mulai mengetik ulang
-                if (_errorText != null) {
-                  setState(() => _errorText = null);
-                }
-              },
-              decoration: InputDecoration(
-                hintText: '0812xxxx',
-                hintStyle: AppTextStyles.inputHint,
-                errorText: _errorText,
-                errorStyle: AppTextStyles.caption.copyWith(
-                  color: Colors.redAccent,
-                ),
-                prefixIcon: const Icon(
-                  Icons.phone_android_rounded,
-                  color: AppColors.textHint,
-                ),
-                filled: true,
-                fillColor: AppColors.inputBackground,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryGreen,
-                    width: 1.5,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 1.5,
-                  ),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        // ── Pakai AppTextField ──
+        AppTextField(
+          label: 'NOMOR HP',
+          hintText: '0812xxxx',
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          prefixIcon: Icons.phone_android_rounded,
+          errorText: _errorText,
+          enabled: !_isLoading,
+          onChanged: (_) {
+            if (_errorText != null) setState(() => _errorText = null);
+          },
         ),
         const SizedBox(height: 32),
 
-        // Tombol Kirim
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _kirimReset,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              disabledBackgroundColor: AppColors.primaryGreen.withOpacity(0.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: AppColors.white,
-                    ),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Kirim Link Reset',
-                        style: AppTextStyles.buttonPrimary,
-                      ),
-                      SizedBox(width: 8),
-                      Icon(
-                        Icons.send_rounded,
-                        size: 20,
-                        color: AppColors.white,
-                      ),
-                    ],
-                  ),
-          ),
+        // ── Pakai AppPrimaryButton ──
+        AppPrimaryButton(
+          label: 'Kirim Link Reset',
+          onPressed: _kirimReset,
+          isLoading: _isLoading,
+          trailingIcon: Icons.send_rounded,
         ),
         const SizedBox(height: 48),
 
-        // Bantuan
+        // Bantuan — pakai AppTextButton
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Butuh bantuan lain? ', style: AppTextStyles.labelLink),
-            GestureDetector(
-              onTap: () => print('Hubungi Kami ditekan'),
-              child: const Text('Hubungi Kami', style: AppTextStyles.link),
+            AppTextButton(
+              label: 'Hubungi Kami',
+              onPressed: () => print('Hubungi Kami ditekan'),
             ),
           ],
         ),
@@ -313,37 +230,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 48),
 
-        // Tombol kembali ke login
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Kembali ke Login',
-              style: AppTextStyles.buttonPrimary,
-            ),
-          ),
+        // ── Pakai AppPrimaryButton ──
+        AppPrimaryButton(
+          label: 'Kembali ke Login',
+          onPressed: () => Navigator.pop(context),
         ),
         const SizedBox(height: 16),
 
-        // Kirim ulang
-        GestureDetector(
-          onTap: () => setState(() {
+        // ── Pakai AppTextButton ──
+        AppTextButton(
+          label: 'Kirim ulang dengan nomor berbeda',
+          onPressed: () => setState(() {
             _isSent = false;
             _phoneController.clear();
           }),
-          child: const Text(
-            'Kirim ulang dengan nomor berbeda',
-            style: AppTextStyles.link,
-          ),
         ),
         const SizedBox(height: 40),
       ],

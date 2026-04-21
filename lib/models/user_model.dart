@@ -3,17 +3,37 @@ class UserModel {
   final String namaLengkap;
   final String nomorHp;
   final String email;
-  final String role; // Untuk membedakan 'customer' dan 'admin' (pengepul)
+  final String role; // 'customer' atau 'admin'
+  final String alamat;
+  final String fotoUrl;
+  final double saldo; // Saldo dompet digital
 
   UserModel({
     required this.uid,
     required this.namaLengkap,
     required this.nomorHp,
     required this.email,
-    this.role = 'customer', // Otomatis jadi pembeli saat daftar dari aplikasi
+    this.role = 'customer',
+    this.alamat = '',
+    this.fotoUrl = '',
+    this.saldo = 0,
   });
 
-  // Fungsi untuk mengubah objek Dart menjadi Map (JSON) agar bisa masuk ke Firestore
+  // Dari Firestore → Dart Object
+  factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
+    return UserModel(
+      uid: uid,
+      namaLengkap: map['namaLengkap'] ?? '',
+      nomorHp: map['nomorHp'] ?? '',
+      email: map['email'] ?? '',
+      role: map['role'] ?? 'customer',
+      alamat: map['alamat'] ?? '',
+      fotoUrl: map['fotoUrl'] ?? '',
+      saldo: (map['saldo'] ?? 0).toDouble(),
+    );
+  }
+
+  // Dart Object → Firestore Map
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -21,6 +41,9 @@ class UserModel {
       'nomorHp': nomorHp,
       'email': email,
       'role': role,
+      'alamat': alamat,
+      'fotoUrl': fotoUrl,
+      'saldo': saldo,
     };
   }
 }

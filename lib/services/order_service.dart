@@ -47,4 +47,28 @@ Future<void> updateStatusPesanan({
     'tanggalUpdate': FieldValue.serverTimestamp(),
   });
 }
+
+  // ── Ambil pesanan berdasarkan status tertentu ──
+  Stream<List<Map<String, dynamic>>> getPesananByStatus(
+      String userId, String status) {
+    return _db
+        .collection(AppConstants.colOrders)
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: status)
+        .orderBy('tanggalPesan', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList());
+  }
+
+  // ── Ambil detail 1 pesanan ──
+  Future<Map<String, dynamic>?> getDetailPesanan(String orderId) async {
+    final doc =
+        await _db.collection(AppConstants.colOrders).doc(orderId).get();
+    if (doc.exists) {
+      return {'id': doc.id, ...doc.data()!};
+    }
+    return null;
+  }
 }
