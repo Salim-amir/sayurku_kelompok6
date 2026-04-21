@@ -1,7 +1,8 @@
-import 'keranjang_belanja_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
+import '../../../../core/constants.dart';
+import 'keranjang_belanja_screen.dart';
 
 class DetailProdukScreen extends StatefulWidget {
   final Map<String, dynamic> produk;
@@ -59,7 +60,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
                 color: AppColors.primaryGreen),
             onPressed: () => Navigator.pop(context),
           ),
-          Text('SayurKu',
+          Text(AppConstants.appName,
               style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
           IconButton(
             icon: const Icon(Icons.favorite_border_rounded,
@@ -73,6 +74,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── FOTO PRODUK ─────────────────────────────────────
   Widget _buildFotoProduk() {
+    final imageUrl = widget.produk['imageUrl'] ?? '';
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       height: 260,
@@ -83,24 +85,23 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
       ),
       child: Stack(
         children: [
-          // Foto
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: AppColors.inputBackground,
-              child: const Icon(Icons.image_rounded,
-                  color: AppColors.textHint, size: 80),
-            ),
+            child: imageUrl.isNotEmpty
+                ? Image.network(
+                    imageUrl,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+                  )
+                : _buildImagePlaceholder(),
           ),
-          // Badge Fresh Harvest
           Positioned(
             top: 16,
             left: 16,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.lightGreen,
                 borderRadius: BorderRadius.circular(20),
@@ -119,17 +120,33 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
     );
   }
 
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: AppColors.inputBackground,
+      child: const Icon(Icons.eco_rounded,
+          color: AppColors.primaryGreen, size: 80),
+    );
+  }
+
   // ── STOK BADGE ──────────────────────────────────────
   Widget _buildStokBadge() {
+    final tersedia = widget.produk['tersedia'] ?? true;
     return Row(
       children: [
-        const Icon(Icons.verified_rounded,
-            color: AppColors.accentGreen, size: 18),
+        Icon(
+          tersedia ? Icons.verified_rounded : Icons.cancel_rounded,
+          color: tersedia ? AppColors.accentGreen : AppColors.error,
+          size: 18,
+        ),
         const SizedBox(width: 6),
         Text(
-          'Stok Harian: Tersedia',
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.accentGreen, fontWeight: FontWeight.w600),
+          tersedia ? 'Stok Harian: Tersedia' : 'Stok Habis',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: tersedia ? AppColors.accentGreen : AppColors.error,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -190,6 +207,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── BOTTOM BAR ──────────────────────────────────────
   Widget _buildBottomBar(BuildContext context) {
+    final tersedia = widget.produk['tersedia'] ?? true;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
@@ -204,7 +222,6 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
       ),
       child: Row(
         children: [
-          // Tombol kurangi/tambah jumlah
           Container(
             decoration: BoxDecoration(
               color: AppColors.inputBackground,
@@ -229,15 +246,24 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Tombol Tambah ke Keranjang
           Expanded(
             child: ElevatedButton(
-onPressed: () => Navigator.push(
-  context,
-  MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
-),
+              onPressed: tersedia
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              '${widget.produk['nama']} ditambahkan ke keranjang!'),
+                          backgroundColor: AppColors.primaryGreen,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
+                disabledBackgroundColor: AppColors.divider,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
