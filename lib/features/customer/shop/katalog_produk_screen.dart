@@ -6,6 +6,8 @@ import '../../../../core/text_styles.dart';
 import '../../../../widgets/product_card.dart';
 import '../../../../widgets/custom_button.dart';
 import '../../../../core/constants.dart';
+import '../../../../models/product_model.dart';
+import '../../../../services/product_service.dart';
 
 class KatalogProdukScreen extends StatefulWidget {
   const KatalogProdukScreen({super.key});
@@ -16,6 +18,8 @@ class KatalogProdukScreen extends StatefulWidget {
 
 class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
   String _selectedKategori = 'Sayur Hijau';
+
+  final ProductService _productService = ProductService();
 
   final List<String> _kategoriList = [
     'Sayur Hijau', 'Buah', 'Bumbu', 'Umbi-umbian'
@@ -135,19 +139,65 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
   }
 
   // ── PRODUK GRID ─────────────────────────────────────
-  Widget _buildProdukGrid() {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.68,
-      ),
-      itemCount: _produk.length,
-      itemBuilder: (context, index) => _buildProductCard(_produk[index]),
-    );
-  }
+Widget _buildProdukGrid() {
+  return StreamBuilder<List<ProductModel>>(
+    stream: _productService.getProdukByKategori(_selectedKategori),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGreen),
+        );
+      }
+      if (snapshot.hasError) {
+        return Center(
+          child: Text('Gagal memuat produk', style: AppTextStyles.bodyMedium),
+        );
+      }
+      final produkList = snapshot.data ?? [];
+      if (produkList.isEmpty) {
+        return Center(
+          child: Text('Belum ada produk di kategori ini',
+              style: AppTextStyles.bodyMedium),
+        );
+      }
+      return GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.68,
+        ),
+        itemCount: produkList.length,
+        itemBuilder: (context, index) {
+          final produk = produkList[index];
+          return ProductCard(
+            name: produk.nama,
+            price: produk.harga,
+            unit: produk.satuan,
+            isAvailable: produk.tersedia,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetailProdukScreen(
+                  produk: {
+                    'id': produk.id,
+                    'nama': produk.nama,
+                    'harga': produk.harga,
+                    'satuan': produk.satuan,
+                    'imageUrl': produk.imageUrl,
+                    'tersedia': produk.tersedia,
+                  },
+                ),
+              ),
+            ),
+            onAddToCart: () {},
+          );
+        },
+      );
+    },
+  );
+}
 
 Widget _buildProductCard(Map<String, dynamic> produk) {
   return ProductCard(
