@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../core/colors.dart';
-import '../../../../core/text_styles.dart';
-import '../../../../core/constants.dart';
-import '../../../../models/product_model.dart';
-import '../../../../services/product_service.dart';
-import '../../../../widgets/product_card.dart';
+import '../../../core/colors.dart';
+import '../../../core/text_styles.dart';
+import '../../../models/product_model.dart';
+import '../../../services/product_service.dart';
+import '../../../widgets/product_card.dart';
 import 'katalog_produk_screen.dart';
 import 'detail_produk_screen.dart';
 import 'keranjang_belanja_screen.dart';
+import '../profile/riwayat_pesanan_screen.dart';
+import '../profile/dompet_digital_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
   final user = FirebaseAuth.instance.currentUser;
+
+  int _currentIndex = 0;
 
   final List<Map<String, dynamic>> _kategori = const [
     {'label': 'Sayur Hijau', 'icon': Icons.eco_rounded, 'color': Color(0xFFE8F5E9)},
@@ -33,27 +37,48 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _buildCartFAB(),
+      floatingActionButton: _currentIndex == 0 ? _buildCartFAB() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              _buildHeader(),
-              const SizedBox(height: 20),
-              _buildSearchBar(),
-              const SizedBox(height: 24),
-              _buildKategoriSection(),
-              const SizedBox(height: 24),
-              _buildPromoBanner(),
-              const SizedBox(height: 24),
-              _buildProdukSection(),
-              const SizedBox(height: 100),
-            ],
-          ),
+      body: _buildBody(),
+    );
+  }
+
+  // ── BODY (switch berdasarkan tab) ───────────────────
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildHomeBody();
+      case 1:
+        return const RiwayatPesananScreen();
+      case 2:
+        return const DompetDigitalScreen();
+      case 3:
+        return const ProfileScreen();
+      default:
+        return _buildHomeBody();
+    }
+  }
+
+  // ── HOME BODY ──────────────────────────────────────
+  Widget _buildHomeBody() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            _buildHeader(),
+            const SizedBox(height: 20),
+            _buildSearchBar(),
+            const SizedBox(height: 24),
+            _buildKategoriSection(),
+            const SizedBox(height: 24),
+            _buildPromoBanner(),
+            const SizedBox(height: 24),
+            _buildProdukSection(),
+            const SizedBox(height: 100),
+          ],
         ),
       ),
     );
@@ -278,7 +303,8 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedItemColor: AppColors.primaryGreen,
       unselectedItemColor: AppColors.textHint,
       type: BottomNavigationBarType.fixed,
-      currentIndex: 0,
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
       items: const [
         BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded), label: 'Beranda'),
