@@ -2,8 +2,8 @@ class ProductModel {
   final String id;
   final String nama;
   final String kategori;
-  final String fotoUrl;
-  final double harga;
+  final String imageUrl;
+  final int harga;
   final String satuan;
   final int stok;
   final bool tersedia;
@@ -12,7 +12,7 @@ class ProductModel {
     required this.id,
     required this.nama,
     required this.kategori,
-    required this.fotoUrl,
+    required this.imageUrl,
     required this.harga,
     required this.satuan,
     required this.stok,
@@ -24,8 +24,8 @@ class ProductModel {
       id: id,
       nama: map['nama'] ?? '',
       kategori: map['kategori'] ?? '',
-      fotoUrl: map['fotoUrl'] ?? '',
-      harga: (map['harga'] ?? 0).toDouble(),
+      imageUrl: map['imageUrl'] ?? '',
+      harga: map['harga'] ?? 0,
       satuan: map['satuan'] ?? '',
       stok: map['stok'] ?? 0,
       tersedia: map['tersedia'] ?? false,
@@ -36,7 +36,7 @@ class ProductModel {
     return {
       'nama': nama,
       'kategori': kategori,
-      'fotoUrl': fotoUrl,
+      'imageUrl': imageUrl,
       'harga': harga,
       'satuan': satuan,
       'stok': stok,

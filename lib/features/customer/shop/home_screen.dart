@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           'nama': produk.nama,
                           'harga': produk.harga.toInt(),
                           'satuan': produk.satuan,
-                          'fotoUrl': produk.fotoUrl,
+                          'imageUrl': produk.imageUrl,
                           'tersedia': produk.tersedia,
                         },
                       ),

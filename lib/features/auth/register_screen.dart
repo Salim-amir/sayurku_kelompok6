@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
-import '../../services/auth_service.dart'; // Import service Firebase kita
+import '../../services/auth_service.dart'; 
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,32 +17,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   // 2. Variabel Loading
   bool _isLoading = false;
 
-  // Jangan lupa matikan controller kalau layar ditutup biar memori HP nggak bocor
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose(); 
     super.dispose();
   }
 
   // 3. Fungsi Utama Mendaftar ke Firebase
   void _prosesDaftar() async {
-    // A. Cek apakah ada kolom yang kosong
+    // Cek apakah ada kolom yang kosong
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _phoneController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      // Cek kolom konfirmasi
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Harap isi semua data!')));
       return;
     }
 
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kata sandi tidak cocok!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     // B. Nyalakan efek loading
     setState(() {
       _isLoading = true;
@@ -151,6 +164,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
 
                   _PasswordTextField(controller: _passwordController),
+                  const SizedBox(height: 32),
+
+                  _ConfirmPasswordTextField(
+                    controller: _confirmPasswordController,
+                    originalPasswordController:
+                        _passwordController,
+                  ),
                   const SizedBox(height: 32),
 
                   // Tombol Daftar (Bisa berubah jadi Loading)
@@ -313,6 +333,50 @@ class _PasswordTextField extends StatefulWidget {
 class _PasswordTextFieldState extends State<_PasswordTextField> {
   bool _isObscured = true;
 
+  // Variabel untuk indikator kekuatan sandi
+  double _strengthScore = 0.0;
+  Color _strengthColor = Colors.transparent;
+  String _strengthText = '';
+
+  void _checkPasswordStrength(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _strengthScore = 0.0;
+        _strengthText = '';
+        _strengthColor = Colors.transparent;
+      });
+      return;
+    }
+
+    double score = 0.0;
+
+    // Kriteria 1: Panjang minimal 6 karakter
+    if (value.length >= 6) score += 0.33;
+
+    // Kriteria 2: Panjang di atas 8 karakter
+    if (value.length >= 8) score += 0.33;
+
+    // Kriteria 3: Mengandung kombinasi Huruf dan Angka
+    if (value.contains(RegExp(r'[a-zA-Z]')) &&
+        value.contains(RegExp(r'[0-9]'))) {
+      score += 0.34;
+    }
+
+    setState(() {
+      _strengthScore = score;
+      if (score <= 0.33) {
+        _strengthColor = AppColors.error;
+        _strengthText = 'Lemah';
+      } else if (score <= 0.66) {
+        _strengthColor = Colors.orange;
+        _strengthText = 'Sedang';
+      } else {
+        _strengthColor = AppColors.primaryGreen;
+        _strengthText = 'Kuat';
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -323,6 +387,7 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
         TextField(
           controller: widget.controller,
           obscureText: _isObscured,
+          onChanged: _checkPasswordStrength, // Deteksi ketikan secara real-time
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••',
@@ -369,6 +434,39 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
             ),
           ),
         ),
+
+        // --- BAR INDIKATOR KEKUATAN SANDI ---
+        if (_strengthText.isNotEmpty) // Hanya muncul kalau ada ketikan
+          Padding(
+            padding: const EdgeInsets.only(top: 12.0, left: 4.0, right: 4.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _strengthScore,
+                      backgroundColor: AppColors.inputBorder,
+                      color: _strengthColor,
+                      minHeight: 6,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 50, // Agar teks tidak menggeser bar saat berubah
+                  child: Text(
+                    _strengthText,
+                    style: TextStyle(
+                      color: _strengthColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -399,4 +497,143 @@ InputDecoration _buildInputDecoration({
     ),
     contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
   );
+}
+
+class _ConfirmPasswordTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final TextEditingController originalPasswordController;
+
+  const _ConfirmPasswordTextField({
+    super.key,
+    required this.controller,
+    required this.originalPasswordController, 
+  });
+
+  @override
+  State<_ConfirmPasswordTextField> createState() =>
+      _ConfirmPasswordTextFieldState();
+}
+
+class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
+  bool _isObscured = true;
+
+  // Variabel untuk indikator kecocokan
+  String _matchText = '';
+  Color _matchColor = Colors.transparent;
+
+  // Ini "otak" yang kelupaan tadi, Lim!
+  void _checkMatch(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _matchText = '';
+        _matchColor = Colors.transparent;
+      });
+      return;
+    }
+
+    // Cek apakah ketikan sama dengan sandi pertama
+    if (value == widget.originalPasswordController.text) {
+      setState(() {
+        _matchText = 'Sandi Cocok';
+        _matchColor = AppColors.primaryGreen;
+      });
+    } else {
+      setState(() {
+        _matchText = 'Sandi Tidak Cocok';
+        _matchColor = AppColors.error; // Warna merah
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'KONFIRMASI KATA SANDI',
+          style: AppTextStyles.labelUppercase,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: widget.controller,
+          obscureText: _isObscured,
+          onChanged: _checkMatch, // Deteksi ketikan secara real-time
+          style: AppTextStyles.inputText,
+          decoration: InputDecoration(
+            hintText: '••••••••',
+            hintStyle: AppTextStyles.inputHint.copyWith(fontSize: 18),
+            prefixIcon: const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.textHint,
+              size: 20,
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isObscured
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: AppColors.textHint,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isObscured = !_isObscured;
+                });
+              },
+            ),
+            filled: true,
+            fillColor: AppColors.inputBackground,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: _matchColor == Colors.transparent
+                    ? AppColors.primaryGreen
+                    : _matchColor, // Garis tepi ikut berubah warna
+                width: 1.5,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 16,
+            ),
+          ),
+        ),
+
+        // --- TEXT INDIKATOR KECOCOKAN ---
+        if (_matchText.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+            child: Row(
+              children: [
+                Icon(
+                  _matchText == 'Sandi Cocok'
+                      ? Icons.check_circle
+                      : Icons.cancel,
+                  color: _matchColor,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _matchText,
+                  style: TextStyle(
+                    color: _matchColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }
