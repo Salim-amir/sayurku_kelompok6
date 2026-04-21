@@ -10,16 +10,25 @@ import '../../../../models/product_model.dart';
 import '../../../../services/product_service.dart';
 
 class KatalogProdukScreen extends StatefulWidget {
-  const KatalogProdukScreen({super.key});
+  final String? kategoriAwal;
+  const KatalogProdukScreen({super.key, this.kategoriAwal});
 
   @override
   State<KatalogProdukScreen> createState() => _KatalogProdukScreenState();
 }
 
 class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
-  String _selectedKategori = 'Sayur Hijau';
+late String _selectedKategori;
 
-  final ProductService _productService = ProductService();
+final ProductService _productService = ProductService();
+
+@override
+void initState() {
+  super.initState();
+  setState(() {
+    _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+  });
+}
 
   final List<String> _kategoriList = [
     'Sayur Hijau', 'Buah', 'Bumbu', 'Umbi-umbian'
