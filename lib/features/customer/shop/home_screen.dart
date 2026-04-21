@@ -26,11 +26,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Map<String, dynamic>> _kategori = const [
-    {'label': 'Sayur Hijau', 'icon': Icons.eco_rounded, 'color': Color(0xFFE8F5E9)},
-    {'label': 'Buah', 'icon': Icons.circle_rounded, 'color': Color(0xFFFFF3E0)},
-    {'label': 'Bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
-    {'label': 'Umbi-umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
+    {'label': 'Sayur Hijau', 'kategoriKey': 'sayur_hijau', 'icon': Icons.eco_rounded, 'color': Color(0xFFE8F5E9)},
+    {'label': 'Buah', 'kategoriKey': 'buah', 'icon': Icons.circle_rounded, 'color': Color(0xFFFFF3E0)},
+    {'label': 'Bumbu', 'kategoriKey': 'bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
+    {'label': 'Umbi-umbian', 'kategoriKey': 'umbi_umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
   ];
+>>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +156,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildKategoriItem(Map<String, dynamic> data) {
-    return Column(
+  return GestureDetector(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => KatalogProdukScreen(
+          kategoriAwal: data['kategoriKey'],
+        ),
+      ),
+    ),
+    child: Column(
       children: [
         Container(
           width: 56,
@@ -173,8 +183,9 @@ class _HomeScreenState extends State<HomeScreen> {
           overflow: TextOverflow.ellipsis,
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   // ── PROMO BANNER ────────────────────────────────────
   Widget _buildPromoBanner() {
