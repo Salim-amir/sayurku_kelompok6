@@ -8,7 +8,6 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- FUNGSI REGISTER ---
-  // Fungsi ini mengembalikan String (pesan error). Jika sukses, mengembalikan null.
   Future<String?> registerUser({
     required String email,
     required String password,
@@ -16,19 +15,16 @@ class AuthService {
     required String nomorHp,
   }) async {
     try {
-      // ─── 1. VALIDASI NOMOR HP GANDA ───
       print("1. Cek apakah Nomor HP sudah terdaftar...");
       QuerySnapshot cekHp = await _firestore
-          .collection(AppConstants.colUsers) // Menggunakan variabel constant
+          .collection(AppConstants.colUsers)
           .where('nomorHp', isEqualTo: nomorHp)
           .get();
 
       if (cekHp.docs.isNotEmpty) {
-        // Jika ada data yang cocok, hentikan pendaftaran!
         return "Nomor HP ini sudah terdaftar. Silakan gunakan nomor lain!";
       }
 
-      // ─── 2. DAFTAR KE FIREBASE AUTH ───
       print("2. Mulai daftar ke Auth...");
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -43,12 +39,9 @@ class AuthService {
         email: email,
       );
 
-      // ─── 3. SIMPAN KE FIRESTORE DENGAN ROLE ───
       print("4. Mulai simpan ke Firestore...");
-      
-      // Kita ubah newUser.toMap() untuk menambahkan role default (Customer)
       Map<String, dynamic> userData = newUser.toMap();
-      userData['role'] = AppConstants.roleCustomer; 
+      userData['role'] = AppConstants.roleCustomer;
 
       await _firestore
           .collection(AppConstants.colUsers)
@@ -56,7 +49,6 @@ class AuthService {
           .set(userData);
 
       print("5. SUKSES SIMPAN KE FIRESTORE!");
-
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
@@ -66,20 +58,69 @@ class AuthService {
   }
 
   // --- FUNGSI LOGIN ---
-  // Sama seperti register, mengembalikan String error jika gagal, dan null jika sukses.
   Future<String?> loginUser({
     required String email,
     required String password,
   }) async {
     try {
-      // Perintah bawaan Firebase untuk mengecek kecocokan email & password
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return null; // Sukses! Tidak ada pesan error.
+      return null;
     } on FirebaseAuthException catch (e) {
-      // Tangkap error dari Firebase (misal: "user-not-found" atau "wrong-password")
       return e.message;
     } catch (e) {
       return "Terjadi kesalahan sistem: ${e.toString()}";
     }
   }
+
+  // --- FUNGSI RESET PASSWORD ---
+  /// Mencari email yang terdaftar berdasarkan nomor HP di Firestore,
+  /// lalu mengirim link reset password ke email tersebut via Firebase Auth.
+  ///
+  /// Mengembalikan [null] jika berhasil.
+  /// Mengembalikan [String] pesan error jika gagal.
+  Future<String?> resetPassword({required String nomorHp}) async {
+    try {
+      // ─── 1. CARI EMAIL BERDASARKAN NOMOR HP ───
+      print("1. Mencari akun dengan nomor HP: $nomorHp");
+      QuerySnapshot hasil = await _firestore
+          .collection(AppConstants.colUsers)
+          .where('nomorHp', isEqualTo: nomorHp)
+          .limit(1)
+          .get();
+
+      // Jika tidak ada akun dengan nomor HP tersebut
+      if (hasil.docs.isEmpty) {
+        return "Nomor HP tidak terdaftar. Periksa kembali nomor Anda.";
+      }
+
+      // ─── 2. AMBIL EMAIL DARI DOKUMEN YANG DITEMUKAN ───
+      final data = hasil.docs.first.data() as Map<String, dynamic>;
+      final String email = data['email'] ?? '';
+
+      if (email.isEmpty) {
+        return "Akun ditemukan namun email tidak valid. Hubungi admin.";
+      }
+
+      print("2. Email ditemukan: $email — mengirim link reset...");
+
+      // ─── 3. KIRIM LINK RESET KE EMAIL ───
+      await _auth.sendPasswordResetEmail(email: email);
+
+      print("3. Link reset password berhasil dikirim ke $email");
+      return null; // Sukses
+    } on FirebaseAuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return "Terjadi kesalahan: ${e.toString()}";
+    }
+  }
+
+  // --- FUNGSI LOGOUT ---
+  Future<void> logoutUser() async {
+    await _auth.signOut();
+  }
+
+  // --- CEK STATUS LOGIN ---
+  User? get currentUser => _auth.currentUser;
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 }
