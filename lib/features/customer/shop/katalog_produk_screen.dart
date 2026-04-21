@@ -124,13 +124,13 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                       : AppColors.inputBorder,
                 ),
               ),
-              child: Text(
-                kategori,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+child: Text(
+  _getLabelKategori(kategori),
+  style: AppTextStyles.bodyMedium.copyWith(
+    color: isSelected ? AppColors.white : AppColors.textPrimary,
+    fontWeight: FontWeight.w600,
+  ),
+),
             ),
           );
         },
@@ -214,7 +214,15 @@ Widget _buildProductCard(Map<String, dynamic> produk) {
     onAddToCart: () {},
   );
 }
-
+String _getLabelKategori(String kategori) {
+  switch (kategori) {
+    case 'sayur_hijau': return 'Sayur Hijau';
+    case 'buah': return 'Buah';
+    case 'bumbu': return 'Bumbu';
+    case 'umbi_umbian': return 'Umbi-umbian';
+    default: return kategori;
+  }
+}
   // ── BOTTOM NAV ──────────────────────────────────────
   Widget _buildBottomNav() {
     return BottomNavigationBar(
