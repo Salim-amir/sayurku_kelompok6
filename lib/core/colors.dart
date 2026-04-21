@@ -14,5 +14,8 @@ class AppColors {
   static const Color white            = Color(0xFFFFFFFF);
   static const Color divider          = Color(0xFFD5D5D5);
   static const Color linkColor        = Color(0xFF1D5C2E);
-  static const Color error = Color(0xFFD32F2F);
+  static const Color error            = Color(0xFFD32F2F);
+  static const Color warning          = Color(0xFFF57C00);
+  static const Color success          = Color(0xFF388E3C);
+  static const Color info             = Color(0xFF1976D2);
 }

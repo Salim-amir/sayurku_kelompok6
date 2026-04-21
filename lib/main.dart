@@ -4,6 +4,12 @@ import 'firebase_options.dart';
 import 'core/colors.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
+import 'features/customer/shop/home_screen.dart';
+import 'features/customer/profile/profile_screen.dart';
+import 'features/customer/profile/riwayat_pesanan_screen.dart';
+import 'features/customer/profile/dompet_digital_screen.dart';
+import 'features/customer/profile/isi_saldo_screen.dart';
+import 'features/customer/profile/alamat_screen.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +40,12 @@ class MyApp extends StatelessWidget {
 home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/riwayat-pesanan': (context) => const RiwayatPesananScreen(),
+        '/dompet': (context) => const DompetDigitalScreen(),
+        '/isi-saldo': (context) => const IsiSaldoScreen(),
+        '/alamat': (context) => const AlamatScreen(),
       },
     );
   }

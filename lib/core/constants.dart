@@ -79,6 +79,10 @@ class AppConstants {
   static const String colNotifications      = 'notifications';
   static const String colAddresses          = 'addresses';
 
+  // ─── Firebase Subcollection Names ──────────────────────────────
+  static const String subColTransactions    = 'transactions';
+  static const String subColAddresses       = 'addresses';
+
   // ─── Shared Preferences Keys ──────────────────────────────────
   static const String prefIsLoggedIn        = 'is_logged_in';
   static const String prefUserId            = 'user_id';
@@ -98,4 +102,22 @@ class AppConstants {
   static const String msgTopUpSuccess       = 'Saldo berhasil ditambahkan.';
   static const String msgNetworkError       = 'Gagal terhubung. Cek koneksi internet.';
   static const String msgUnknownError       = 'Terjadi kesalahan. Coba lagi.';
+
+  // ─── Wallet Transaction Types ──────────────────────────────────
+  static const String txTopUp               = 'topup';
+  static const String txPayment             = 'payment';
+
+  // ─── Wallet Transaction Status ─────────────────────────────────
+  static const String txStatusPending       = 'pending';
+  static const String txStatusApproved      = 'approved';
+  static const String txStatusRejected      = 'rejected';
+  static const String txStatusSuccess       = 'success';
+
+  // ─── Nominal Top-Up Options ────────────────────────────────────
+  static const List<int> topUpNominals = [
+    50000,
+    100000,
+    200000,
+    500000,
+  ];
 }
