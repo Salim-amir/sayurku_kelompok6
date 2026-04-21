@@ -14,42 +14,38 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  // ─── Controller & Service ─────────────────────────────────────────────────
-  final TextEditingController _phoneController = TextEditingController();
-  final AuthService _authService = AuthService();
+  // ─── GANTI JADI EMAIL CONTROLLER ───
+  final TextEditingController _emailController = TextEditingController();
 
-  // ─── State ────────────────────────────────────────────────────────────────
+  // ─── State ───
   bool _isLoading = false;
   String? _errorText;
   bool _isSent = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  // ─── Validasi Nomor HP ────────────────────────────────────────────────────
-  String? _validatePhone(String value) {
+  // ─── Validasi Email ───
+  String? _validateEmail(String value) {
     if (value.trim().isEmpty) {
-      return 'Nomor HP tidak boleh kosong.';
+      return 'Email tidak boleh kosong.';
     }
-    if (!value.startsWith('08') && !value.startsWith('+62')) {
-      return 'Nomor HP harus diawali 08 atau +62.';
-    }
-    if (value.trim().length < 10 || value.trim().length > 14) {
-      return 'Nomor HP tidak valid.';
+    if (!value.contains('@')) {
+      return 'Format email tidak valid (harus mengandung @).';
     }
     return null;
   }
 
-  // ─── Fungsi Kirim Reset ───────────────────────────────────────────────────
+  // ─── Fungsi Kirim Reset ───
   Future<void> _kirimReset() async {
     FocusScope.of(context).unfocus();
 
-    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
 
-    final validasiError = _validatePhone(phone);
+    final validasiError = _validateEmail(email);
     if (validasiError != null) {
       setState(() => _errorText = validasiError);
       return;
@@ -60,9 +56,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _errorText = null;
     });
 
-    final error = await _authService.resetPassword(nomorHp: phone);
-
-    if (!mounted) return;
+    // Panggil mesin AuthService yang baru
+    final error = await AuthService().resetPassword(email: email);
+    
+    // Pakai context.mounted biar ga ada garis biru
+    if (!context.mounted) return; 
 
     setState(() => _isLoading = false);
 
@@ -71,13 +69,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } else {
       setState(() => _isSent = true);
       _tampilkanSnackbar(
-        'Link reset berhasil dikirim ke email terdaftar.',
+        'Link reset berhasil dikirim ke email Anda.',
         isError: false,
       );
     }
   }
 
-  // ─── Helper Snackbar ──────────────────────────────────────────────────────
+  // ─── Helper Snackbar ───
   void _tampilkanSnackbar(String pesan, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -126,14 +124,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  // ─── View: Form Input ─────────────────────────────────────────────────────
+  // ─── View: Form Input ───
   Widget _buildFormView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 40),
 
-        // Ikon reset
         Container(
           width: 80,
           height: 80,
@@ -152,19 +149,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         const Text('Lupa Kata Sandi', style: AppTextStyles.h1),
         const SizedBox(height: 12),
         const Text(
-          'Masukkan nomor HP terdaftar untuk\nreset kata sandi',
+          'Masukkan alamat email terdaftar untuk\nreset kata sandi',
           style: AppTextStyles.appTagline,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
 
-        // ── Pakai AppTextField ──
+        // ── Input Email ──
         AppTextField(
-          label: 'NOMOR HP',
-          hintText: '0812xxxx',
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          prefixIcon: Icons.phone_android_rounded,
+          label: 'ALAMAT EMAIL',
+          hintText: 'nama@email.com',
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          prefixIcon: Icons.email_outlined,
           errorText: _errorText,
           enabled: !_isLoading,
           onChanged: (_) {
@@ -173,7 +170,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 32),
 
-        // ── Pakai AppPrimaryButton ──
         AppPrimaryButton(
           label: 'Kirim Link Reset',
           onPressed: _kirimReset,
@@ -181,31 +177,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           trailingIcon: Icons.send_rounded,
         ),
         const SizedBox(height: 48),
-
-        // Bantuan — pakai AppTextButton
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Butuh bantuan lain? ', style: AppTextStyles.labelLink),
-            AppTextButton(
-              label: 'Hubungi Kami',
-              onPressed: () => print('Hubungi Kami ditekan'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 40),
       ],
     );
   }
 
-  // ─── View: Sukses ─────────────────────────────────────────────────────────
+  // ─── View: Sukses ───
   Widget _buildSuksesView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 60),
 
-        // Ikon centang
         Container(
           width: 90,
           height: 90,
@@ -230,19 +212,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 48),
 
-        // ── Pakai AppPrimaryButton ──
         AppPrimaryButton(
           label: 'Kembali ke Login',
           onPressed: () => Navigator.pop(context),
         ),
         const SizedBox(height: 16),
 
-        // ── Pakai AppTextButton ──
         AppTextButton(
-          label: 'Kirim ulang dengan nomor berbeda',
+          label: 'Gunakan email berbeda',
           onPressed: () => setState(() {
             _isSent = false;
-            _phoneController.clear();
+            _emailController.clear();
           }),
         ),
         const SizedBox(height: 40),

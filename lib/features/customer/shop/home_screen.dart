@@ -31,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
     {'label': 'Bumbu', 'kategoriKey': 'bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
     {'label': 'Umbi-umbian', 'kategoriKey': 'umbi_umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
   ];
->>>>>>> Stashed changes
 
   @override
   Widget build(BuildContext context) {

@@ -141,8 +141,37 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Cukup panggil AppGoogleButton!
               AppGoogleButton(
-                onPressed: () {
-                  print('Google login ditekan');
+                onPressed: () async {
+                  setState(() => _isLoading = true); // Nyalakan loading
+
+                  final pesanError = await AuthService().loginWithGoogle();
+
+                  // Pastikan widget masih ada sebelum lanjut
+                  if (!mounted) return;
+
+                  setState(() => _isLoading = false); // Matikan loading
+
+                  if (pesanError == null) {
+                    // Sukses
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Berhasil masuk dengan Google!'),
+                        backgroundColor: AppColors.primaryGreen,
+                      ),
+                    );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    );
+                  } else {
+                    // Gagal / Batal
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(pesanError),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 },
               ),
               const SizedBox(height: 28),
