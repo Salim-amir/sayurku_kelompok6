@@ -36,4 +36,15 @@ class OrderService {
             .map((doc) => {'id': doc.id, ...doc.data()})
             .toList());
   }
+
+ // ── Update status pesanan (untuk admin) ──
+Future<void> updateStatusPesanan({
+  required String orderId,
+  required String statusBaru,
+}) async {
+  await _db.collection(AppConstants.colOrders).doc(orderId).update({
+    'status': statusBaru,
+    'tanggalUpdate': FieldValue.serverTimestamp(),
+  });
+}
 }
