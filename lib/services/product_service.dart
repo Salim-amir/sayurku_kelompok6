@@ -54,6 +54,7 @@ class ProductService {
 
   
   }
+  // CREATE
   Future<void> addProduct({
   required String nama,
   required int harga,
@@ -70,5 +71,26 @@ class ProductService {
     'tersedia': true,
     'createdAt': FieldValue.serverTimestamp(),
   });
+}
+// UPDATE
+Future<void> updateProduct({
+  required String id,
+  required String nama,
+  required int harga,
+  required int stok,
+  required String kategori,
+  required String imageUrl,
+}) async {
+  await _db.collection(AppConstants.colProducts).doc(id).update({
+    'nama': nama,
+    'harga': harga,
+    'stok': stok,
+    'kategori': kategori,
+    'imageUrl': imageUrl,
+  });
+}
+// DELETE
+Future<void> deleteProduct(String id) async {
+  await _db.collection(AppConstants.colProducts).doc(id).delete();
 }
 }
