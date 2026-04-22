@@ -47,6 +47,7 @@ class _TestPageState extends State<TestPage> {
                   stok: 10,
                   kategori: selectedKategori, // ✅ dinamis
                   imageUrl: "https://example.com/bayam.jpg",
+                  satuan: AppConstants.satuanProduk[0],
                 );
 
                 ScaffoldMessenger.of(context).showSnackBar(
