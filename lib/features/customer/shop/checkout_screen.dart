@@ -19,7 +19,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
 
-int get _subtotal => 44500; // dummy dulu
+int get _subtotal => CartManager.instance.totalHarga;
 int get _totalPembayaran => _subtotal + _ongkosKirim;
 
   @override
@@ -115,10 +115,7 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
 
   // ── RINGKASAN PESANAN ───────────────────────────────
   Widget _buildRingkasanPesanan() {
-final items = [
-  {'nama': 'Bayam Hijau', 'harga': 12000, 'satuan': 'ikat', 'jumlah': 2},
-  {'nama': 'Tomat Merah', 'harga': 8500, 'satuan': 'kg', 'jumlah': 1},
-];
+final items = CartManager.instance.items;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),

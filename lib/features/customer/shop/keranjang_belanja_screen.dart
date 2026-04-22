@@ -1,8 +1,8 @@
-import 'checkout_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
-import '../../../../widgets/product_card.dart';
+import '../../../../core/cart_manager.dart';
+import 'checkout_screen.dart';
 
 class KeranjangBelanjaScreen extends StatefulWidget {
   const KeranjangBelanjaScreen({super.key});
@@ -12,17 +12,9 @@ class KeranjangBelanjaScreen extends StatefulWidget {
 }
 
 class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
-  // Data dummy keranjang
-  final List<Map<String, dynamic>> _keranjang = [
-    {'nama': 'Bayam Hijau', 'harga': 5000, 'satuan': 'ikat', 'jumlah': 2},
-    {'nama': 'Tomat Merah', 'harga': 8500, 'satuan': 'kg', 'jumlah': 1},
-    {'nama': 'Cabai Rawit', 'harga': 12000, 'satuan': '250g', 'jumlah': 3},
-  ];
-
-  int get _totalHarga => _keranjang.fold(
-      0, (sum, item) => sum + (item['harga'] as int) * (item['jumlah'] as int));
-
-  int get _totalProduk => _keranjang.length;
+  List<Map<String, dynamic>> get _keranjang => CartManager.instance.items;
+  int get _totalHarga => CartManager.instance.totalHarga;
+  int get _totalProduk => CartManager.instance.totalProduk;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +50,7 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
                           _buildItemKeranjang(index),
                     ),
             ),
-            _buildBottomBar(context),
+            if (_keranjang.isNotEmpty) _buildBottomBar(context),
           ],
         ),
       ),
@@ -88,22 +80,17 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
     final item = _keranjang[index];
     return Row(
       children: [
-// GANTI jadi ini
-ClipRRect(
-  borderRadius: BorderRadius.circular(14),
-  child: Container(
-    width: 90,
-    height: 90,
-    color: AppColors.inputBackground,
-    child: const Icon(
-      Icons.eco_rounded,
-      color: AppColors.primaryGreen,
-      size: 36,
-    ),
-  ),
-),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: 90,
+            height: 90,
+            color: AppColors.inputBackground,
+            child: const Icon(Icons.eco_rounded,
+                color: AppColors.primaryGreen, size: 36),
+          ),
+        ),
         const SizedBox(width: 14),
-        // Info produk
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,16 +102,13 @@ ClipRRect(
                     .copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              // Tombol kurangi/tambah
               Row(
                 children: [
                   _buildQtyButton(
                     icon: Icons.remove_rounded,
-                    onTap: () {
-                      if (item['jumlah'] > 1) {
-                        setState(() => _keranjang[index]['jumlah']--);
-                      }
-                    },
+                    onTap: () => setState(() =>
+                        CartManager.instance.updateJumlah(
+                            index, item['jumlah'] - 1)),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -132,16 +116,18 @@ ClipRRect(
                   ),
                   _buildQtyButton(
                     icon: Icons.add_rounded,
-                    onTap: () => setState(() => _keranjang[index]['jumlah']++),
+                    onTap: () => setState(() =>
+                        CartManager.instance.updateJumlah(
+                            index, item['jumlah'] + 1)),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        // Tombol hapus
         IconButton(
-          onPressed: () => setState(() => _keranjang.removeAt(index)),
+          onPressed: () =>
+              setState(() => CartManager.instance.hapusProduk(index)),
           icon: const Icon(Icons.delete_outline_rounded,
               color: Colors.redAccent, size: 22),
         ),
@@ -149,7 +135,8 @@ ClipRRect(
     );
   }
 
-  Widget _buildQtyButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildQtyButton(
+      {required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -237,10 +224,10 @@ ClipRRect(
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-onPressed: () => Navigator.push(
-  context,
-  MaterialPageRoute(builder: (_) => const CheckoutScreen()),
-),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 padding: const EdgeInsets.symmetric(vertical: 16),

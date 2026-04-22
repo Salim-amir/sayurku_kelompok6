@@ -3,6 +3,7 @@ import 'detail_produk_screen.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
+import '../../../core/cart_manager.dart';
 import '../../../../widgets/product_card.dart';
 import '../../../../widgets/custom_button.dart';
 import '../../../../core/constants.dart';
@@ -201,7 +202,22 @@ Widget _buildProdukGrid() {
                 ),
               ),
             ),
-            onAddToCart: () {},
+            onAddToCart: () {
+  CartManager.instance.tambahProduk({
+    'nama': produk.nama,
+    'harga': produk.harga.toInt(),
+    'satuan': produk.satuan,
+    'imageUrl': produk.imageUrl,
+  }, 1);
+  setState(() {});
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('${produk.nama} ditambahkan ke keranjang!'),
+      backgroundColor: AppColors.primaryGreen,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+},
           );
         },
       );
@@ -255,38 +271,45 @@ String _getLabelKategori(String kategori) {
   }
 
   // ── CART FAB ────────────────────────────────────────
- Widget _buildCartFAB() {
+Widget _buildCartFAB() {
   return Stack(
     clipBehavior: Clip.none,
     children: [
       FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
-        ),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const KeranjangBelanjaScreen()),
+          );
+          setState(() {}); // refresh badge setelah balik dari keranjang
+        },
         backgroundColor: AppColors.primaryGreen,
         child: const Icon(Icons.shopping_basket_rounded,
             color: AppColors.white),
       ),
-      Positioned(
-        right: -2,
-        top: -2,
-        child: Container(
-          width: 18,
-          height: 18,
-          decoration: const BoxDecoration(
-            color: Colors.red,
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-            child: Text('3',
-                style: TextStyle(
+      if (CartManager.instance.totalProduk > 0)
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: const BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${CartManager.instance.totalProduk}',
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
-                    fontWeight: FontWeight.bold)),
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ),
-      ),
     ],
   );
 }

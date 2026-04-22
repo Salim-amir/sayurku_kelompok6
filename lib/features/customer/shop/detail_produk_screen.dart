@@ -3,6 +3,7 @@ import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
 import '../../../../core/constants.dart';
 import 'keranjang_belanja_screen.dart';
+import '../../../../core/cart_manager.dart';
 
 class DetailProdukScreen extends StatefulWidget {
   final Map<String, dynamic> produk;
@@ -248,19 +249,20 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: tersedia
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              '${widget.produk['nama']} ditambahkan ke keranjang!'),
-                          backgroundColor: AppColors.primaryGreen,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                      Navigator.pop(context);
-                    }
-                  : null,
+          onPressed: tersedia
+              ? () {
+                  CartManager.instance.tambahProduk(widget.produk, _jumlah);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          '${widget.produk['nama']} ditambahkan ke keranjang!'),
+                      backgroundColor: AppColors.primaryGreen,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                  Navigator.pop(context);
+                }
+              : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 disabledBackgroundColor: AppColors.divider,
