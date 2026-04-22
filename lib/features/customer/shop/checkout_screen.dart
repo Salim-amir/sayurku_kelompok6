@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../services/order_service.dart';
+import '../../../../core/cart_manager.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -12,6 +15,9 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String _metodePembayaran = 'COD';
   final int _ongkosKirim = 10000;
+  final OrderService _orderService = OrderService();
+  final _user = FirebaseAuth.instance.currentUser;
+  bool _isLoading = false;
 
 int get _subtotal => 44500; // dummy dulu
 int get _totalPembayaran => _subtotal + _ongkosKirim;
@@ -289,7 +295,7 @@ final items = [
   }
 
   // ── BOTTOM BAR ──────────────────────────────────────
-  Widget _buildBottomBar(BuildContext context) {
+Widget _buildBottomBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(
@@ -318,26 +324,53 @@ final items = [
             ],
           ),
           ElevatedButton(
-            onPressed: () {
-              // Nanti disambung ke order_service saat Firebase sudah siap
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: Text('Pesanan Dibuat!', style: AppTextStyles.h3),
-                  content: Text(
-                    'Pesanan kamu sedang diproses oleh admin.',
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('OK',
-                          style: AppTextStyles.link),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    setState(() => _isLoading = true);
+                    try {
+                      await _orderService.buatPesananBaru(
+                        userId: _user?.uid ?? '',
+                        items: CartManager.instance.items,
+                        totalHarga: _subtotal.toDouble(),
+                        ongkosKirim: _ongkosKirim.toDouble(),
+                        metodePembayaran: _metodePembayaran,
+                        alamatPengiriman: 'Jl. Kebon Jeruk No. 12, Jakarta Barat',
+                      );
+                      setState(() => _isLoading = false);
+                      if (mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: Text('Pesanan Dibuat! 🎉',
+                                style: AppTextStyles.h3),
+                            content: Text(
+                              'Pesanan kamu sedang diproses oleh admin.',
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  CartManager.instance.items.clear();
+                                  Navigator.popUntil(
+                                      context, (route) => route.isFirst);
+                                },
+                                child: Text('OK', style: AppTextStyles.link),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Gagal membuat pesanan: $e'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               padding:
@@ -346,7 +379,16 @@ final items = [
                 borderRadius: BorderRadius.circular(30),
               ),
             ),
-            child: Text('Buat Pesanan', style: AppTextStyles.buttonPrimary),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: AppColors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text('Buat Pesanan', style: AppTextStyles.buttonPrimary),
           ),
         ],
       ),

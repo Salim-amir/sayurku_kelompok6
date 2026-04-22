@@ -108,44 +108,45 @@ void initState() {
     );
   }
 
-  // ── FILTER KATEGORI ─────────────────────────────────
-  Widget _buildKategoriFilter() {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _kategoriList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final kategori = _kategoriList[index];
-          final isSelected = kategori == _selectedKategori;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedKategori = kategori),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryGreen : AppColors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : AppColors.inputBorder,
-                ),
+// ── FILTER KATEGORI ─────────────────────────────────
+Widget _buildKategoriFilter() {
+  return SizedBox(
+    height: 40,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: _kategoriList.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 8),
+      itemBuilder: (context, index) {
+        final kategori = _kategoriList[index];
+        final isSelected = kategori == _selectedKategori;
+        return InkWell(
+          onTap: () => setState(() => _selectedKategori = kategori),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryGreen : AppColors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryGreen
+                    : AppColors.inputBorder,
               ),
-child: Text(
-  _getLabelKategori(kategori),
-  style: AppTextStyles.bodyMedium.copyWith(
-    color: isSelected ? AppColors.white : AppColors.textPrimary,
-    fontWeight: FontWeight.w600,
-  ),
-),
             ),
-          );
-        },
-      ),
-    );
-  }
+            child: Text(
+              _getLabelKategori(kategori),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isSelected ? AppColors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   // ── PRODUK GRID ─────────────────────────────────────
 Widget _buildProdukGrid() {
