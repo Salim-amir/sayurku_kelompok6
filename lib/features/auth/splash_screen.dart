@@ -38,6 +38,15 @@ class _SplashScreenState extends State<SplashScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+
+  Future.delayed(Duration.zero, () {
+    Navigator.pushNamed(context, '/test');
+  });
+}
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();

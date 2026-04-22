@@ -4,6 +4,7 @@ import 'firebase_options.dart';
 import 'core/colors.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
+import 'features/test/test_firestore.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
 home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/test': (context) => const TestPage(),
       },
     );
   }
