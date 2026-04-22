@@ -11,6 +11,7 @@ import 'keranjang_belanja_screen.dart';
 import '../profile/riwayat_pesanan_screen.dart';
 import '../profile/dompet_digital_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../../core/cart_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -296,7 +297,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  onAddToCart: () {},
+                  onAddToCart: () {
+  CartManager.instance.tambahProduk({
+    'nama': produk.nama,
+    'harga': produk.harga.toInt(),
+    'satuan': produk.satuan,
+    'imageUrl': produk.imageUrl,
+  }, 1);
+  setState(() {});
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('${produk.nama} ditambahkan ke keranjang!'),
+      backgroundColor: AppColors.primaryGreen,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+},
                 );
               },
             );
@@ -329,19 +345,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── CART FAB ────────────────────────────────────────
-  Widget _buildCartFAB() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        FloatingActionButton(
-          onPressed: () => Navigator.push(
+Widget _buildCartFAB() {
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
-          ),
-          backgroundColor: AppColors.primaryGreen,
-          child: const Icon(Icons.shopping_basket_rounded,
-              color: AppColors.white),
-        ),
+            MaterialPageRoute(
+                builder: (_) => const KeranjangBelanjaScreen()),
+          );
+          setState(() {}); // refresh badge setelah balik dari keranjang
+        },
+        backgroundColor: AppColors.primaryGreen,
+        child: const Icon(Icons.shopping_basket_rounded,
+            color: AppColors.white),
+      ),
+      if (CartManager.instance.totalProduk > 0)
         Positioned(
           right: -2,
           top: -2,
@@ -352,16 +373,18 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.red,
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Text('0',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold)),
+            child: Center(
+              child: Text(
+                '${CartManager.instance.totalProduk}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),
-      ],
-    );
-  }
+    ],
+  );
+}
 }
