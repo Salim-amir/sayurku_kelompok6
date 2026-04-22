@@ -59,6 +59,19 @@ class AppConstants {
     'liter',
   ];
 
+  // ─── Kategori Produk ───────────────────────────────────────────
+static const String kategoriSayurHijau = 'sayur_hijau';
+static const String kategoriBuah       = 'buah';
+static const String kategoriBumbu      = 'bumbu';
+static const String kategoriUmbi       = 'umbi_umbian';
+
+static const List<String> kategoriProduk = [
+  kategoriSayurHijau,
+  kategoriBuah,
+  kategoriBumbu,
+  kategoriUmbi,
+];
+
   // ─── Status Pesanan ───────────────────────────────────────────
   static const String statusMenunggu        = 'Menunggu Konfirmasi';
   static const String statusDiproses        = 'Diproses';
