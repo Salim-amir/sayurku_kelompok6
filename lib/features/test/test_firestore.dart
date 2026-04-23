@@ -1,36 +1,62 @@
 import 'package:flutter/material.dart';
 import '../../services/product_service.dart';
-class TestPage extends StatelessWidget {
+import '../../core/constants.dart';
+class TestPage extends StatefulWidget {
   const TestPage({super.key});
+
+  @override
+  State<TestPage> createState() => _TestPageState();
+}
+
+class _TestPageState extends State<TestPage> {
+  String selectedKategori = AppConstants.kategoriSayurHijau;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Test Firestore"),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            try {
-              await ProductService().addProduct(
-                nama: "Bayam Test",
-                harga: 5000,
-                stok: 10,
-                kategori: "Sayur",
-                imageUrl: "https://example.com/bayam.jpg",
-              );
+      appBar: AppBar(title: const Text("Tambah Produk")),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            DropdownButtonFormField<String>(
+              value: selectedKategori,
+              items: AppConstants.kategoriProduk.map((kategori) {
+                return DropdownMenuItem(
+                  value: kategori,
+                  child: Text(kategori),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedKategori = value!;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: "Kategori",
+              ),
+            ),
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Produk berhasil ditambahkan")),
-              );
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Error: $e")),
-              );
-            }
-          },
-          child: const Text("Tambah Produk"),
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: () async {
+                await ProductService().addProduct(
+                  nama: "Bayam",
+                  harga: 5000,
+                  stok: 10,
+                  kategori: selectedKategori, // ✅ dinamis
+                  imageUrl: "https://example.com/bayam.jpg",
+                  satuan: AppConstants.satuanProduk[0],
+                );
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Produk berhasil ditambahkan")),
+                );
+              },
+              child: const Text("Tambah Produk"),
+            ),
+          ],
         ),
       ),
     );

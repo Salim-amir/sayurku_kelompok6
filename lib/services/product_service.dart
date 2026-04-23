@@ -61,6 +61,7 @@ class ProductService {
   required int stok,
   required String kategori,
   required String imageUrl,
+  required String satuan,
    }) async {
   await _db.collection(AppConstants.colProducts).add({
     'nama': nama,
@@ -68,6 +69,7 @@ class ProductService {
     'stok': stok,
     'kategori': kategori,
     'imageUrl': imageUrl,
+    'satuan': satuan,
     'tersedia': true,
     'createdAt': FieldValue.serverTimestamp(),
   });
@@ -80,6 +82,7 @@ Future<void> updateProduct({
   required int stok,
   required String kategori,
   required String imageUrl,
+  required String satuan,
 }) async {
   await _db.collection(AppConstants.colProducts).doc(id).update({
     'nama': nama,
@@ -87,6 +90,7 @@ Future<void> updateProduct({
     'stok': stok,
     'kategori': kategori,
     'imageUrl': imageUrl,
+    'satuan': satuan,
   });
 }
 // DELETE
