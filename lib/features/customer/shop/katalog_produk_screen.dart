@@ -12,7 +12,8 @@ import '../../../../services/product_service.dart';
 
 class KatalogProdukScreen extends StatefulWidget {
   final String? kategoriAwal;
-  const KatalogProdukScreen({super.key, this.kategoriAwal});
+  final String? searchKeyword;
+  const KatalogProdukScreen({super.key, this.kategoriAwal, this.searchKeyword});
 
   @override
   State<KatalogProdukScreen> createState() => _KatalogProdukScreenState();
@@ -22,12 +23,26 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
 late String _selectedKategori;
 
 final ProductService _productService = ProductService();
+  final TextEditingController _searchController = TextEditingController(); // ← tambah ini
+  String _searchKeyword = '';
 
+  @override
+void dispose() {
+  _searchController.dispose();
+  super.dispose();
+}
 @override
 void initState() {
   super.initState();
-  setState(() {
-    _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+  _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+  if (widget.searchKeyword != null) {
+    _searchKeyword = widget.searchKeyword!;
+    _searchController.text = widget.searchKeyword!;
+  }
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    setState(() {
+      _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+    });
   });
 }
 
@@ -71,80 +86,99 @@ void initState() {
   }
 
   // ── APP BAR ─────────────────────────────────────────
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.primaryGreen),
-            onPressed: () => Navigator.pop(context),
+Widget _buildAppBar(BuildContext context) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
+    child: Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded,
+              color: AppColors.primaryGreen),
+          onPressed: () => Navigator.pop(context),
+        ),
+        Expanded(
+          child: Center(
+            child: Text('Katalog Produk',
+                style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
           ),
-          Text('Katalog Produk',
-              style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
-          const Icon(Icons.search_rounded,
-              color: AppColors.primaryGreen, size: 26),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 48), // biar judul tetap center
+      ],
+    ),
+  );
+}
 
   // ── SEARCH BAR ──────────────────────────────────────
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(30),
+ Widget _buildSearchBar() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.inputBackground,
+      borderRadius: BorderRadius.circular(30),
+    ),
+    child: TextField(
+      controller: _searchController,
+      onChanged: (value) => setState(() => _searchKeyword = value),
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: 'Cari sayur segar hari ini...',
+        hintStyle: AppTextStyles.inputHint,
+        prefixIcon: const Icon(Icons.search_rounded,
+            color: AppColors.textHint, size: 20),
+        suffixIcon: _searchKeyword.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded,
+                    color: AppColors.textHint, size: 20),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchKeyword = '');
+                },
+              )
+            : null,
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.search_rounded, color: AppColors.textHint, size: 20),
-          const SizedBox(width: 10),
-          Text('Cari sayur segar hari ini...', style: AppTextStyles.inputHint),
-        ],
-      ),
-    );
-  }
-
+    ),
+  );
+}
 // ── FILTER KATEGORI ─────────────────────────────────
 Widget _buildKategoriFilter() {
-  return SizedBox(
-    height: 40,
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _kategoriList.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 8),
-      itemBuilder: (context, index) {
-        final kategori = _kategoriList[index];
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Row(
+      children: _kategoriList.asMap().entries.map((entry) {
+        final kategori = entry.value;
         final isSelected = kategori == _selectedKategori;
-        return InkWell(
-          onTap: () => setState(() => _selectedKategori = kategori),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryGreen : AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : AppColors.inputBorder,
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                _selectedKategori = kategori;
+              });
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primaryGreen : AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : AppColors.inputBorder,
+                ),
               ),
-            ),
-            child: Text(
-              _getLabelKategori(kategori),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isSelected ? AppColors.white : AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+              child: Text(
+                _getLabelKategori(kategori),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isSelected ? AppColors.white : AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
         );
-      },
+      }).toList(),
     ),
   );
 }
@@ -152,7 +186,9 @@ Widget _buildKategoriFilter() {
   // ── PRODUK GRID ─────────────────────────────────────
 Widget _buildProdukGrid() {
   return StreamBuilder<List<ProductModel>>(
-    stream: _productService.getProdukByKategori(_selectedKategori),
+    stream: _searchKeyword.isEmpty
+        ? _productService.getProdukByKategori(_selectedKategori)
+        : _productService.cariProduk(_searchKeyword),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(

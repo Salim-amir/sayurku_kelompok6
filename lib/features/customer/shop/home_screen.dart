@@ -23,7 +23,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
   final user = FirebaseAuth.instance.currentUser;
-
+  final TextEditingController _searchController = TextEditingController();
+  String _searchKeyword = '';
   int _currentIndex = 0;
 
   final List<Map<String, dynamic>> _kategori = const [
@@ -86,12 +87,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── HEADER ──────────────────────────────────────────
-  Widget _buildHeader() {
-    final namaUser = user?.displayName ?? user?.email?.split('@')[0] ?? 'Pengguna';
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+ Widget _buildHeader() {
+  final namaUser = user?.displayName ?? user?.email?.split('@')[0] ?? 'Pengguna';
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      GestureDetector(
+        onTap: () => setState(() => _currentIndex = 3),
+        child: Row(
           children: [
             CircleAvatar(
               radius: 22,
@@ -102,31 +105,53 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Halo, $namaUser', style: AppTextStyles.h2),
           ],
         ),
-        IconButton(
-          icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 26),
-          onPressed: () {},
-        ),
-      ],
-    );
-  }
-
+      ),
+    ],
+  );
+}
   // ── SEARCH BAR ──────────────────────────────────────
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(30),
+ Widget _buildSearchBar() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.inputBackground,
+      borderRadius: BorderRadius.circular(30),
+    ),
+    child: TextField(
+      controller: _searchController,
+      onChanged: (value) {
+        setState(() => _searchKeyword = value);
+        if (value.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => KatalogProdukScreen(
+                searchKeyword: value,
+              ),
+            ),
+          );
+        }
+      },
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: 'Cari sayur segar hari ini...',
+        hintStyle: AppTextStyles.inputHint,
+        prefixIcon: const Icon(Icons.search_rounded,
+            color: AppColors.textHint, size: 20),
+        suffixIcon: _searchKeyword.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded,
+                    color: AppColors.textHint, size: 20),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchKeyword = '');
+                },
+              )
+            : null,
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.search_rounded, color: AppColors.textHint, size: 20),
-          const SizedBox(width: 10),
-          Text('Cari sayur segar hari ini...', style: AppTextStyles.inputHint),
-        ],
-      ),
-    );
-  }
+    ),
+  );
+}
 
   // ── KATEGORI ────────────────────────────────────────
   Widget _buildKategoriSection() {
@@ -233,8 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Produk Segar', style: AppTextStyles.h3),
-            const Icon(Icons.tune_rounded,
-                color: AppColors.textSecondary, size: 22),
           ],
         ),
         const SizedBox(height: 14),
