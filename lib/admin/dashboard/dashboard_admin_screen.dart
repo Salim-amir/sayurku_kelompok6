@@ -73,7 +73,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   icon: Icons.warning_amber_rounded,
                   iconColor: AppColors.error,
                   number: '5',
-                  label: 'Stok Hamdir Habis',
+                  label: 'Stok Hampir Habis',
                 )),
               ],
             ),

@@ -1,52 +1,101 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../core/constants.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
+// ─── Model Hasil Login ─────────────────────────────────────────────────────
+/// Membawa dua informasi sekaligus:
+/// [error] — pesan error jika gagal (null jika sukses)
+/// [role]  — role user yang berhasil login ('customer' atau 'admin')
+class LoginResult {
+  final String? error;
+  final String? role;
+
+  LoginResult({this.error, this.role});
+}
+
+// ─── Auth Service ──────────────────────────────────────────────────────────
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  // --- FUNGSI LOGIN (dengan role detection) ---
+  Future<LoginResult> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      // 1. Login ke Firebase Auth
+      UserCredential credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 2. Ambil data user dari Firestore untuk cek role
+      DocumentSnapshot doc = await _firestore
+          .collection(AppConstants.colUsers)
+          .doc(credential.user!.uid)
+          .get();
+
+      if (!doc.exists) {
+        return LoginResult(error: 'Data akun tidak ditemukan.');
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final String role = data['role'] ?? AppConstants.roleCustomer;
+
+      print("Login sukses. Role: $role");
+      return LoginResult(role: role);
+    } on FirebaseAuthException catch (e) {
+      return LoginResult(error: e.message);
+    } catch (e) {
+      return LoginResult(error: 'Terjadi kesalahan sistem: ${e.toString()}');
+    }
+  }
+
+  // --- FUNGSI LOGIN GOOGLE ---
   Future<String?> loginWithGoogle() async {
     try {
       await _googleSignIn.signOut();
-      // 1. Buka popup pilih akun Google
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return 'Login dibatalkan.'; // User cancel popup
 
-      // 2. Ambil token autentikasi
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return 'Login dibatalkan.';
+
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      // 3. Buat credential untuk Firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // 4. Login ke Firebase pakai credential Google
-      final UserCredential result = await _auth.signInWithCredential(
-        credential,
-      );
+      final UserCredential result =
+          await _auth.signInWithCredential(credential);
       final User? user = result.user;
       if (user == null) return 'Gagal mendapatkan data user.';
 
-      // 5. Cek apakah user sudah pernah daftar di Firestore
-      final doc = await _firestore.collection('users').doc(user.uid).get();
+      final doc = await _firestore
+          .collection(AppConstants.colUsers)
+          .doc(user.uid)
+          .get();
 
-      // 6. Kalau belum ada, simpan data baru ke Firestore
       if (!doc.exists) {
-        await _firestore.collection('users').doc(user.uid).set({
+        await _firestore
+            .collection(AppConstants.colUsers)
+            .doc(user.uid)
+            .set({
           'uid': user.uid,
           'namaLengkap': user.displayName ?? '',
           'email': user.email ?? '',
-          'nomorHp': '', // Nomor HP kosong karena dari Google
-          'role': 'customer', // Default role
+          'nomorHp': '',
+          'role': AppConstants.roleCustomer,
+          'photoUrl': user.photoURL ?? '',
         });
       }
-      return null; // Sukses
+
+      return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
     } catch (e) {
@@ -104,34 +153,12 @@ class AuthService {
     }
   }
 
-  // --- FUNGSI LOGIN ---
-  Future<String?> loginUser({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return "Terjadi kesalahan sistem: ${e.toString()}";
-    }
-  }
-
-  // --- FUNGSI RESET PASSWORD ---
-  /// Mencari email yang terdaftar berdasarkan nomor HP di Firestore,
-  /// lalu mengirim link reset password ke email tersebut via Firebase Auth.
-  ///
-  /// Mengembalikan [null] jika berhasil.
-  /// Mengembalikan [String] pesan error jika gagal.
-// --- FUNGSI RESET PASSWORD (VERSI EMAIL - FINAL) ---
+  // --- FUNGSI RESET PASSWORD (pakai email langsung) ---
   Future<String?> resetPassword({required String email}) async {
     try {
-      // Langsung tembak emailnya ke Firebase Auth
       await _auth.sendPasswordResetEmail(email: email);
       print("Link reset password berhasil dikirim ke $email");
-      return null; // Sukses
+      return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
     } catch (e) {
@@ -142,13 +169,9 @@ class AuthService {
   // --- FUNGSI LOGOUT ---
   Future<void> logoutUser() async {
     try {
-      // 1. Putuskan sesi dari Firebase Auth
       await _auth.signOut();
-
-      // 2. Putuskan SESI DARI GOOGLE SIGN-IN (Ini rahasianya!)
       await _googleSignIn.signOut();
-
-      print("Berhasil Logout dari Firebase dan Google!");
+      print("Berhasil logout dari Firebase dan Google!");
     } catch (e) {
       print("Error saat logout: ${e.toString()}");
     }
