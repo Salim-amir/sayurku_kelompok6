@@ -1,13 +1,14 @@
-import '../customer/shop/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
 import '../../core/constants.dart';
 import '../../widgets/custom_textfield.dart';
 import '../../widgets/custom_button.dart';
+import '../../services/auth_service.dart';
+import '../customer/shop/home_screen.dart';
+import '../../admin/dashboard/dashboard_admin_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-import '../../services/auth_service.dart'; // Buka komen ini kalau Auth sudah siap dipanggil
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,7 +18,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controller untuk menangkap teks (Kita pakai Email karena Firebase Auth butuh Email)
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -30,8 +30,23 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _prosesLogin() async {
-    // 1. Cek apakah ada kolom yang kosong
+  // ─── Navigasi berdasarkan role ─────────────────────────────────────────
+  void _navigasiByRole(String role) {
+    if (role == AppConstants.roleAdmin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboard()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
+  }
+
+  // ─── Proses Login Email ────────────────────────────────────────────────
+  Future<void> _prosesLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email dan kata sandi harus diisi!')),
@@ -39,37 +54,62 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // 2. Nyalakan efek muter-muter (loading)
     setState(() => _isLoading = true);
 
-    // 3. Panggil mesin Firebase yang baru saja kita buat di Langkah 1!
-    String? pesanError = await AuthService().loginUser(
+    // loginUser sekarang return LoginResult bukan String?
+    final LoginResult result = await AuthService().loginUser(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
-    // 4. Matikan efek loading
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    // 5. Cek Hasilnya
-    if (pesanError == null) {
-      // SUKSES LOGIN
+    if (result.error != null) {
+      // Gagal
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.error!),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } else {
+      // Sukses → arahkan berdasarkan role
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berhasil Masuk!'),
           backgroundColor: AppColors.primaryGreen,
         ),
       );
+      _navigasiByRole(result.role!);
+    }
+  }
 
-      // MENGHANCURKAN HALAMAN LOGIN DAN PINDAH KE HOME
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+  // ─── Proses Login Google ───────────────────────────────────────────────
+  Future<void> _prosesLoginGoogle() async {
+    setState(() => _isLoading = true);
+
+    // Google selalu customer, tidak perlu cek role
+    final String? error = await AuthService().loginWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.error),
       );
     } else {
-      // GAGAL LOGIN (Munculkan pop-up merah dari bawah)
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(pesanError), backgroundColor: AppColors.error),
+        const SnackBar(
+          content: Text('Berhasil masuk dengan Google!'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+      // Google login hanya untuk customer
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     }
   }
@@ -94,7 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildWelcomeText(),
               const SizedBox(height: 28),
 
-              // ─── PENGGUNAAN CUSTOM WIDGET ───
               AppTextField(
                 controller: _emailController,
                 label: 'ALAMAT EMAIL',
@@ -102,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
+                enabled: !_isLoading,
               ),
               const SizedBox(height: AppConstants.paddingMD),
 
@@ -110,14 +150,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'KATA SANDI',
                 hintText: '••••••••••',
                 trailingAction: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  ),
                   child: const Text(
                     'Lupa Sandi?',
                     style: AppTextStyles.linkUppercase,
@@ -139,41 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildDivider(),
               const SizedBox(height: 20),
 
-              // Cukup panggil AppGoogleButton!
-              AppGoogleButton(
-                onPressed: () async {
-                  setState(() => _isLoading = true); // Nyalakan loading
-
-                  final pesanError = await AuthService().loginWithGoogle();
-
-                  // Pastikan widget masih ada sebelum lanjut
-                  if (!mounted) return;
-
-                  setState(() => _isLoading = false); // Matikan loading
-
-                  if (pesanError == null) {
-                    // Sukses
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Berhasil masuk dengan Google!'),
-                        backgroundColor: AppColors.primaryGreen,
-                      ),
-                    );
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
-                  } else {
-                    // Gagal / Batal
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(pesanError),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                },
-              ),
+              AppGoogleButton(onPressed: _prosesLoginGoogle),
               const SizedBox(height: 28),
 
               _buildRegisterRow(context),
@@ -254,12 +258,10 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         const Text('Belum punya akun? ', style: AppTextStyles.labelLink),
         InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const RegisterScreen()),
-            );
-          },
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RegisterScreen()),
+          ),
           child: const Text('Daftar Sekarang', style: AppTextStyles.link),
         ),
       ],
