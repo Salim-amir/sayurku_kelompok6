@@ -6,7 +6,9 @@ import '../../widgets/custom_textfield.dart';
 import '../../widgets/custom_button.dart';
 import '../../services/auth_service.dart';
 import '../customer/shop/home_screen.dart';
-import '../../admin/dashboard/dashboard_admin_screen.dart';
+import '../admin/dashboard/dashboard_admin_screen.dart';
+import '../admin/product/daftar_produk_stok_screen.dart';
+import '../admin/verification/verifikasi_pesanan_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
