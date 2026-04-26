@@ -4,6 +4,10 @@ import '../../../../core/text_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../services/order_service.dart';
 import '../../../../core/cart_manager.dart';
+import '../../../../models/address_model.dart';
+import '../../../../services/address_service.dart';
+import '../profile/alamat_screen.dart';
+import 'detail_produk_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -18,7 +22,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final OrderService _orderService = OrderService();
   final _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
+final AddressService _addressService = AddressService();
+AddressModel? _alamatUtama;
 
+@override
+void initState() {
+  super.initState();
+  _loadAlamatUtama();
+}
+
+void _loadAlamatUtama() async {
+  final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  final alamat = await _addressService.getAlamatUtama(userId);
+  setState(() => _alamatUtama = alamat);
+}
 int get _subtotal => CartManager.instance.totalHarga;
 int get _totalPembayaran => _subtotal + _ongkosKirim;
 
@@ -73,46 +90,65 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
 
   // ── ALAMAT PENGIRIMAN ───────────────────────────────
   Widget _buildAlamatPengiriman() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.location_on_rounded,
+                    color: AppColors.primaryGreen, size: 20),
+                const SizedBox(width: 8),
+                Text('Alamat Pengiriman', style: AppTextStyles.h3),
+              ],
+            ),
+            TextButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AlamatScreen()),
+                );
+                _loadAlamatUtama();
+              },
+              child: Text('Ubah',
+                  style: AppTextStyles.link.copyWith(fontSize: 13)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _alamatUtama == null
+            ? Text('Belum ada alamat pengiriman',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSecondary))
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on_rounded,
-                      color: AppColors.primaryGreen, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Alamat Pengiriman', style: AppTextStyles.h3),
+                  Text(
+                    '${_alamatUtama!.namaPenerima}   (${_alamatUtama!.nomorHp})',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _alamatUtama!.fullAddress,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary, height: 1.5),
+                  ),
                 ],
               ),
-              Text('Ubah',
-                  style: AppTextStyles.link.copyWith(fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text('Ibu Sari   (+62 812-3456-7890)',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(
-            'Jl. Kebon Jeruk No. 12, RT 005/RW 003,\nKelurahan Palmerah, Kecamatan Jakarta Barat,\nDKI Jakarta, 11480',
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textSecondary, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
+      ],
+    ),
+  );
+}
   // ── RINGKASAN PESANAN ───────────────────────────────
   Widget _buildRingkasanPesanan() {
 final items = CartManager.instance.items;
@@ -147,12 +183,18 @@ final items = CartManager.instance.items;
     );
   }
 
-  Widget _buildItemPesanan(Map<String, dynamic> item) {
-    return Padding(
+Widget _buildItemPesanan(Map<String, dynamic> item) {
+  return GestureDetector(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailProdukScreen(produk: item),
+      ),
+    ),
+    child: Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          // Foto
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -164,7 +206,6 @@ final items = CartManager.instance.items;
             ),
           ),
           const SizedBox(width: 12),
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,8 +227,9 @@ final items = CartManager.instance.items;
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBiayaRow(String label, int harga) {
     return Row(
@@ -332,7 +374,7 @@ Widget _buildBottomBar(BuildContext context) {
                         totalHarga: _subtotal.toDouble(),
                         ongkosKirim: _ongkosKirim.toDouble(),
                         metodePembayaran: _metodePembayaran,
-                        alamatPengiriman: 'Jl. Kebon Jeruk No. 12, Jakarta Barat',
+                        alamatPengiriman: _alamatUtama?.fullAddress ?? 'Alamat belum diset',
                       );
                       setState(() => _isLoading = false);
                       if (mounted) {
