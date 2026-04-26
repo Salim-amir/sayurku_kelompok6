@@ -13,6 +13,7 @@ import '../profile/dompet_digital_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../../core/cart_manager.dart';
 import '../../../services/promo_service.dart';
+import '../../../models/promo_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
+  final PromoService _promoService = PromoService();
   final user = FirebaseAuth.instance.currentUser;
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
@@ -215,26 +217,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── PROMO BANNER ────────────────────────────────────
 Widget _buildPromoBanner() {
-  return StreamBuilder(
-    stream: PromoService().getPromos(),
+  return StreamBuilder<List<PromoModel>>(
+    stream: _promoService.getPromos(),
     builder: (context, snapshot) {
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return const SizedBox(); // kalau belum ada promo
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Container(
+          height: 160,
+          decoration: BoxDecoration(
+            color: AppColors.inputBackground,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryGreen),
+          ),
+        );
       }
 
-      final promo = snapshot.data!.first;
+      final promos = snapshot.data ?? [];
+      if (promos.isEmpty) {
+        return _buildDefaultBanner();
+      }
 
+      // Tampilkan promo pertama
+      final promo = promos.first;
       return Container(
         width: double.infinity,
         height: 160,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          image: DecorationImage(
-            image: NetworkImage(promo.imageUrl),
-            fit: BoxFit.cover,
-            colorFilter:
-                const ColorFilter.mode(Colors.black26, BlendMode.darken),
-          ),
+          color: AppColors.accentGreen,
+          image: promo.imageUrl.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(promo.imageUrl),
+                  fit: BoxFit.cover,
+                  colorFilter: const ColorFilter.mode(
+                      Colors.black26, BlendMode.darken),
+                )
+              : null,
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -248,22 +267,17 @@ Widget _buildPromoBanner() {
                 color: AppColors.accentGreen,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(
-                'PROMO HARI INI',
-                style: AppTextStyles.labelUppercase
-                    .copyWith(color: AppColors.white, fontSize: 10),
-              ),
+              child: Text('PROMO HARI INI',
+                  style: AppTextStyles.labelUppercase
+                      .copyWith(color: AppColors.white, fontSize: 10)),
             ),
             const SizedBox(height: 8),
-            Text(
-              promo.title,
-              style: AppTextStyles.h2.copyWith(color: AppColors.white),
-            ),
-            Text(
-              promo.subtitle,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.white),
-            ),
+            Text(promo.title,
+                style: AppTextStyles.h2.copyWith(color: AppColors.white)),
+            if (promo.subtitle.isNotEmpty)
+              Text(promo.subtitle,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.white)),
           ],
         ),
       );
@@ -271,6 +285,42 @@ Widget _buildPromoBanner() {
   );
 }
 
+Widget _buildDefaultBanner() {
+  return Container(
+    width: double.infinity,
+    height: 160,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      color: AppColors.accentGreen,
+      image: const DecorationImage(
+        image: NetworkImage(
+            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800'),
+        fit: BoxFit.cover,
+        colorFilter: ColorFilter.mode(Colors.black26, BlendMode.darken),
+      ),
+    ),
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.accentGreen,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text('PROMO HARI INI',
+              style: AppTextStyles.labelUppercase
+                  .copyWith(color: AppColors.white, fontSize: 10)),
+        ),
+        const SizedBox(height: 8),
+        Text('Diskon 20%\nSayur Organik',
+            style: AppTextStyles.h2.copyWith(color: AppColors.white)),
+      ],
+    ),
+  );
+}
   // ── PRODUK SECTION (FIREBASE) ───────────────────────
   Widget _buildProdukSection() {
     return Column(
