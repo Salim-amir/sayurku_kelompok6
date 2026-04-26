@@ -10,6 +10,7 @@ import 'features/customer/profile/riwayat_pesanan_screen.dart';
 import 'features/customer/profile/dompet_digital_screen.dart';
 import 'features/customer/profile/isi_saldo_screen.dart';
 import 'features/customer/profile/alamat_screen.dart';
+import 'features/customer/profile/ganti_password_screen.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,7 @@ home: const SplashScreen(),
         '/dompet': (context) => const DompetDigitalScreen(),
         '/isi-saldo': (context) => const IsiSaldoScreen(),
         '/alamat': (context) => const AlamatScreen(),
+        '/ganti-password': (context) => const GantiPasswordScreen(),
       },
     );
   }

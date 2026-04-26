@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
+import '../../../services/profile_service.dart';
 
 class EditProfilScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -16,11 +16,15 @@ class EditProfilScreen extends StatefulWidget {
 
 class _EditProfilScreenState extends State<EditProfilScreen> {
   final user = FirebaseAuth.instance.currentUser;
+  final ProfileService _profileService = ProfileService();
+
   late TextEditingController _namaController;
   late TextEditingController _hpController;
   late TextEditingController _emailController;
 
   bool _isLoading = false;
+  bool _emailChanged = false;
+  late String _originalEmail;
 
   @override
   void initState() {
@@ -31,6 +35,15 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
         TextEditingController(text: widget.userData['nomorHp'] ?? '');
     _emailController =
         TextEditingController(text: widget.userData['email'] ?? '');
+
+    _originalEmail = widget.userData['email'] ?? '';
+
+    // Listener untuk deteksi perubahan email
+    _emailController.addListener(() {
+      setState(() {
+        _emailChanged = _emailController.text.trim() != _originalEmail;
+      });
+    });
   }
 
   @override
@@ -52,28 +65,153 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    // Jika email berubah, minta password untuk re-auth
+    if (_emailChanged) {
+      final password = await _showPasswordDialog();
+      if (password == null) return; // User batal
 
-    try {
-      await FirebaseFirestore.instance
-          .collection(AppConstants.colUsers)
-          .doc(user!.uid)
-          .update({
-        'namaLengkap': _namaController.text.trim(),
-        'nomorHp': _hpController.text.trim(),
-      });
+      setState(() => _isLoading = true);
 
-      if (mounted) {
-        _showSnackbar('Profil berhasil diperbarui!', AppColors.success);
+      // Update email dulu (butuh re-auth)
+      final emailError = await _profileService.updateEmail(
+        newEmail: _emailController.text.trim(),
+        password: password,
+      );
+
+      if (emailError != null) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showSnackbar(emailError, AppColors.error);
+        }
+        return;
+      }
+    } else {
+      setState(() => _isLoading = true);
+    }
+
+    // Update nama & no HP
+    final error = await _profileService.updateProfil(
+      uid: user!.uid,
+      namaLengkap: _namaController.text.trim(),
+      nomorHp: _hpController.text.trim(),
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (error != null) {
+        _showSnackbar(error, AppColors.error);
+      } else {
+        final msg = _emailChanged
+            ? 'Profil diperbarui! Cek email baru untuk verifikasi.'
+            : 'Profil berhasil diperbarui!';
+        _showSnackbar(msg, AppColors.success);
         Navigator.pop(context);
       }
-    } catch (e) {
-      if (mounted) {
-        _showSnackbar('Gagal menyimpan: ${e.toString()}', AppColors.error);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<String?> _showPasswordDialog() async {
+    final passwordController = TextEditingController();
+    bool obscure = true;
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.security_rounded,
+                    color: AppColors.warning, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text('Verifikasi', style: AppTextStyles.h3),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Masukkan password Anda untuk mengubah email',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: obscure,
+                autofocus: true,
+                style: AppTextStyles.inputText,
+                decoration: InputDecoration(
+                  hintText: 'Password',
+                  hintStyle: AppTextStyles.inputHint,
+                  prefixIcon: const Icon(Icons.lock_rounded,
+                      color: AppColors.textHint, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      color: AppColors.textHint,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setDialogState(() => obscure = !obscure),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.inputBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.primaryGreen, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, null),
+              child: Text('Batal',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (passwordController.text.isEmpty) return;
+                Navigator.pop(ctx, passwordController.text);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: Text('Konfirmasi',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showSnackbar(String message, Color color) {
@@ -104,6 +242,10 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
                     _buildAvatar(),
                     const SizedBox(height: 28),
                     _buildForm(),
+                    if (_emailChanged) ...[
+                      const SizedBox(height: 12),
+                      _buildEmailWarning(),
+                    ],
                     const SizedBox(height: 28),
                     _buildSimpanButton(),
                   ],
@@ -197,7 +339,35 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
             controller: _emailController,
             icon: Icons.email_rounded,
             hint: 'email@example.com',
-            enabled: false, // Email tidak bisa diubah
+            keyboardType: TextInputType.emailAddress,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── EMAIL CHANGE WARNING ───────────────────────────
+  Widget _buildEmailWarning() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded,
+              color: AppColors.warning, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Mengubah email memerlukan verifikasi password. Email baru perlu diverifikasi.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.warning,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

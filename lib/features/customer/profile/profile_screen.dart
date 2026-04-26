@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
-import '../../../core/constants.dart';
 import '../../../services/wallet_service.dart';
+import '../../../services/profile_service.dart';
+import '../../../models/user_model.dart';
 import 'riwayat_pesanan_screen.dart';
 import 'dompet_digital_screen.dart';
 import 'alamat_screen.dart';
 import 'edit_profil_screen.dart';
+import 'ganti_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,103 +21,71 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final user = FirebaseAuth.instance.currentUser;
   final WalletService _walletService = WalletService();
-
-  Map<String, dynamic>? _userData;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    if (user == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection(AppConstants.colUsers)
-          .doc(user!.uid)
-          .get();
-      if (mounted) {
-        setState(() {
-          _userData = doc.data();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Keluar', style: AppTextStyles.h3),
-        content: Text('Apakah Anda yakin ingin keluar dari akun?',
-            style: AppTextStyles.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Batal',
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Keluar',
-                style:
-                    AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-      }
-    }
-  }
+  final ProfileService _profileService = ProfileService();
 
   @override
   Widget build(BuildContext context) {
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_off_rounded,
+                  color: AppColors.textHint.withOpacity(0.4), size: 72),
+              const SizedBox(height: 16),
+              Text('Silakan login terlebih dahulu',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.primaryGreen))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    _buildProfileHeader(),
-                    const SizedBox(height: 20),
-                    _buildSaldoCard(),
-                    const SizedBox(height: 24),
-                    _buildMenuSection(),
-                    const SizedBox(height: 24),
-                    _buildLogoutButton(),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+        child: StreamBuilder<UserModel?>(
+          stream: _profileService.getProfilStream(user!.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen),
+              );
+            }
+
+            final userData = snapshot.data;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  _buildProfileHeader(userData),
+                  const SizedBox(height: 20),
+                  _buildSaldoCard(),
+                  const SizedBox(height: 24),
+                  _buildMenuSection(userData),
+                  const SizedBox(height: 24),
+                  _buildLogoutButton(),
+                  const SizedBox(height: 40),
+                ],
               ),
+            );
+          },
+        ),
       ),
     );
   }
 
   // ── PROFILE HEADER ─────────────────────────────────
-  Widget _buildProfileHeader() {
-    final nama = _userData?['namaLengkap'] ?? 'Pengguna';
-    final email = _userData?['email'] ?? user?.email ?? '';
-    final nomorHp = _userData?['nomorHp'] ?? '';
+  Widget _buildProfileHeader(UserModel? userData) {
+    final nama = userData?.namaLengkap ?? 'Pengguna';
+    final email = userData?.email ?? user?.email ?? '';
+    final nomorHp = userData?.nomorHp ?? '';
 
     return Container(
       width: double.infinity,
@@ -161,14 +130,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 14),
           // Tombol Edit Profil
           OutlinedButton.icon(
-            onPressed: () async {
-              await Navigator.push(
+            onPressed: () {
+              final userMap = {
+                'namaLengkap': userData?.namaLengkap ?? '',
+                'nomorHp': userData?.nomorHp ?? '',
+                'email': userData?.email ?? '',
+              };
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) =>
-                        EditProfilScreen(userData: _userData ?? {})),
+                        EditProfilScreen(userData: userMap)),
               );
-              _loadUserData(); // Refresh data setelah edit
             },
             icon: const Icon(Icons.edit_rounded, size: 16),
             label: Text('Edit Profil', style: AppTextStyles.bodyMedium),
@@ -266,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── MENU SECTION ───────────────────────────────────
-  Widget _buildMenuSection() {
+  Widget _buildMenuSection(UserModel? userData) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -313,6 +286,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AlamatScreen()),
+            ),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.lock_rounded,
+            label: 'Ganti Password',
+            subtitle: 'Ubah kata sandi akun Anda',
+            color: const Color(0xFF7B1FA2),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const GantiPasswordScreen()),
             ),
           ),
         ],
@@ -392,6 +377,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Keluar', style: AppTextStyles.h3),
+        content: Text('Apakah Anda yakin ingin keluar dari akun?',
+            style: AppTextStyles.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Batal',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Keluar',
+                style:
+                    AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      }
+    }
   }
 
   String _formatHarga(int harga) {
