@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
 import '../../core/constants.dart';
 import '../../widgets/custom_button.dart';
+import '../../services/auth_service.dart'; 
+import '../customer/shop/home_screen.dart'; 
+import '../admin/dashboard/dashboard_admin_screen.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,6 +19,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  
+  // ── State untuk ngecek sesi login ──
+  bool _isCheckingSession = true; 
 
   final List<Map<String, dynamic>> _splashData = [
     {
@@ -36,6 +43,58 @@ class _SplashScreenState extends State<SplashScreen> {
       "icon": Icons.security_rounded,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserSession(); // 👈 Panggil fungsi cek otomatis saat layar dimuat
+  }
+
+  // ── Logika Auto-Login (Bypass) ──
+  Future<void> _checkUserSession() async {
+    final authService = AuthService();
+    final user = authService.currentUser;
+
+    if (user != null) {
+      try {
+        // Cek role user di Firestore
+        final doc = await FirebaseFirestore.instance
+            .collection(AppConstants.colUsers)
+            .doc(user.uid)
+            .get();
+
+        if (!mounted) return;
+
+        if (doc.exists) {
+          final role = doc.data()?['role'] ?? AppConstants.roleCustomer;
+          
+          // Lempar ke halaman sesuai role
+          if (role == AppConstants.roleAdmin) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+            return;
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        print("Error auto-login: $e");
+      }
+    }
+
+    // Jika belum login, matikan loading dan tampilkan slider Onboarding
+    if (mounted) {
+      setState(() {
+        _isCheckingSession = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -66,6 +125,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ── Tampilan Loading saat ngecek sesi ──
+    if (_isCheckingSession) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 80),
+              SizedBox(height: 24),
+              CircularProgressIndicator(color: AppColors.primaryGreen),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Tampilan Slider Onboarding (kalau belum login) ──
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -133,7 +210,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Ganti dengan AppTextButton
                     AppTextButton(
                       label: "Lewati",
                       onPressed: _onSkipPressed,
@@ -143,10 +219,8 @@ class _SplashScreenState extends State<SplashScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    
-                    // Ganti dengan AppPrimaryButton (dengan width custom)
                     AppPrimaryButton(
-                      width: 140, // Atur lebar khusus biar gak kepanjangan
+                      width: 140, 
                       label: _currentPage == _splashData.length - 1 ? "Mulai" : "Selanjutnya",
                       onPressed: _onNextPressed,
                     ),
