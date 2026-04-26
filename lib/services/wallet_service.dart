@@ -18,11 +18,15 @@ class WalletService {
   }
 
   // ── Ajukan top-up (status: pending, admin akan validasi) ──
+  /// Flow manual: customer ajukan → admin approve → saldo bertambah
   Future<String?> topUpSaldo({
     required String userId,
     required double amount,
   }) async {
     try {
+      if (amount <= 0) return 'Nominal harus lebih dari 0';
+      if (amount < 10000) return 'Minimal isi saldo Rp 10.000';
+
       // Simpan transaksi ke subcollection wallets/{uid}/transactions
       await _db
           .collection(AppConstants.colWallets)
@@ -33,7 +37,7 @@ class WalletService {
         'type': AppConstants.txTopUp,
         'amount': amount,
         'status': AppConstants.txStatusPending,
-        'keterangan': 'Permintaan isi saldo Rp ${amount.toInt()}',
+        'keterangan': 'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -43,45 +47,115 @@ class WalletService {
     }
   }
 
+  // ── Top-up langsung (Fake Payment) — saldo langsung bertambah ──
+  /// Flow fake payment: customer bayar QRIS → saldo langsung bertambah
+  /// Transaksi dicatat dengan status 'success' (tanpa admin approval)
+  Future<String?> topUpLangsung({
+    required String userId,
+    required double amount,
+  }) async {
+    try {
+      if (amount <= 0) return 'Nominal harus lebih dari 0';
+      if (amount < 10000) return 'Minimal isi saldo Rp 10.000';
+
+      // Gunakan Firestore transaction untuk atomic operation
+      await _db.runTransaction((transaction) async {
+        // 1. Baca saldo user saat ini
+        final userRef = _db.collection(AppConstants.colUsers).doc(userId);
+        final userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) {
+          throw Exception('User tidak ditemukan');
+        }
+
+        final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
+
+        // 2. Tambah saldo
+        transaction.update(userRef, {
+          'saldo': currentSaldo + amount,
+        });
+
+        // 3. Catat transaksi dengan status success
+        final txRef = _db
+            .collection(AppConstants.colWallets)
+            .doc(userId)
+            .collection(AppConstants.subColTransactions)
+            .doc();
+
+        transaction.set(txRef, {
+          'userId': userId,
+          'type': AppConstants.txTopUp,
+          'amount': amount,
+          'status': AppConstants.txStatusSuccess,
+          'keterangan': 'Isi saldo via QRIS Rp ${_formatNominal(amount.toInt())}',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      });
+
+      return null; // Sukses
+    } catch (e) {
+      return 'Gagal memproses top-up: ${e.toString()}';
+    }
+  }
+
   // ── Potong saldo saat customer bayar dengan dompet digital ──
+  /// Menggunakan Firestore Transaction untuk mencegah race condition
   Future<String?> potongSaldo({
     required String userId,
     required double amount,
     String? orderId,
   }) async {
     try {
-      // 1. Cek saldo cukup
-      final userDoc =
-          await _db.collection(AppConstants.colUsers).doc(userId).get();
-      final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
+      if (amount <= 0) return 'Nominal pembayaran tidak valid';
 
-      if (currentSaldo < amount) {
-        return 'Saldo tidak cukup. Saldo Anda: Rp ${currentSaldo.toInt()}';
-      }
+      await _db.runTransaction((transaction) async {
+        // 1. Baca saldo secara atomic
+        final userRef = _db.collection(AppConstants.colUsers).doc(userId);
+        final userDoc = await transaction.get(userRef);
 
-      // 2. Kurangi saldo di users/{uid}
-      await _db.collection(AppConstants.colUsers).doc(userId).update({
-        'saldo': FieldValue.increment(-amount),
-      });
+        if (!userDoc.exists) {
+          throw Exception('User tidak ditemukan');
+        }
 
-      // 3. Catat transaksi pembayaran
-      await _db
-          .collection(AppConstants.colWallets)
-          .doc(userId)
-          .collection(AppConstants.subColTransactions)
-          .add({
-        'userId': userId,
-        'type': AppConstants.txPayment,
-        'amount': amount,
-        'status': AppConstants.txStatusSuccess,
-        'orderId': orderId ?? '',
-        'keterangan': 'Pembayaran pesanan',
-        'timestamp': FieldValue.serverTimestamp(),
+        final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
+
+        // 2. Validasi saldo cukup
+        if (currentSaldo < amount) {
+          throw Exception(
+              'Saldo tidak cukup. Saldo Anda: Rp ${_formatNominal(currentSaldo.toInt())}');
+        }
+
+        // 3. Kurangi saldo (atomic)
+        transaction.update(userRef, {
+          'saldo': currentSaldo - amount,
+        });
+
+        // 4. Catat transaksi pembayaran
+        final txRef = _db
+            .collection(AppConstants.colWallets)
+            .doc(userId)
+            .collection(AppConstants.subColTransactions)
+            .doc();
+
+        transaction.set(txRef, {
+          'userId': userId,
+          'type': AppConstants.txPayment,
+          'amount': amount,
+          'status': AppConstants.txStatusSuccess,
+          'orderId': orderId ?? '',
+          'keterangan': 'Pembayaran pesanan',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
       });
 
       return null; // Sukses
     } catch (e) {
-      return 'Gagal memproses pembayaran: ${e.toString()}';
+      final msg = e.toString();
+      if (msg.contains('Saldo tidak cukup')) {
+        // Ambil pesan error dari exception
+        return msg.replaceAll('Exception: ', '');
+      }
+      return 'Gagal memproses pembayaran: $msg';
     }
   }
 
@@ -93,7 +167,9 @@ class WalletService {
         .collection(AppConstants.subColTransactions)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
+        .handleError((error) {
+      return;
+    }).map((snapshot) => snapshot.docs
             .map((doc) => {'id': doc.id, ...doc.data()})
             .toList());
   }
@@ -105,20 +181,33 @@ class WalletService {
     required double amount,
   }) async {
     try {
-      // 1. Update status transaksi
-      await _db
-          .collection(AppConstants.colWallets)
-          .doc(userId)
-          .collection(AppConstants.subColTransactions)
-          .doc(transactionId)
-          .update({
-        'status': AppConstants.txStatusApproved,
-        'approvedAt': FieldValue.serverTimestamp(),
-      });
+      await _db.runTransaction((transaction) async {
+        // 1. Baca data user
+        final userRef = _db.collection(AppConstants.colUsers).doc(userId);
+        final userDoc = await transaction.get(userRef);
 
-      // 2. Tambah saldo user
-      await _db.collection(AppConstants.colUsers).doc(userId).update({
-        'saldo': FieldValue.increment(amount),
+        if (!userDoc.exists) {
+          throw Exception('User tidak ditemukan');
+        }
+
+        final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
+
+        // 2. Update status transaksi
+        final txRef = _db
+            .collection(AppConstants.colWallets)
+            .doc(userId)
+            .collection(AppConstants.subColTransactions)
+            .doc(transactionId);
+
+        transaction.update(txRef, {
+          'status': AppConstants.txStatusApproved,
+          'approvedAt': FieldValue.serverTimestamp(),
+        });
+
+        // 3. Tambah saldo user (atomic)
+        transaction.update(userRef, {
+          'saldo': currentSaldo + amount,
+        });
       });
 
       return null;
@@ -147,5 +236,11 @@ class WalletService {
     } catch (e) {
       return 'Gagal reject top-up: ${e.toString()}';
     }
+  }
+
+  // ── Helper format nominal ──
+  String _formatNominal(int nominal) {
+    return nominal.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
   }
 }
