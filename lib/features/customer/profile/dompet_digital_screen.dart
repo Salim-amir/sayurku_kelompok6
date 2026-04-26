@@ -69,6 +69,18 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
     return StreamBuilder<double>(
       stream: _walletService.getSaldo(user!.uid),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Text('Gagal memuat saldo',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+          );
+        }
         final saldo = snapshot.data ?? 0;
         return Container(
           width: double.infinity,
@@ -161,6 +173,24 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
                 child: CircularProgressIndicator(
                     color: AppColors.primaryGreen),
               ));
+            }
+
+            if (snapshot.hasError) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(children: [
+                  const Icon(Icons.error_outline_rounded,
+                      color: AppColors.error, size: 40),
+                  const SizedBox(height: 12),
+                  Text('Gagal memuat riwayat',
+                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+                ]),
+              );
             }
 
             final transaksiList = snapshot.data ?? [];
