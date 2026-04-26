@@ -7,6 +7,7 @@ import '../../../../core/cart_manager.dart';
 import '../../../../models/address_model.dart';
 import '../../../../services/address_service.dart';
 import '../profile/alamat_screen.dart';
+import 'detail_produk_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -182,12 +183,18 @@ final items = CartManager.instance.items;
     );
   }
 
-  Widget _buildItemPesanan(Map<String, dynamic> item) {
-    return Padding(
+Widget _buildItemPesanan(Map<String, dynamic> item) {
+  return GestureDetector(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailProdukScreen(produk: item),
+      ),
+    ),
+    child: Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          // Foto
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -199,7 +206,6 @@ final items = CartManager.instance.items;
             ),
           ),
           const SizedBox(width: 12),
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,8 +227,9 @@ final items = CartManager.instance.items;
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBiayaRow(String label, int harga) {
     return Row(
