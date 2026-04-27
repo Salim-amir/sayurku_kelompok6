@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
+import '../product/daftar_produk_stok_screen.dart';
+import '../verification/verifikasi_pesanan_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -12,8 +14,57 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
 
+  // ─── PAGE LIST ──────────────────────────────────────────
+  late final List<Widget> _pages = [
+    _buildDashboardPage(),
+    const OrderVerificationPage(),
+    const ProductStockPage(),
+    _buildProfilPage(),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: _pages[_selectedIndex],
+      // ─── BOTTOM NAVIGATION ──────────────────────────────
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: AppColors.white,
+        currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primaryGreen,
+        unselectedItemColor: AppColors.textSecondary,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.verified_user_outlined),
+            activeIcon: Icon(Icons.verified_user),
+            label: 'Verifikasi',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag_outlined),
+            activeIcon: Icon(Icons.shopping_bag),
+            label: 'Produk',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── DASHBOARD PAGE ─────────────────────────────────────
+  Widget _buildDashboardPage() {
     return Scaffold(
       backgroundColor: AppColors.background,
       // ─── APP BAR ───────────────────────────────────────
@@ -62,14 +113,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
             // ─ Stats Cards
             Row(
               children: [
-                Expanded(child: _buildStatCard(
+                Expanded(
+                    child: _buildStatCard(
                   icon: Icons.check_circle,
                   iconColor: AppColors.success,
                   number: '124',
                   label: 'Pesanan Selesai',
                 )),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard(
+                Expanded(
+                    child: _buildStatCard(
                   icon: Icons.warning_amber_rounded,
                   iconColor: AppColors.error,
                   number: '5',
@@ -85,38 +138,38 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ],
         ),
       ),
-      // ─── BOTTOM NAVIGATION ──────────────────────────────
-      bottomNavigationBar: BottomNavigationBar(
+    );
+  }
+
+  // ─── PROFIL PAGE ────────────────────────────────────────
+  Widget _buildProfilPage() {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
         backgroundColor: AppColors.white,
-        currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSecondary,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified_user_outlined),
-            activeIcon: Icon(Icons.verified_user),
-            label: 'Verifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined),
-            activeIcon: Icon(Icons.receipt_long),
-            label: 'Pesanan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+          onPressed: () {},
+        ),
+        title: Text(
+          'Profil',
+          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined,
+                color: AppColors.textPrimary),
+            onPressed: () {},
           ),
         ],
+      ),
+      body: Center(
+        child: Text(
+          'Halaman Profil',
+          style: AppTextStyles.h2,
+        ),
       ),
     );
   }
@@ -305,7 +358,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigate ke halaman produk
+                    setState(() => _selectedIndex = 2);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accentGreen,
                     padding:

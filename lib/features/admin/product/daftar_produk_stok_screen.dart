@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
+
 class ProductStockPage extends StatefulWidget {
   const ProductStockPage({Key? key}) : super(key: key);
 
@@ -9,8 +10,6 @@ class ProductStockPage extends StatefulWidget {
 }
 
 class _ProductStockPageState extends State<ProductStockPage> {
-  int _selectedBottomNavIndex = 2; // Produk tab
-  
   // Sample data produk
   final List<ProductModel> products = [
     ProductModel(
@@ -174,39 +173,10 @@ class _ProductStockPageState extends State<ProductStockPage> {
         backgroundColor: AppColors.primaryGreen,
         child: const Icon(Icons.add, color: AppColors.white),
       ),
-      // ─── BOTTOM NAVIGATION ──────────────────────────────
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppColors.white,
-        currentIndex: _selectedBottomNavIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSecondary,
-        onTap: (index) {
-          setState(() => _selectedBottomNavIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified_user_outlined),
-            activeIcon: Icon(Icons.verified_user),
-            label: 'Verifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Produk',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      // ─────────────────────────────────────────────────────
+      // PENTING: TIDAK ADA bottomNavigationBar DI SINI
+      // Navigation diatur oleh parent AdminDashboard
+      // ─────────────────────────────────────────────────────
     );
   }
 
