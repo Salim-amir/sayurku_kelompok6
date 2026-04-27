@@ -10,7 +10,6 @@ class OrderVerificationPage extends StatefulWidget {
 }
 
 class _OrderVerificationPageState extends State<OrderVerificationPage> {
-  int _selectedBottomNavIndex = 1; // Verifikasi tab
   int _selectedTabIndex = 0; // Pesanan tab
 
   // Sample data pesanan
@@ -278,39 +277,10 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
           ),
         ],
       ),
-      // ─── BOTTOM NAVIGATION ──────────────────────────────
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppColors.white,
-        currentIndex: _selectedBottomNavIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textSecondary,
-        onTap: (index) {
-          setState(() => _selectedBottomNavIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.verified_user_outlined),
-            activeIcon: Icon(Icons.verified_user),
-            label: 'Verifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            activeIcon: Icon(Icons.shopping_bag),
-            label: 'Produk',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      // ─────────────────────────────────────────────────────
+      // PENTING: TIDAK ADA bottomNavigationBar DI SINI
+      // Navigation diatur oleh parent AdminDashboard
+      // ─────────────────────────────────────────────────────
     );
   }
 
