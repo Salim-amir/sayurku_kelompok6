@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
 import '../../core/constants.dart';
 import '../../widgets/custom_button.dart';
-import '../../services/auth_service.dart'; 
-import '../customer/shop/home_screen.dart'; 
+import '../../services/auth_service.dart';
+import '../customer/shop/home_screen.dart';
 import '../admin/dashboard/dashboard_admin_screen.dart';
 import 'login_screen.dart';
 
@@ -19,9 +20,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   // ── State untuk ngecek sesi login ──
-  bool _isCheckingSession = true; 
+  bool _isCheckingSession = true;
 
   final List<Map<String, dynamic>> _splashData = [
     {
@@ -50,14 +51,13 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkUserSession(); // 👈 Panggil fungsi cek otomatis saat layar dimuat
   }
 
-  // ── Logika Auto-Login (Bypass) ──
+  // ── Logika Auto-Login & Cek Memori Onboarding ──
   Future<void> _checkUserSession() async {
     final authService = AuthService();
     final user = authService.currentUser;
 
     if (user != null) {
       try {
-        // Cek role user di Firestore
         final doc = await FirebaseFirestore.instance
             .collection(AppConstants.colUsers)
             .doc(user.uid)
@@ -67,8 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
         if (doc.exists) {
           final role = doc.data()?['role'] ?? AppConstants.roleCustomer;
-          
-          // Lempar ke halaman sesuai role
+
           if (role == AppConstants.roleAdmin) {
             Navigator.pushReplacement(
               context,
@@ -88,11 +87,23 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
 
-    // Jika belum login, matikan loading dan tampilkan slider Onboarding
-    if (mounted) {
+    // ── JIKA BELUM LOGIN: Cek apakah ini pertama kali buka aplikasi ──
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isFirstTime = prefs.getBool('isFirstTime') ?? true; // Default: true
+
+    if (!mounted) return;
+
+    if (isFirstTime) {
+      // Jika pertama kali, matikan loading dan tampilkan Slider Onboarding
       setState(() {
         _isCheckingSession = false;
       });
+    } else {
+      // Jika sudah pernah buka sebelumnya, LANGSUNG LEMPAR KE LOGIN
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
     }
   }
 
@@ -102,12 +113,24 @@ class _SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
+  // ── Fungsi Mencatat Memori saat Onboarding Selesai ──
+  Future<void> _selesaikanOnboarding() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+      'isFirstTime',
+      false,
+    ); // Catat di memori HP: "Sudah pernah lihat"
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   void _onNextPressed() {
     if (_currentPage == _splashData.length - 1) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      _selesaikanOnboarding(); // Panggil fungsi memori
     } else {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -117,10 +140,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _onSkipPressed() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    _selesaikanOnboarding(); // Panggil fungsi memori
   }
 
   @override
@@ -220,8 +240,10 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                     AppPrimaryButton(
-                      width: 140, 
-                      label: _currentPage == _splashData.length - 1 ? "Mulai" : "Selanjutnya",
+                      width: 140,
+                      label: _currentPage == _splashData.length - 1
+                          ? "Mulai"
+                          : "Selanjutnya",
                       onPressed: _onNextPressed,
                     ),
                   ],
@@ -257,9 +279,17 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Icon(data["icon"], color: AppColors.primaryGreen, size: 52),
           ),
           const SizedBox(height: AppConstants.paddingXL),
-          Text(data["title"], style: AppTextStyles.appName, textAlign: TextAlign.center),
+          Text(
+            data["title"],
+            style: AppTextStyles.appName,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: AppConstants.paddingSM),
-          Text(data["subtitle"], style: AppTextStyles.appTagline.copyWith(fontSize: 16), textAlign: TextAlign.center),
+          Text(
+            data["subtitle"],
+            style: AppTextStyles.appTagline.copyWith(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 60),
         ],
       ),
@@ -273,7 +303,9 @@ class _SplashScreenState extends State<SplashScreen> {
       width: isActive ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryGreen : AppColors.primaryGreen.withValues(alpha: 0.25),
+        color: isActive
+            ? AppColors.primaryGreen
+            : AppColors.primaryGreen.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(AppConstants.radiusXS),
       ),
     );
