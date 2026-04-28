@@ -10,8 +10,8 @@ class ProductStockPage extends StatefulWidget {
 }
 
 class _ProductStockPageState extends State<ProductStockPage> {
-  // Sample data produk
-  final List<ProductModel> products = [
+  // ✅ UBAH: final → late (agar bisa ditambah/dihapus produk)
+  late List<ProductModel> products = [
     ProductModel(
       id: 1,
       name: 'Bayam Hijau',
@@ -163,20 +163,12 @@ class _ProductStockPageState extends State<ProductStockPage> {
           ),
         ],
       ),
-      // ─── FLOATING ACTION BUTTON ─────────────────────────
+      // ✅ UBAH: onPressed hardcoded → _showAddProductDialog
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tambah Produk Baru')),
-          );
-        },
+        onPressed: _showAddProductDialog,
         backgroundColor: AppColors.primaryGreen,
         child: const Icon(Icons.add, color: AppColors.white),
       ),
-      // ─────────────────────────────────────────────────────
-      // PENTING: TIDAK ADA bottomNavigationBar DI SINI
-      // Navigation diatur oleh parent AdminDashboard
-      // ─────────────────────────────────────────────────────
     );
   }
 
@@ -346,6 +338,213 @@ class _ProductStockPageState extends State<ProductStockPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ✅ NEW: DIALOG TAMBAH PRODUK BARU ───────────────────
+  void _showAddProductDialog() {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final stockController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.white,
+        title: Text(
+          'Tambah Produk Baru',
+          style: AppTextStyles.h3,
+        ),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                // ─ Nama Produk
+                TextFormField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Sayuran',
+                    labelStyle: AppTextStyles.bodySmall,
+                    hintText: 'Contoh: Bayam Hijau',
+                    hintStyle: AppTextStyles.inputHint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  style: AppTextStyles.inputText,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Nama produk tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                // ─ Harga Produk
+                TextFormField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Harga per kg',
+                    labelStyle: AppTextStyles.bodySmall,
+                    prefixText: 'Rp ',
+                    hintText: 'Contoh: 12000',
+                    hintStyle: AppTextStyles.inputHint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  style: AppTextStyles.inputText,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Harga tidak boleh kosong';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Harga harus berupa angka';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                // ─ Stok Produk
+                TextFormField(
+                  controller: stockController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Stok Awal',
+                    labelStyle: AppTextStyles.bodySmall,
+                    suffixText: 'kg',
+                    hintText: 'Contoh: 45',
+                    hintStyle: AppTextStyles.inputHint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  style: AppTextStyles.inputText,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Stok tidak boleh kosong';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Stok harus berupa angka';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Batal',
+              style: AppTextStyles.link,
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                final name = nameController.text;
+                final price = int.parse(priceController.text);
+                final stock = int.parse(stockController.text);
+
+                _addNewProduct(name, price, stock);
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Simpan Produk',
+              style: AppTextStyles.buttonPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ NEW: ADD NEW PRODUCT FUNCTION ────────────────────
+  void _addNewProduct(String name, int price, int stock) {
+    setState(() {
+      final newId = products.isEmpty ? 1 : products.last.id + 1;
+      products.add(
+        ProductModel(
+          id: newId,
+          name: name,
+          price: price,
+          stock: stock,
+          image: 'assets/images/product_$newId.jpg',
+          category: 'FRESH',
+        ),
+      );
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Produk "$name" berhasil ditambahkan!'),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
