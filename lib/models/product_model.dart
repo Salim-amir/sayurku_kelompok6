@@ -7,6 +7,7 @@ class ProductModel {
   final String satuan;
   final int stok;
   final bool tersedia;
+  final String deskripsi;
 
   ProductModel({
     required this.id,
@@ -17,6 +18,8 @@ class ProductModel {
     required this.satuan,
     required this.stok,
     required this.tersedia,
+    required this.deskripsi,
+
   });
 
   factory ProductModel.fromMap(Map<String, dynamic> map, String id) {
@@ -29,6 +32,7 @@ class ProductModel {
       satuan: map['satuan'] ?? 'kg',
       stok: (map['stok'] ?? 0).toInt(),
       tersedia: map['tersedia'] ?? false,
+      deskripsi: map['deskripsi'] ?? '',
     );
   }
 
@@ -41,6 +45,7 @@ class ProductModel {
       'satuan': satuan,
       'stok': stok,
       'tersedia': tersedia,
+      'deskripsi' : deskripsi,
     };
   }
 
@@ -53,6 +58,7 @@ class ProductModel {
     String? satuan,
     int? stok,
     bool? tersedia,
+    String? deskripsi,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -63,6 +69,7 @@ class ProductModel {
       satuan: satuan ?? this.satuan,
       stok: stok ?? this.stok,
       tersedia: tersedia ?? this.tersedia,
+      deskripsi: deskripsi ?? this.deskripsi,
     );
   }
 }
