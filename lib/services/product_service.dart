@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 import '../core/constants.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -54,15 +56,34 @@ class ProductService {
 
   
   }
-  // CREATE
-  Future<void> addProduct({
+
+  // 📸 UPLOAD IMAGE
+Future<String> uploadImage(File file) async {
+  try {
+    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('products')
+        .child('$fileName.jpg');
+
+    await ref.putFile(file);
+
+    return await ref.getDownloadURL();
+  } catch (e) {
+    throw Exception('Gagal upload gambar: $e');
+  }
+}
+ // CREATE
+Future<void> addProduct({
   required String nama,
   required int harga,
   required int stok,
   required String kategori,
   required String imageUrl,
   required String satuan,
-   }) async {
+  required String deskripsi,
+}) async {
   await _db.collection(AppConstants.colProducts).add({
     'nama': nama,
     'harga': harga,
@@ -70,10 +91,12 @@ class ProductService {
     'kategori': kategori,
     'imageUrl': imageUrl,
     'satuan': satuan,
+    'deskripsi': deskripsi,
     'tersedia': true,
     'createdAt': FieldValue.serverTimestamp(),
   });
 }
+
 // UPDATE
 Future<void> updateProduct({
   required String id,
@@ -83,6 +106,7 @@ Future<void> updateProduct({
   required String kategori,
   required String imageUrl,
   required String satuan,
+  required String deskripsi,
 }) async {
   await _db.collection(AppConstants.colProducts).doc(id).update({
     'nama': nama,
@@ -91,8 +115,10 @@ Future<void> updateProduct({
     'kategori': kategori,
     'imageUrl': imageUrl,
     'satuan': satuan,
+    'deskripsi': deskripsi,
   });
 }
+
 // DELETE
 Future<void> deleteProduct(String id) async {
   await _db.collection(AppConstants.colProducts).doc(id).delete();

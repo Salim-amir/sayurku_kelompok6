@@ -3,6 +3,9 @@ import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
 import 'package:sayurku_kelompok6/services/product_service.dart';
 import 'package:sayurku_kelompok6/models/product_model.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:sayurku_kelompok6/core/constants.dart';
 
 class ProductStockPage extends StatefulWidget {
   const ProductStockPage({Key? key}) : super(key: key);
@@ -98,43 +101,159 @@ class _ProductStockPageState extends State<ProductStockPage> {
   }
 
   // ─── TAMBAH PRODUK ────────────────────────────────────
-  void _showAddProductDialog() {
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    final stockController = TextEditingController();
+void _showAddProductDialog() {
+  final nameController = TextEditingController();
+  final priceController = TextEditingController();
+  final stockController = TextEditingController();
+  final deskripsiController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Tambah Produk"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nama")),
-            TextField(controller: priceController, decoration: const InputDecoration(labelText: "Harga"), keyboardType: TextInputType.number),
-            TextField(controller: stockController, decoration: const InputDecoration(labelText: "Stok"), keyboardType: TextInputType.number),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-          ElevatedButton(
-            onPressed: () async {
-              await _productService.addProduct(
-                nama: nameController.text,
-                harga: int.parse(priceController.text),
-                stok: int.parse(stockController.text),
-                kategori: "sayur_hijau",
-                imageUrl: "",
-                satuan: "kg",
-              );
-              Navigator.pop(context);
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
-      ),
-    );
-  }
+  String selectedKategori = "sayur_hijau";
+  String selectedSatuan = "kg";
+
+  File? selectedImage;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text("Tambah Produk"),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // 📸 PILIH GAMBAR
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await ImagePicker()
+                          .pickImage(source: ImageSource.gallery);
+
+                      if (picked != null) {
+                        setStateDialog(() {
+                          selectedImage = File(picked.path);
+                        });
+                      }
+                    },
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: selectedImage == null
+                          ? const Icon(Icons.camera_alt, size: 40)
+                          : Image.file(selectedImage!, fit: BoxFit.cover),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 🥬 NAMA
+                  TextField(
+                    controller: nameController,
+                    decoration:
+                        const InputDecoration(labelText: "Nama Produk"),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 💰 HARGA
+                  TextField(
+                    controller: priceController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: "Harga"),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 📦 STOK
+                  TextField(
+                    controller: stockController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: "Stok"),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 📂 KATEGORI
+                  DropdownButtonFormField(
+                    value: selectedKategori,
+                    items: AppConstants.kategoriProduk.map((e) {
+                      return DropdownMenuItem(value: e, child: Text(e));
+                    }).toList(),
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        selectedKategori = val!;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: "Kategori"),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ⚖️ SATUAN
+                  DropdownButtonFormField(
+                    value: selectedSatuan,
+                    items: AppConstants.satuanProduk.map((e) {
+                      return DropdownMenuItem(value: e, child: Text(e));
+                    }).toList(),
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        selectedSatuan = val!;
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: "Satuan"),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 📝 DESKRIPSI
+                  TextField(
+                    controller: deskripsiController,
+                    maxLines: 3,
+                    decoration:
+                        const InputDecoration(labelText: "Deskripsi"),
+                  ),
+                ],
+              ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Batal"),
+              ),
+
+              ElevatedButton(
+                onPressed: () async {
+                  String imageUrl = "";
+
+                  if (selectedImage != null) {
+                    imageUrl =
+                        await _productService.uploadImage(selectedImage!);
+                  }
+
+                  await _productService.addProduct(
+                    nama: nameController.text,
+                    harga: int.parse(priceController.text),
+                    stok: int.parse(stockController.text),
+                    kategori: selectedKategori,
+                    imageUrl: imageUrl,
+                    satuan: selectedSatuan,
+                    deskripsi: deskripsiController.text, // ✅ FIX
+                  );
+
+                  Navigator.pop(context);
+                },
+                child: const Text("Simpan"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   // ─── UPDATE STOK ──────────────────────────────────────
   void _showUpdateStockDialog(ProductModel product) {
@@ -161,6 +280,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                 kategori: product.kategori,
                 imageUrl: product.imageUrl,
                 satuan: product.satuan,
+                deskripsi: product.deskripsi ?? "",
               );
               Navigator.pop(context);
             },
