@@ -6,7 +6,8 @@ import '../../../core/constants.dart';
 import '../../../services/order_service.dart';
 
 class RiwayatPesananScreen extends StatefulWidget {
-  const RiwayatPesananScreen({super.key});
+  final bool showBackButton;
+  const RiwayatPesananScreen({super.key, this.showBackButton = true});
 
   @override
   State<RiwayatPesananScreen> createState() => _RiwayatPesananScreenState();
@@ -65,14 +66,15 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
   // ── APP BAR ─────────────────────────────────────────
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
+      padding: EdgeInsets.fromLTRB(widget.showBackButton ? 8 : 20, 16, 20, 0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.primaryGreen),
-            onPressed: () => Navigator.pop(context),
-          ),
+          if (widget.showBackButton)
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.primaryGreen),
+              onPressed: () => Navigator.pop(context),
+            ),
           Text('Riwayat Pesanan',
               style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
         ],

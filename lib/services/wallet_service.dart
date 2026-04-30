@@ -47,56 +47,6 @@ class WalletService {
     }
   }
 
-  // ── Top-up langsung (Fake Payment) — saldo langsung bertambah ──
-  /// Flow fake payment: customer bayar QRIS → saldo langsung bertambah
-  /// Transaksi dicatat dengan status 'success' (tanpa admin approval)
-  Future<String?> topUpLangsung({
-    required String userId,
-    required double amount,
-  }) async {
-    try {
-      if (amount <= 0) return 'Nominal harus lebih dari 0';
-      if (amount < 10000) return 'Minimal isi saldo Rp 10.000';
-
-      // Gunakan Firestore transaction untuk atomic operation
-      await _db.runTransaction((transaction) async {
-        // 1. Baca saldo user saat ini
-        final userRef = _db.collection(AppConstants.colUsers).doc(userId);
-        final userDoc = await transaction.get(userRef);
-
-        if (!userDoc.exists) {
-          throw Exception('User tidak ditemukan');
-        }
-
-        final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
-
-        // 2. Tambah saldo
-        transaction.update(userRef, {
-          'saldo': currentSaldo + amount,
-        });
-
-        // 3. Catat transaksi dengan status success
-        final txRef = _db
-            .collection(AppConstants.colWallets)
-            .doc(userId)
-            .collection(AppConstants.subColTransactions)
-            .doc();
-
-        transaction.set(txRef, {
-          'userId': userId,
-          'type': AppConstants.txTopUp,
-          'amount': amount,
-          'status': AppConstants.txStatusSuccess,
-          'keterangan': 'Isi saldo via QRIS Rp ${_formatNominal(amount.toInt())}',
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-      });
-
-      return null; // Sukses
-    } catch (e) {
-      return 'Gagal memproses top-up: ${e.toString()}';
-    }
-  }
 
   // ── Potong saldo saat customer bayar dengan dompet digital ──
   /// Menggunakan Firestore Transaction untuk mencegah race condition

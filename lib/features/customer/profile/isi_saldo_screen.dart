@@ -20,11 +20,10 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   final _nominalController = TextEditingController();
 
   int? _selectedNominal;
-  // Steps: 0=pilih nominal, 1=konfirmasi, 2=qris, 3=sukses
+  // Steps: 0=pilih nominal, 1=konfirmasi, 2=qris, 3=menunggu admin
   int _currentStep = 0;
   bool _isLoading = false;
   late AnimationController _pulseController;
-  late AnimationController _successController;
 
   @override
   void initState() {
@@ -32,16 +31,12 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
     _pulseController = AnimationController(
       vsync: this, duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _successController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 800),
-    );
   }
 
   @override
   void dispose() {
     _nominalController.dispose();
     _pulseController.dispose();
-    _successController.dispose();
     super.dispose();
   }
 
@@ -67,18 +62,21 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
 
   void _tampilkanQris() => setState(() => _currentStep = 2);
 
-  Future<void> _prosesTopUp() async {
+  Future<void> _sudahBayar() async {
     setState(() => _isLoading = true);
-    final error = await _walletService.topUpLangsung(
-      userId: user!.uid, amount: _nominal.toDouble(),
+
+    // Kirim sebagai pending — admin yang akan approve
+    final error = await _walletService.topUpSaldo(
+      userId: user!.uid,
+      amount: _nominal.toDouble(),
     );
+
     if (mounted) {
       setState(() => _isLoading = false);
       if (error != null) {
         _showSnackbar(error, AppColors.error);
       } else {
         setState(() => _currentStep = 3);
-        _successController.forward();
       }
     }
   }
@@ -118,9 +116,9 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   }
 
   Widget _buildAppBar() {
-    final titles = ['Isi Saldo', 'Konfirmasi', 'Pembayaran QRIS', 'Berhasil'];
+    final titles = ['Isi Saldo', 'Konfirmasi', 'Pembayaran QRIS', 'Menunggu Konfirmasi'];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
+      padding: EdgeInsets.fromLTRB(_currentStep == 3 ? 20 : 8, 16, 20, 0),
       child: Row(children: [
         if (_currentStep < 3)
           IconButton(
@@ -130,9 +128,10 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               else { setState(() => _currentStep--); }
             },
           ),
-        if (_currentStep == 3) const SizedBox(width: 48),
-        Text(titles[_currentStep],
-            style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
+        Expanded(
+          child: Text(titles[_currentStep],
+              style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
+        ),
       ]),
     );
   }
@@ -142,7 +141,7 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
       case 0: return _buildStep0PilihNominal();
       case 1: return _buildStep1Konfirmasi();
       case 2: return _buildStep2Qris();
-      case 3: return _buildStep3Sukses();
+      case 3: return _buildStep3MenungguAdmin();
       default: return const SizedBox();
     }
   }
@@ -250,8 +249,7 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               const SizedBox(height: 10),
               const Divider(color: AppColors.divider),
               const SizedBox(height: 10),
-              _buildSummaryRow('Total Bayar', 'Rp ${_formatHarga(_nominal)}',
-                  isBold: true),
+              _buildSummaryRow('Total Bayar', 'Rp ${_formatHarga(_nominal)}', isBold: true),
             ]),
           ),
           const SizedBox(height: 16),
@@ -261,17 +259,20 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               color: AppColors.info.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.info.withOpacity(0.2))),
-            child: Row(children: [
-              const Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18),
+              ),
               const SizedBox(width: 10),
               Expanded(child: Text(
-                'Setelah konfirmasi, Anda akan diarahkan ke halaman QRIS untuk melakukan pembayaran.',
+                'Setelah scan QRIS, pembayaran akan diverifikasi oleh admin. Saldo akan bertambah setelah admin mengkonfirmasi.',
                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.info))),
             ]),
           ),
         ]),
       )),
-      _buildBottomButton('Bayar Sekarang', _tampilkanQris),
+      _buildBottomButton('Lanjut ke QRIS', _tampilkanQris),
     ]);
   }
 
@@ -286,7 +287,7 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
     ]);
   }
 
-  // ═══════ STEP 2: QRIS PALSU ═══════
+  // ═══════ STEP 2: QRIS ═══════
   Widget _buildStep2Qris() {
     return Column(children: [
       Expanded(child: SingleChildScrollView(
@@ -305,7 +306,6 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               Text('Scan QR untuk membayar', style: AppTextStyles.bodyMedium
                   .copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 20),
-              // Fake QRIS
               Container(
                 width: 220, height: 220, padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -352,63 +352,86 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
       )),
       _buildBottomButton(
         _isLoading ? '' : 'Saya Sudah Bayar',
-        _isLoading ? null : _prosesTopUp,
+        _isLoading ? null : _sudahBayar,
         isLoading: _isLoading,
       ),
     ]);
   }
 
-  // ═══════ STEP 3: SUKSES ═══════
-  Widget _buildStep3Sukses() {
+  // ═══════ STEP 3: MENUNGGU KONFIRMASI ADMIN ═══════
+  Widget _buildStep3MenungguAdmin() {
     return Center(child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: AnimatedBuilder(
-        animation: _successController,
-        builder: (_, __) => Opacity(
-          opacity: _successController.value,
-          child: Transform.scale(
-            scale: 0.8 + (_successController.value * 0.2),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(
-                width: 100, height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.12), shape: BoxShape.circle),
-                child: const Icon(Icons.check_circle_rounded,
-                    color: AppColors.success, size: 64),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Container(
+          width: 100, height: 100,
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.12), shape: BoxShape.circle),
+          child: const Icon(Icons.schedule_rounded,
+              color: AppColors.warning, size: 56),
+        ),
+        const SizedBox(height: 24),
+        Text('Menunggu Konfirmasi Admin', style: AppTextStyles.h2),
+        const SizedBox(height: 8),
+        Text(
+          'Pembayaran Anda sedang diverifikasi oleh admin.',
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        // Nominal badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primaryGreen.withOpacity(0.2))),
+          child: Text('Rp ${_formatHarga(_nominal)}',
+              style: AppTextStyles.h1.copyWith(color: AppColors.primaryGreen)),
+        ),
+        const SizedBox(height: 20),
+        // Info card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.info.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.info.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18),
+                const SizedBox(width: 8),
+                Text('Informasi', style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700, color: AppColors.info)),
+              ]),
+              const SizedBox(height: 10),
+              Text(
+                '• Saldo akan otomatis bertambah setelah admin mengkonfirmasi pembayaran.\n'
+                '• Proses verifikasi biasanya membutuhkan waktu beberapa menit.\n'
+                '• Anda dapat memantau status di halaman Dompet Digital.',
+                style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary, height: 1.5),
               ),
-              const SizedBox(height: 24),
-              Text('Pembayaran Berhasil!', style: AppTextStyles.h2),
-              const SizedBox(height: 8),
-              Text('Saldo Anda telah bertambah', style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.success.withOpacity(0.2))),
-                child: Text('+Rp ${_formatHarga(_nominal)}',
-                    style: AppTextStyles.h1.copyWith(color: AppColors.success)),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity, height: AppConstants.buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // kembali ke dompet
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)), elevation: 0),
-                  child: Text('Kembali ke Dompet', style: AppTextStyles.buttonPrimary),
-                ),
-              ),
-            ]),
+            ],
           ),
         ),
-      ),
+        const SizedBox(height: 32),
+        SizedBox(
+          width: double.infinity, height: AppConstants.buttonHeight,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)), elevation: 0),
+            child: Text('Kembali ke Dompet', style: AppTextStyles.buttonPrimary),
+          ),
+        ),
+      ]),
     ));
   }
 
@@ -455,22 +478,19 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
 
 // ═══════ FAKE QRIS PAINTER ═══════
 class _FakeQrisPainter extends CustomPainter {
-  final Random _rng = Random(42); // fixed seed for consistent pattern
+  final Random _rng = Random(42);
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = const Color(0xFF1A1A1A);
     final cellSize = size.width / 25;
 
-    // Draw position detection patterns (3 corners)
     _drawFinderPattern(canvas, paint, 0, 0, cellSize);
     _drawFinderPattern(canvas, paint, size.width - 7 * cellSize, 0, cellSize);
     _drawFinderPattern(canvas, paint, 0, size.height - 7 * cellSize, cellSize);
 
-    // Draw random data modules
     for (int row = 0; row < 25; row++) {
       for (int col = 0; col < 25; col++) {
-        // Skip finder pattern areas
         if ((row < 8 && col < 8) || (row < 8 && col > 16) || (row > 16 && col < 8)) continue;
         if (_rng.nextBool()) {
           canvas.drawRect(
@@ -481,12 +501,9 @@ class _FakeQrisPainter extends CustomPainter {
   }
 
   void _drawFinderPattern(Canvas canvas, Paint paint, double x, double y, double cell) {
-    // Outer 7x7 black
     canvas.drawRect(Rect.fromLTWH(x, y, 7 * cell, 7 * cell), paint);
-    // Inner 5x5 white
     final white = Paint()..color = Colors.white;
     canvas.drawRect(Rect.fromLTWH(x + cell, y + cell, 5 * cell, 5 * cell), white);
-    // Center 3x3 black
     canvas.drawRect(Rect.fromLTWH(x + 2 * cell, y + 2 * cell, 3 * cell, 3 * cell), paint);
   }
 

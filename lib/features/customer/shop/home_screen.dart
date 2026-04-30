@@ -11,6 +11,7 @@ import 'keranjang_belanja_screen.dart';
 import '../profile/riwayat_pesanan_screen.dart';
 import '../profile/dompet_digital_screen.dart';
 import '../profile/profile_screen.dart';
+import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
 import '../../../services/promo_service.dart';
 import '../../../models/promo_model.dart';
@@ -54,10 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildHomeBody();
       case 1:
-        return const RiwayatPesananScreen();
+        return const RiwayatPesananScreen(showBackButton: false);
       case 2:
-        return const DompetDigitalScreen();
+        return const DompetDigitalScreen(showBackButton: false);
       case 3:
+        return const NotifikasiScreen(showBackButton: false);
+      case 4:
         return const ProfileScreen();
       default:
         return _buildHomeBody();
@@ -96,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       GestureDetector(
-        onTap: () => setState(() => _currentIndex = 3),
+        onTap: () => setState(() => _currentIndex = 4),
         child: Row(
           children: [
             CircleAvatar(
@@ -425,6 +428,8 @@ Widget _buildDefaultBanner() {
       type: BottomNavigationBarType.fixed,
       currentIndex: _currentIndex,
       onTap: (index) => setState(() => _currentIndex = index),
+      selectedFontSize: 11,
+      unselectedFontSize: 11,
       items: const [
         BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded), label: 'Beranda'),
@@ -432,6 +437,8 @@ Widget _buildDefaultBanner() {
             icon: Icon(Icons.receipt_long_rounded), label: 'Pesanan'),
         BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet_rounded), label: 'Dompet'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_rounded), label: 'Notifikasi'),
         BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded), label: 'Profil'),
       ],

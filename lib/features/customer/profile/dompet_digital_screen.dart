@@ -7,7 +7,8 @@ import '../../../services/wallet_service.dart';
 import 'isi_saldo_screen.dart';
 
 class DompetDigitalScreen extends StatefulWidget {
-  const DompetDigitalScreen({super.key});
+  final bool showBackButton;
+  const DompetDigitalScreen({super.key, this.showBackButton = true});
 
   @override
   State<DompetDigitalScreen> createState() => _DompetDigitalScreenState();
@@ -47,14 +48,15 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
   // ── APP BAR ─────────────────────────────────────────
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
+      padding: EdgeInsets.fromLTRB(widget.showBackButton ? 8 : 20, 16, 20, 0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.primaryGreen),
-            onPressed: () => Navigator.pop(context),
-          ),
+          if (widget.showBackButton)
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.primaryGreen),
+              onPressed: () => Navigator.pop(context),
+            ),
           Text('Dompet Digital',
               style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
         ],
