@@ -25,9 +25,9 @@ class ProductModel {
       nama: map['nama'] ?? '',
       kategori: map['kategori'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
-      harga: map['harga'] ?? 0,
-      satuan: map['satuan'] ?? '',
-      stok: map['stok'] ?? 0,
+      harga: (map['harga'] ?? 0).toInt(),
+      satuan: map['satuan'] ?? 'kg',
+      stok: (map['stok'] ?? 0).toInt(),
       tersedia: map['tersedia'] ?? false,
     );
   }
@@ -42,5 +42,27 @@ class ProductModel {
       'stok': stok,
       'tersedia': tersedia,
     };
+  }
+
+  ProductModel copyWith({
+    String? id,
+    String? nama,
+    String? kategori,
+    String? imageUrl,
+    int? harga,
+    String? satuan,
+    int? stok,
+    bool? tersedia,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      kategori: kategori ?? this.kategori,
+      imageUrl: imageUrl ?? this.imageUrl,
+      harga: harga ?? this.harga,
+      satuan: satuan ?? this.satuan,
+      stok: stok ?? this.stok,
+      tersedia: tersedia ?? this.tersedia,
+    );
   }
 }
