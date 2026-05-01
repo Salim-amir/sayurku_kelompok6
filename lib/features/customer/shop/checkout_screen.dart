@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sayurku_kelompok6/core/constants.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +9,7 @@ import '../../../../models/address_model.dart';
 import '../../../../services/address_service.dart';
 import '../profile/alamat_screen.dart';
 import 'detail_produk_screen.dart';
+import '../profile/konfirmasi_pembayaran_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -244,41 +246,41 @@ Widget _buildItemPesanan(Map<String, dynamic> item) {
   }
 
   // ── METODE PEMBAYARAN ───────────────────────────────
-  Widget _buildMetodePembayaran() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.payment_rounded,
-                  color: AppColors.primaryGreen, size: 20),
-              const SizedBox(width: 8),
-              Text('Metode Pembayaran', style: AppTextStyles.h3),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildMetodeItem(
-            icon: Icons.handshake_rounded,
-            label: 'COD (Bayar di Tempat)',
-            value: 'COD',
-          ),
-          const SizedBox(height: 8),
-          _buildMetodeItem(
-            icon: Icons.account_balance_rounded,
-            label: 'Transfer Bank',
-            value: 'Transfer',
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildMetodePembayaran() {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.payment_rounded,
+                color: AppColors.primaryGreen, size: 20),
+            const SizedBox(width: 8),
+            Text('Metode Pembayaran', style: AppTextStyles.h3),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildMetodeItem(
+          icon: Icons.handshake_rounded,
+          label: 'COD (Bayar di Tempat)',
+          value: AppConstants.metodeCOD,
+        ),
+        const SizedBox(height: 8),
+        _buildMetodeItem(
+          icon: Icons.account_balance_wallet_rounded,
+          label: 'Dompet Digital SayurKu',
+          value: AppConstants.metodeDompet,
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildMetodeItem({
     required IconData icon,
@@ -378,25 +380,20 @@ Widget _buildBottomBar(BuildContext context) {
                       );
                       setState(() => _isLoading = false);
                       if (mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: Text('Pesanan Dibuat! 🎉',
-                                style: AppTextStyles.h3),
-                            content: Text(
-                              'Pesanan kamu sedang diproses oleh admin.',
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  CartManager.instance.items.clear();
-                                  Navigator.popUntil(
-                                      context, (route) => route.isFirst);
-                                },
-                                child: Text('OK', style: AppTextStyles.link),
-                              ),
-                            ],
+                        // Buat data pesanan untuk dikirim ke konfirmasi
+                        final dataPesanan = {
+                          'totalHarga': _subtotal.toDouble(),
+                          'ongkosKirim': _ongkosKirim.toDouble(),
+                          'metodePembayaran': _metodePembayaran,
+                          'status': 'Menunggu Konfirmasi',
+                        };
+
+                        CartManager.instance.items.clear();
+                        
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => KonfirmasiPembayaranScreen(pesanan: dataPesanan),
                           ),
                         );
                       }

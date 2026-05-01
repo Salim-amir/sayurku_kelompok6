@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
 import '../../../../core/constants.dart';
-import 'keranjang_belanja_screen.dart';
 import '../../../../core/cart_manager.dart';
+import '../../../../models/product_model.dart';
+import '../../../../services/product_service.dart';
 
 class DetailProdukScreen extends StatefulWidget {
   final Map<String, dynamic> produk;
@@ -15,6 +16,28 @@ class DetailProdukScreen extends StatefulWidget {
 
 class _DetailProdukScreenState extends State<DetailProdukScreen> {
   int _jumlah = 1;
+  final ProductService _productService = ProductService();
+  ProductModel? _produkDetail;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  void _loadDetail() async {
+    final id = widget.produk['id'] ?? '';
+    if (id.isEmpty) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    final detail = await _productService.getDetailProduk(id);
+    setState(() {
+      _produkDetail = detail;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,60 +45,60 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
       backgroundColor: AppColors.background,
       bottomNavigationBar: _buildBottomBar(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAppBar(context),
-              _buildFotoProduk(),
-              Padding(
-                padding: const EdgeInsets.all(20),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen))
+            : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStokBadge(),
-                    const SizedBox(height: 8),
-                    _buildNamaDanHarga(),
-                    const SizedBox(height: 20),
-                    _buildInformasiProduk(),
-                    const SizedBox(height: 100),
+                    _buildAppBar(context),
+                    _buildFotoProduk(),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStokBadge(),
+                          const SizedBox(height: 8),
+                          _buildNamaDanHarga(),
+                          const SizedBox(height: 20),
+                          _buildInformasiProduk(),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
   // ── APP BAR ─────────────────────────────────────────
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.primaryGreen),
-            onPressed: () => Navigator.pop(context),
-          ),
-          Text(AppConstants.appName,
-              style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
-          IconButton(
-            icon: const Icon(Icons.favorite_border_rounded,
-                color: AppColors.primaryGreen),
-            onPressed: () {},
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildAppBar(BuildContext context) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded,
+              color: AppColors.primaryGreen),
+          onPressed: () => Navigator.pop(context),
+        ),
+        Text(AppConstants.appName,
+            style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+        const SizedBox(width: 48), // biar judul tetap center
+      ],
+    ),
+  );
+}
 
   // ── FOTO PRODUK ─────────────────────────────────────
   Widget _buildFotoProduk() {
-    final imageUrl = widget.produk['imageUrl'] ?? '';
+    final imageUrl = _produkDetail?.imageUrl ?? widget.produk['imageUrl'] ?? '';
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       height: 260,
@@ -102,7 +125,8 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
             top: 16,
             left: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.lightGreen,
                 borderRadius: BorderRadius.circular(20),
@@ -133,7 +157,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── STOK BADGE ──────────────────────────────────────
   Widget _buildStokBadge() {
-    final tersedia = widget.produk['tersedia'] ?? true;
+    final tersedia = _produkDetail?.tersedia ?? widget.produk['tersedia'] ?? true;
     return Row(
       children: [
         Icon(
@@ -155,23 +179,23 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── NAMA DAN HARGA ───────────────────────────────────
   Widget _buildNamaDanHarga() {
+    final nama = _produkDetail?.nama ?? widget.produk['nama'] ?? 'Nama Produk';
+    final harga = _produkDetail?.harga ?? widget.produk['harga'] ?? 0;
+    final satuan = _produkDetail?.satuan ?? widget.produk['satuan'] ?? 'ikat';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.produk['nama'] ?? 'Nama Produk',
-          style: AppTextStyles.h1,
-        ),
+        Text(nama, style: AppTextStyles.h1),
         const SizedBox(height: 8),
         Row(
           children: [
             Text(
-              'Rp ${_formatHarga(widget.produk['harga'] ?? 0)}',
+              'Rp ${_formatHarga(harga)}',
               style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen),
             ),
             const SizedBox(width: 6),
             Text(
-              '/ ${widget.produk['satuan'] ?? 'ikat'}',
+              '/ $satuan',
               style: AppTextStyles.bodyMedium
                   .copyWith(color: AppColors.textSecondary),
             ),
@@ -183,6 +207,11 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── INFORMASI PRODUK ────────────────────────────────
   Widget _buildInformasiProduk() {
+    final deskripsi = _produkDetail != null
+        ? (_produkDetail!.toMap()['deskripsi'] ??
+            'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.')
+        : 'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -196,8 +225,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
           Text('Informasi Produk', style: AppTextStyles.h3),
           const SizedBox(height: 8),
           Text(
-            widget.produk['deskripsi'] ??
-                'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.',
+            deskripsi,
             style: AppTextStyles.bodyMedium
                 .copyWith(color: AppColors.textSecondary, height: 1.6),
           ),
@@ -208,7 +236,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
 
   // ── BOTTOM BAR ──────────────────────────────────────
   Widget _buildBottomBar(BuildContext context) {
-    final tersedia = widget.produk['tersedia'] ?? true;
+    final tersedia = _produkDetail?.tersedia ?? widget.produk['tersedia'] ?? true;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
@@ -249,20 +277,26 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-          onPressed: tersedia
-              ? () {
-                  CartManager.instance.tambahProduk(widget.produk, _jumlah);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '${widget.produk['nama']} ditambahkan ke keranjang!'),
-                      backgroundColor: AppColors.primaryGreen,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
-              : null,
+              onPressed: tersedia
+                  ? () {
+                      final data = {
+                        'id': _produkDetail?.id ?? widget.produk['id'],
+                        'nama': _produkDetail?.nama ?? widget.produk['nama'],
+                        'harga': _produkDetail?.harga ?? widget.produk['harga'],
+                        'satuan': _produkDetail?.satuan ?? widget.produk['satuan'],
+                        'imageUrl': _produkDetail?.imageUrl ?? widget.produk['imageUrl'],
+                      };
+                      CartManager.instance.tambahProduk(data, _jumlah);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${data['nama']} ditambahkan ke keranjang!'),
+                          backgroundColor: AppColors.primaryGreen,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 disabledBackgroundColor: AppColors.divider,

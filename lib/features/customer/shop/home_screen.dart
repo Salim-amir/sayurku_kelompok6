@@ -15,6 +15,7 @@ import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
 import '../../../services/promo_service.dart';
 import '../../../models/promo_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +38,30 @@ class _HomeScreenState extends State<HomeScreen> {
     {'label': 'Bumbu', 'kategoriKey': 'bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
     {'label': 'Umbi-umbian', 'kategoriKey': 'umbi_umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
   ];
+String _namaUser = 'Pengguna';
+
+@override
+void initState() {
+  super.initState();
+  _loadNamaUser();
+}
+
+void _loadNamaUser() async {
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return;
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+  if (doc.exists) {
+    setState(() {
+      _namaUser = doc.data()?['namaLengkap'] ?? 
+                  doc.data()?['username'] ?? 
+                  doc.data()?['nama'] ?? 
+                  'Pengguna';
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── HEADER ──────────────────────────────────────────
  Widget _buildHeader() {
-  final namaUser = user?.displayName ?? user?.email?.split('@')[0] ?? 'Pengguna';
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -108,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.person_rounded, color: AppColors.primaryGreen),
             ),
             const SizedBox(width: 12),
-            Text('Halo, $namaUser', style: AppTextStyles.h2),
+            Text('Halo, $_namaUser', style: AppTextStyles.h2),
           ],
         ),
       ),
