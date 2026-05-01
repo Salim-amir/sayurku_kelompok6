@@ -365,52 +365,169 @@ Widget _buildBottomBar(BuildContext context) {
             ],
           ),
           ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () async {
-                    setState(() => _isLoading = true);
-                    try {
-                      await _orderService.buatPesananBaru(
-                        userId: _user?.uid ?? '',
-                        items: CartManager.instance.items,
-                        totalHarga: _subtotal.toDouble(),
-                        ongkosKirim: _ongkosKirim.toDouble(),
-                        metodePembayaran: _metodePembayaran,
-                        alamatPengiriman: _alamatUtama?.fullAddress ?? 'Alamat belum diset',
-                      );
-                      setState(() => _isLoading = false);
-                      if (mounted) {
-                        // Buat data pesanan untuk dikirim ke konfirmasi
-                        final dataPesanan = {
-                          'totalHarga': _subtotal.toDouble(),
-                          'ongkosKirim': _ongkosKirim.toDouble(),
-                          'metodePembayaran': _metodePembayaran,
-                          'status': 'Menunggu Konfirmasi',
-                        };
+onPressed: _isLoading
+    ? null
+    : () async {
+        // ── VALIDASI ──────────────────────────────
+        // 1. Cek alamat
+        if (_alamatUtama == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kamu belum punya alamat pengiriman! Tambahkan dulu.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
 
-                        CartManager.instance.items.clear();
-                        
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => KonfirmasiPembayaranScreen(pesanan: dataPesanan),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Gagal membuat pesanan: $e'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
+        // 2. Cek keranjang tidak kosong
+        if (CartManager.instance.items.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Keranjang belanja masih kosong!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        // 3. Tampilkan dialog konfirmasi
+        final konfirmasi = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Konfirmasi Pesanan', style: AppTextStyles.h3),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Info alamat
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on_rounded,
+                        color: AppColors.primaryGreen, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Alamat Pengiriman',
+                              style: AppTextStyles.bodySmall),
+                          Text(_alamatUtama!.namaPenerima,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w700)),
+                          Text(_alamatUtama!.fullAddress,
+                              style: AppTextStyles.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                // Info pesanan
+                Row(
+                  children: [
+                    const Icon(Icons.shopping_basket_rounded,
+                        color: AppColors.primaryGreen, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${CartManager.instance.totalProduk} produk',
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Info metode
+                Row(
+                  children: [
+                    const Icon(Icons.payment_rounded,
+                        color: AppColors.primaryGreen, size: 18),
+                    const SizedBox(width: 8),
+                    Text(_metodePembayaran, style: AppTextStyles.bodyMedium),
+                  ],
+                ),
+                const Divider(height: 20),
+                // Total
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Pembayaran',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(fontWeight: FontWeight.w700)),
+                    Text(
+                      'Rp ${_formatHarga(_totalPembayaran)}',
+                      style: AppTextStyles.h3
+                          .copyWith(color: AppColors.primaryGreen),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Ubah', style: AppTextStyles.bodyMedium),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text('Ya, Pesan!', style: AppTextStyles.buttonPrimary),
+              ),
+            ],
+          ),
+        );
+
+        // Kalau user klik Ubah / tutup dialog
+        if (konfirmasi != true) return;
+
+        // ── PROSES PESANAN ────────────────────────
+        setState(() => _isLoading = true);
+        try {
+          await _orderService.buatPesananBaru(
+            userId: _user?.uid ?? '',
+            items: CartManager.instance.items,
+            totalHarga: _subtotal.toDouble(),
+            ongkosKirim: _ongkosKirim.toDouble(),
+            metodePembayaran: _metodePembayaran,
+            alamatPengiriman: _alamatUtama!.fullAddress,
+          );
+          setState(() => _isLoading = false);
+
+          if (mounted) {
+            final dataPesanan = {
+              'totalHarga': _subtotal.toDouble(),
+              'ongkosKirim': _ongkosKirim.toDouble(),
+              'metodePembayaran': _metodePembayaran,
+              'status': 'Menunggu Konfirmasi',
+            };
+            CartManager.instance.items.clear();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    KonfirmasiPembayaranScreen(pesanan: dataPesanan),
+              ),
+            );
+          }
+        } catch (e) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal membuat pesanan: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      },
+       style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
