@@ -30,6 +30,17 @@ class OrderService {
     }
   }
 
+// ── Ambil semua pesanan untuk Admin (Bypass Index) ──
+  Stream<List<Map<String, dynamic>>> getSemuaPesananAdmin() {
+    return _db
+        .collection(AppConstants.colOrders)
+        .orderBy('tanggalPesan', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList());
+  }
+
   // ── Ambil semua pesanan milik customer tertentu ──
   Stream<List<Map<String, dynamic>>> getPesananByUser(String userId) {
     return _db

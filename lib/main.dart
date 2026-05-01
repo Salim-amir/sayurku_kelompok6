@@ -11,6 +11,7 @@ import 'features/customer/profile/dompet_digital_screen.dart';
 import 'features/customer/profile/isi_saldo_screen.dart';
 import 'features/customer/profile/alamat_screen.dart';
 import 'features/customer/profile/ganti_password_screen.dart';
+import 'features/admin/dashboard/dashboard_admin_screen.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +43,7 @@ home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/admin': (context) => const AdminDashboard(),
         '/profile': (context) => const ProfileScreen(),
         '/riwayat-pesanan': (context) => const RiwayatPesananScreen(),
         '/dompet': (context) => const DompetDigitalScreen(),

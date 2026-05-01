@@ -3,6 +3,7 @@ import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
 import '../product/daftar_produk_stok_screen.dart';
 import '../verification/verifikasi_pesanan_screen.dart';
+import '../../../services/auth_service.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -148,27 +149,46 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-          onPressed: () {},
-        ),
         title: Text(
           'Profil',
           style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
         ),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: AppColors.textPrimary),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Center(
-        child: Text(
-          'Halaman Profil',
-          style: AppTextStyles.h2,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Halaman Profil Admin',
+              style: AppTextStyles.h2,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () async {
+                // 1. Panggil fungsi logout dari auth_service.dart
+                await AuthService().logoutUser();
+                
+                // 2. Cegah error context setelah proses async
+                if (!mounted) return;
+                
+                // 3. Lempar ke layar Login dan hapus semua riwayat rute
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+              },
+              icon: const Icon(Icons.logout, color: AppColors.white),
+              label: const Text(
+                'Logout', 
+                style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error, // Menggunakan warna error (merah) dari colors.dart
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

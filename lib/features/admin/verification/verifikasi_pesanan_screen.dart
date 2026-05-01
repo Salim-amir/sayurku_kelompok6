@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
+import 'package:sayurku_kelompok6/features/admin/verification/detail_pesanan_screen.dart';
+import '/../services/order_service.dart';
+import '/../core/constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrderVerificationPage extends StatefulWidget {
   const OrderVerificationPage({Key? key}) : super(key: key);
@@ -12,54 +16,19 @@ class OrderVerificationPage extends StatefulWidget {
 class _OrderVerificationPageState extends State<OrderVerificationPage> {
   int _selectedTabIndex = 0; // Pesanan tab
 
-  // Sample data pesanan
-  final List<OrderModel> orders = [
-    OrderModel(
-      id: 'ORD-102',
-      sellerName: 'Ibu Sari',
-      sellerAvatar: 'assets/avatars/ibu_sari.jpg',
-      status: 'MENUNGGU VERIFIKASI',
-      timeAgo: '2 menit',
-      totalPrice: 45000,
-      description: 'Sayur Segar Pagi Ini',
-    ),
-    OrderModel(
-      id: 'ORD-101',
-      sellerName: 'Pak Budi',
-      sellerAvatar: 'assets/avatars/pak_budi.jpg',
-      status: 'MENUNGGU VERIFIKASI',
-      timeAgo: '10 menit',
-      totalPrice: 122500,
-      description: 'Paket Hemat Sayuran',
-    ),
-    OrderModel(
-      id: 'ORD-100',
-      sellerName: 'Mbak Anita',
-      sellerAvatar: 'assets/avatars/mbak_anita.jpg',
-      status: 'MENUNGGU VERIFIKASI',
-      timeAgo: '28 menit',
-      totalPrice: 76200,
-      description: 'Sayuran Organik Premium',
-    ),
-    OrderModel(
-      id: 'ORD-099',
-      sellerName: 'Pak Adi',
-      sellerAvatar: 'assets/avatars/pak_adi.jpg',
-      status: 'MENUNGGU VERIFIKASI',
-      timeAgo: '45 menit',
-      totalPrice: 89500,
-      description: 'Sayuran Segar Hari Ini',
-    ),
-    OrderModel(
-      id: 'ORD-098',
-      sellerName: 'Ibu Dewi',
-      sellerAvatar: 'assets/avatars/ibu_dewi.jpg',
-      status: 'MENUNGGU VERIFIKASI',
-      timeAgo: '1 jam',
-      totalPrice: 156000,
-      description: 'Paket Lengkap Sayuran',
-    ),
-  ];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedFilter = 'Semua';
+  // 1. TAMBAHKAN VARIABEL INI
+  late Stream<List<Map<String, dynamic>>> _ordersStream;
+
+  // 2. TAMBAHKAN INITSTATE INI
+  @override
+  void initState() {
+    super.initState();
+    // Tarik data Firebase sekali saja di awal, bukan setiap kali ngetik
+    _ordersStream = OrderService().getSemuaPesananAdmin();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,212 +49,359 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () {},
           ),
         ],
       ),
-      // ─── BODY ───────────────────────────────────────────
-      body: CustomScrollView(
-        slivers: [
-          // ─ Tab Section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                children: [
-                  // Pesanan Tab
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedTabIndex = 0);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedTabIndex == 0
-                              ? AppColors.primaryGreen
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                          border: _selectedTabIndex == 0
-                              ? null
-                              : Border.all(
-                                  color: AppColors.divider,
-                                  width: 1,
-                                ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Pesanan',
-                            style: AppTextStyles.buttonSecondary.copyWith(
-                              color: _selectedTabIndex == 0
-                                  ? AppColors.white
-                                  : AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Isi Saldo Tab
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedTabIndex = 1);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedTabIndex == 1
-                              ? AppColors.primaryGreen
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                          border: _selectedTabIndex == 1
-                              ? null
-                              : Border.all(
-                                  color: AppColors.divider,
-                                  width: 1,
-                                ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Isi Saldo',
-                            style: AppTextStyles.buttonSecondary.copyWith(
-                              color: _selectedTabIndex == 1
-                                  ? AppColors.white
-                                  : AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      // ─── BODY (Dibungkus StreamBuilder Agar Kartu Hijau Ikut Dinamis) ───
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _ordersStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          // ─ Dashboard Card (Pesanan Tab Only)
-          if (_selectedTabIndex == 0)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildDashboardCard(),
-              ),
-            ),
+          final allOrders = snapshot.data ?? [];
 
-          // ─ Search Bar (Pesanan Tab Only)
-          if (_selectedTabIndex == 0)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Cari Pesanan...',
-                    hintStyle: AppTextStyles.inputHint,
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: AppColors.textHint,
-                      size: 18,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: AppColors.inputBorder,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: AppColors.inputBorder,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.white,
-                  ),
-                  style: AppTextStyles.inputText,
-                ),
-              ),
-            ),
+          // Logika Filter Dinamis
+          final orders = _selectedFilter == 'Semua'
+              ? allOrders.where((order) {
+                  // Jika filter 'Semua', HANYA tampilkan pesanan yang masih AKTIF
+                  // Sembunyikan yang sudah 'Selesai' atau 'Dibatalkan'
+                  final statusAsli = (order['status'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return statusAsli != 'selesai' && statusAsli != 'dibatalkan';
+                }).toList()
+              : allOrders.where((order) {
+                  // Jika pilih filter spesifik (Menunggu, Diproses, dll)
+                  final statusAsli = (order['status'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return statusAsli == _selectedFilter.toLowerCase();
+                }).toList();
 
-          // ─ Antrian Terbaru Section (Pesanan Tab Only)
-          if (_selectedTabIndex == 0)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Antrean Terbaru',
-                      style: AppTextStyles.h3,
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.tune, color: AppColors.textPrimary),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // ─ Order List (Pesanan Tab Only)
-          if (_selectedTabIndex == 0)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final order = orders[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildOrderCard(order),
-                    );
-                  },
-                  childCount: orders.length,
-                ),
-              ),
-            ),
-
-          // ─ Isi Saldo Tab Content (Placeholder)
-          if (_selectedTabIndex == 1)
-            SliverToBoxAdapter(
-              child: Center(
+          return CustomScrollView(
+            slivers: [
+              // ─ Tab Section
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'Fitur Isi Saldo Akan Segera Tersedia',
-                    style: AppTextStyles.h3,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      // Pesanan Tab
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedTabIndex = 0);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _selectedTabIndex == 0
+                                  ? AppColors.primaryGreen
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: _selectedTabIndex == 0
+                                  ? null
+                                  : Border.all(
+                                      color: AppColors.divider,
+                                      width: 1,
+                                    ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Pesanan',
+                                style: AppTextStyles.buttonSecondary.copyWith(
+                                  color: _selectedTabIndex == 0
+                                      ? AppColors.white
+                                      : AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Isi Saldo Tab
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedTabIndex = 1);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _selectedTabIndex == 1
+                                  ? AppColors.primaryGreen
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: _selectedTabIndex == 1
+                                  ? null
+                                  : Border.all(
+                                      color: AppColors.divider,
+                                      width: 1,
+                                    ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Isi Saldo',
+                                style: AppTextStyles.buttonSecondary.copyWith(
+                                  color: _selectedTabIndex == 1
+                                      ? AppColors.white
+                                      : AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
 
-          // ─ Bottom Spacing
-          SliverToBoxAdapter(
-            child: const SizedBox(height: 20),
-          ),
-        ],
+              // ─ Dashboard Card (Pesanan Tab Only)
+              if (_selectedTabIndex == 0)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildDashboardCard(
+                      orders.length,
+                    ), // Angka dikirim ke kartu
+                  ),
+                ),
+
+              // ─ Search Bar (Pesanan Tab Only)
+              if (_selectedTabIndex == 0)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.toLowerCase();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Cari Berdasarkan Nama...',
+                        hintStyle: AppTextStyles.inputHint,
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.textHint,
+                          size: 18,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputBorder,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.white,
+                      ),
+                      style: AppTextStyles.inputText,
+                    ),
+                  ),
+                ),
+
+              // ─ Antrean Terbaru Section (Pesanan Tab Only)
+              if (_selectedTabIndex == 0)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Teks Judul & Indikator Filter Aktif
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedFilter == 'Selesai' || _selectedFilter == 'Dibatalkan'
+                                  ? 'Riwayat Pesanan'
+                                  : 'Pesanan Terbaru',
+                              style: AppTextStyles.h3,
+                            ),
+                            if (_selectedFilter != 'Semua')
+                              Text(
+                                'Menampilkan: $_selectedFilter',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
+                        ),
+                        // Tombol Popup Filter
+                        PopupMenuButton<String>(
+                          icon: Icon(
+                            Icons.tune,
+                            color: _selectedFilter == 'Semua'
+                                ? AppColors.textPrimary
+                                : AppColors.primaryGreen,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onSelected: (String value) {
+                            setState(() {
+                              _selectedFilter = value;
+                            });
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'Semua',
+                                  child: Text('Tampilkan Semua (Aktif)'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'Menunggu Konfirmasi',
+                                  child: Text('Menunggu Konfirmasi'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'Diproses',
+                                  child: Text('Diproses'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'Dikirim',
+                                  child: Text('Dikirim'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'Selesai',
+                                  child: Text('Riwayat: Selesai'),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'Dibatalkan',
+                                  child: Text('Riwayat: Dibatalkan'),
+                                ),
+                              ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // ─ Order List (Pesanan Tab Only)
+              if (_selectedTabIndex == 0)
+                orders.isEmpty
+                    ? const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(
+                            child: Text('Belum ada pesanan masuk.'),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final orderData = orders[index];
+                            final userId = orderData['userId'] ?? '';
+
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: FirebaseFirestore.instance
+                                  .collection(AppConstants.colUsers)
+                                  .doc(userId)
+                                  .get(),
+                              builder: (context, userSnapshot) {
+                                String namaAsli = 'Memuat...';
+
+                                if (userSnapshot.hasData &&
+                                    userSnapshot.data!.exists) {
+                                  final userData =
+                                      userSnapshot.data!.data()
+                                          as Map<String, dynamic>;
+                                  namaAsli =
+                                      userData['namaLengkap'] ?? 'Customer';
+                                }
+
+                                // Sembunyikan jika nama tidak cocok dengan pencarian
+                                if (_searchQuery.isNotEmpty &&
+                                    !namaAsli.toLowerCase().contains(
+                                      _searchQuery,
+                                    )) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final order = OrderModel(
+                                  id: orderData['id'] ?? 'ORD-XXX',
+                                  sellerName: namaAsli,
+                                  sellerAvatar: '',
+                                  status:
+                                      (orderData['status'] ??
+                                              'MENUNGGU KONFIRMASI')
+                                          .toString()
+                                          .toUpperCase(),
+                                  timeAgo: _getTimeAgo(
+                                    orderData['tanggalPesan'] as Timestamp?,
+                                  ),
+                                  totalPrice: (orderData['totalHarga'] ?? 0)
+                                      .toInt(),
+                                  description: 'Pesanan Customer',
+                                );
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildOrderCard(order),
+                                );
+                              },
+                            );
+                          }, childCount: orders.length),
+                        ),
+                      ),
+
+              // ─ Isi Saldo Tab Content (Placeholder)
+              if (_selectedTabIndex == 1)
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'Fitur Isi Saldo Akan Segera Tersedia',
+                        style: AppTextStyles.h3,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ─ Bottom Spacing
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            ],
+          );
+        },
       ),
-      // ─────────────────────────────────────────────────────
-      // PENTING: TIDAK ADA bottomNavigationBar DI SINI
-      // Navigation diatur oleh parent AdminDashboard
-      // ─────────────────────────────────────────────────────
     );
   }
 
   // ─── DASHBOARD CARD WIDGET ───────────────────────────
-  Widget _buildDashboardCard() {
+  Widget _buildDashboardCard(int totalAntrean) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
@@ -307,13 +423,13 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
           Text(
             'DASHBOARD ADMIN',
             style: AppTextStyles.labelUppercase.copyWith(
-              color: AppColors.white.withOpacity(0.8),
+              color: AppColors.white.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
-          // ─ Title
+          // ─ Title (Teks diubah dan jumlah dinamis)
           Text(
-            'Total Antrian Hari Ini: ${orders.length} Pesanan',
+            'Total Pesanan: $totalAntrean Pesanan',
             style: AppTextStyles.h2.copyWith(
               color: AppColors.white,
               fontSize: 22,
@@ -323,17 +439,13 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
           // ─ Message with Icon
           Row(
             children: [
-              Icon(
-                Icons.check_circle,
-                color: AppColors.white,
-                size: 16,
-              ),
+              const Icon(Icons.check_circle, color: AppColors.white, size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Semua sayuran siap dikiemasi!',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.white.withOpacity(0.9),
+                    color: AppColors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ),
@@ -369,7 +481,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.inputBackground,
-                child: Icon(
+                child: const Icon(
                   Icons.person,
                   color: AppColors.textHint,
                   size: 28,
@@ -381,16 +493,16 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      order.sellerName,
-                      style: AppTextStyles.h3,
-                    ),
+                    Text(order.sellerName, style: AppTextStyles.h3),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Text(
-                          order.id,
-                          style: AppTextStyles.bodySmall,
+                        Expanded(
+                          child: Text(
+                            '#${order.id.length > 8 ? order.id.substring(0, 8) : order.id}',
+                            style: AppTextStyles.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -404,10 +516,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               ),
               // Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFE5E5),
                   borderRadius: BorderRadius.circular(6),
@@ -428,19 +537,11 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'TOTAL PESANAN',
-                style: AppTextStyles.labelUppercase,
-              ),
+              Text('TOTAL PESANAN', style: AppTextStyles.labelUppercase),
               const SizedBox(height: 4),
               Text(
-                'Rp ${order.totalPrice.toString().replaceAllMapped(
-                      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-                      (match) => '${match.group(1)}.',
-                    )}',
-                style: AppTextStyles.h3.copyWith(
-                  color: AppColors.primaryGreen,
-                ),
+                'Rp ${order.totalPrice.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match.group(1)}.')}',
+                style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
               ),
             ],
           ),
@@ -450,10 +551,12 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Detail ${order.id} - ${order.sellerName}'),
-                    backgroundColor: AppColors.primaryGreen,
+                // Navigasi ke halaman Detail dengan membawa ID Pesanan
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        DetailPesananScreen(orderId: order.id),
                   ),
                 );
               },
@@ -467,15 +570,31 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               ),
               child: Text(
                 'Detail',
-                style: AppTextStyles.buttonPrimary.copyWith(
-                  fontSize: 13,
-                ),
+                style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+// ─── FUNGSI PENGHITUNG WAKTU ─────────────────────────
+String _getTimeAgo(Timestamp? timestamp) {
+  if (timestamp == null) return 'Baru saja';
+
+  final DateTime orderTime = timestamp.toDate();
+  final Duration diff = DateTime.now().difference(orderTime);
+
+  if (diff.inMinutes < 1) {
+    return 'Baru saja';
+  } else if (diff.inMinutes < 60) {
+    return '${diff.inMinutes} mnt lalu';
+  } else if (diff.inHours < 24) {
+    return '${diff.inHours} jam lalu';
+  } else {
+    return '${diff.inDays} hari lalu';
   }
 }
 
