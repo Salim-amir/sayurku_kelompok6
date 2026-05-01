@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
 import 'package:sayurku_kelompok6/services/product_service.dart';
@@ -90,8 +91,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () async {
-                await _productService.deleteProduct(product.id);
+              onPressed: () {
+                _showDeleteConfirmation(product);
               },
             ),
           ],
@@ -100,119 +101,335 @@ class _ProductStockPageState extends State<ProductStockPage> {
     );
   }
 
+  // ─── DELETE PRODUCT ───────────────────────────────────
+  void _showDeleteConfirmation(ProductModel product) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Hapus Produk"),
+        content: Text(
+          "Apakah yakin ingin menghapus ${product.nama}?",
+        ),
+        actions: [
+          // ❌ BATAL
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("Batal"),
+          ),
+
+          // 🗑️ HAPUS
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () async {
+              await _productService.deleteProduct(product.id);
+
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "${product.nama} berhasil dihapus",
+                  ),
+                ),
+              );
+            },
+            child: const Text("Hapus"),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─── TAMBAH PRODUK ────────────────────────────────────
-void _showAddProductDialog() {
-  final nameController = TextEditingController();
-  final priceController = TextEditingController();
-  final stockController = TextEditingController();
-  final deskripsiController = TextEditingController();
+  void _showAddProductDialog() {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final stockController = TextEditingController();
+    final deskripsiController = TextEditingController();
 
-  String selectedKategori = "sayur_hijau";
-  String selectedSatuan = "kg";
+    String selectedKategori = "sayur_hijau";
+    String selectedSatuan = "kg";
 
-  File? selectedImage;
+    File? selectedImage;
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setStateDialog) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text("Tambah Produk"),
+              content: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // 📸 PILIH GAMBAR
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await ImagePicker()
+                            .pickImage(source: ImageSource.gallery);
+
+                        if (picked != null) {
+                          setStateDialog(() {
+                            selectedImage = File(picked.path);
+                          });
+                        }
+                      },
+                      child: Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.grey[200],
+                        child: selectedImage == null
+                            ? const Icon(Icons.camera_alt, size: 40)
+                            : kIsWeb
+                                ? Image.network(selectedImage!.path, fit: BoxFit.cover)
+                                : Image.file(selectedImage!, fit: BoxFit.cover),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 🥬 NAMA
+                    TextField(
+                      controller: nameController,
+                      decoration:
+                          const InputDecoration(labelText: "Nama Produk"),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 💰 HARGA
+                    TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Harga"),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 📦 STOK
+                    TextField(
+                      controller: stockController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: "Stok"),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 📂 KATEGORI
+                    DropdownButtonFormField(
+                      value: selectedKategori,
+                      items: AppConstants.kategoriProduk.map((e) {
+                        return DropdownMenuItem(value: e, child: Text(e));
+                      }).toList(),
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          selectedKategori = val!;
+                        });
+                      },
+                      decoration:
+                          const InputDecoration(labelText: "Kategori"),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // ⚖️ SATUAN
+                    DropdownButtonFormField(
+                      value: selectedSatuan,
+                      items: AppConstants.satuanProduk.map((e) {
+                        return DropdownMenuItem(value: e, child: Text(e));
+                      }).toList(),
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          selectedSatuan = val!;
+                        });
+                      },
+                      decoration:
+                          const InputDecoration(labelText: "Satuan"),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 📝 DESKRIPSI
+                    TextField(
+                      controller: deskripsiController,
+                      maxLines: 3,
+                      decoration:
+                          const InputDecoration(labelText: "Deskripsi"),
+                    ),
+                  ],
+                ),
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Batal"),
+                ),
+
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      String imageUrl = "";
+
+                      // Upload gambar hanya jika ada dan bukan web
+                      if (selectedImage != null && !kIsWeb) {
+                        imageUrl =
+                            await _productService.uploadImage(selectedImage!);
+                      }
+
+                      // Validasi input
+                      if (nameController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Nama produk tidak boleh kosong"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      await _productService.addProduct(
+                        nama: nameController.text,
+                        harga: int.parse(priceController.text),
+                        stok: int.parse(stockController.text),
+                        kategori: selectedKategori,
+                        imageUrl: imageUrl,
+                        satuan: selectedSatuan,
+                        deskripsi: deskripsiController.text,
+                      );
+
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Produk berhasil ditambahkan"),
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Error: ${e.toString()}"),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text("Simpan"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ─── UPDATE STOK ──────────────────────────────────────
+  void _showUpdateStockDialog(ProductModel product) {
+    final namaController = TextEditingController(text: product.nama);
+    final hargaController =
+        TextEditingController(text: product.harga.toString());
+    final stokController =
+        TextEditingController(text: product.stok.toString());
+    final deskripsiController =
+        TextEditingController(text: product.deskripsi);
+
+    String selectedKategori = product.kategori;
+    String selectedSatuan = product.satuan;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setModalState) {
           return AlertDialog(
-            title: const Text("Tambah Produk"),
+            title: const Text("Edit Produk"),
             content: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 📸 PILIH GAMBAR
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await ImagePicker()
-                          .pickImage(source: ImageSource.gallery);
-
-                      if (picked != null) {
-                        setStateDialog(() {
-                          selectedImage = File(picked.path);
-                        });
-                      }
-                    },
-                    child: Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.grey[200],
-                      child: selectedImage == null
-                          ? const Icon(Icons.camera_alt, size: 40)
-                          : Image.file(selectedImage!, fit: BoxFit.cover),
+                  // 🥬 NAMA
+                  TextField(
+                    controller: namaController,
+                    decoration: const InputDecoration(
+                      labelText: "Nama Produk",
                     ),
                   ),
 
-                  const SizedBox(height: 10),
-
-                  // 🥬 NAMA
-                  TextField(
-                    controller: nameController,
-                    decoration:
-                        const InputDecoration(labelText: "Nama Produk"),
-                  ),
-
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // 💰 HARGA
                   TextField(
-                    controller: priceController,
+                    controller: hargaController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "Harga"),
+                    decoration: const InputDecoration(
+                      labelText: "Harga",
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // 📦 STOK
                   TextField(
-                    controller: stockController,
+                    controller: stokController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "Stok"),
+                    decoration: const InputDecoration(
+                      labelText: "Stok",
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // 📂 KATEGORI
-                  DropdownButtonFormField(
+                  DropdownButtonFormField<String>(
                     value: selectedKategori,
-                    items: AppConstants.kategoriProduk.map((e) {
-                      return DropdownMenuItem(value: e, child: Text(e));
+                    items: AppConstants.kategoriProduk.map((kategori) {
+                      return DropdownMenuItem(
+                        value: kategori,
+                        child: Text(kategori),
+                      );
                     }).toList(),
-                    onChanged: (val) {
-                      setStateDialog(() {
-                        selectedKategori = val!;
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedKategori = value!;
                       });
                     },
-                    decoration:
-                        const InputDecoration(labelText: "Kategori"),
+                    decoration: const InputDecoration(
+                      labelText: "Kategori",
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // ⚖️ SATUAN
-                  DropdownButtonFormField(
+                  DropdownButtonFormField<String>(
                     value: selectedSatuan,
-                    items: AppConstants.satuanProduk.map((e) {
-                      return DropdownMenuItem(value: e, child: Text(e));
+                    items: AppConstants.satuanProduk.map((satuan) {
+                      return DropdownMenuItem(
+                        value: satuan,
+                        child: Text(satuan),
+                      );
                     }).toList(),
-                    onChanged: (val) {
-                      setStateDialog(() {
-                        selectedSatuan = val!;
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedSatuan = value!;
                       });
                     },
-                    decoration:
-                        const InputDecoration(labelText: "Satuan"),
+                    decoration: const InputDecoration(
+                      labelText: "Satuan",
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   // 📝 DESKRIPSI
                   TextField(
                     controller: deskripsiController,
                     maxLines: 3,
-                    decoration:
-                        const InputDecoration(labelText: "Deskripsi"),
+                    decoration: const InputDecoration(
+                      labelText: "Deskripsi",
+                    ),
                   ),
                 ],
               ),
@@ -226,67 +443,30 @@ void _showAddProductDialog() {
 
               ElevatedButton(
                 onPressed: () async {
-                  String imageUrl = "";
-
-                  if (selectedImage != null) {
-                    imageUrl =
-                        await _productService.uploadImage(selectedImage!);
-                  }
-
-                  await _productService.addProduct(
-                    nama: nameController.text,
-                    harga: int.parse(priceController.text),
-                    stok: int.parse(stockController.text),
+                  await _productService.updateProduct(
+                    id: product.id,
+                    nama: namaController.text,
+                    harga: int.parse(hargaController.text),
+                    stok: int.parse(stokController.text),
                     kategori: selectedKategori,
-                    imageUrl: imageUrl,
+                    imageUrl: product.imageUrl,
                     satuan: selectedSatuan,
-                    deskripsi: deskripsiController.text, // ✅ FIX
+                    deskripsi: deskripsiController.text,
                   );
 
                   Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Produk berhasil diupdate"),
+                    ),
+                  );
                 },
-                child: const Text("Simpan"),
+                child: const Text("Update"),
               ),
             ],
           );
         },
-      );
-    },
-  );
-}
-
-  // ─── UPDATE STOK ──────────────────────────────────────
-  void _showUpdateStockDialog(ProductModel product) {
-    final stockController = TextEditingController(text: product.stok.toString());
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text("Update Stok ${product.nama}"),
-        content: TextField(
-          controller: stockController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: "Stok Baru"),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-          ElevatedButton(
-            onPressed: () async {
-              await _productService.updateProduct(
-                id: product.id,
-                nama: product.nama,
-                harga: product.harga,
-                stok: int.parse(stockController.text),
-                kategori: product.kategori,
-                imageUrl: product.imageUrl,
-                satuan: product.satuan,
-                deskripsi: product.deskripsi ?? "",
-              );
-              Navigator.pop(context);
-            },
-            child: const Text("Update"),
-          ),
-        ],
       ),
     );
   }
