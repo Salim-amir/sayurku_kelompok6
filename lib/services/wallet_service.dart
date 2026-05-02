@@ -188,6 +188,33 @@ class WalletService {
     }
   }
 
+  // ── [ADMIN] Ambil SEMUA permintaan top-up dari seluruh user ──
+  Stream<List<Map<String, dynamic>>> getSemuaTopUpAdmin({
+    String? filterStatus,
+  }) {
+    Query query = _db
+        .collectionGroup(AppConstants.subColTransactions)
+        .where('type', isEqualTo: AppConstants.txTopUp)
+        .orderBy('timestamp', descending: true);
+
+    if (filterStatus != null) {
+      query = query.where('status', isEqualTo: filterStatus);
+    }
+
+    return query.snapshots().handleError((e) {
+      return;
+    }).map((snapshot) => snapshot.docs.map((doc) {
+          final pathSegments = doc.reference.path.split('/');
+          final userId = pathSegments.length >= 2 ? pathSegments[1] : '';
+          return {
+            'id': doc.id,
+            'userId': userId,
+            'docPath': doc.reference.path,
+            ...doc.data() as Map<String, dynamic>,
+          };
+        }).toList());
+  }
+
   // ── Helper format nominal ──
   String _formatNominal(int nominal) {
     return nominal.toString().replaceAllMapped(
