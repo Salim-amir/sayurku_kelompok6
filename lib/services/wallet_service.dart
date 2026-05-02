@@ -18,7 +18,6 @@ class WalletService {
   }
 
   // ── Ajukan top-up (status: pending, admin akan validasi) ──
-  /// Flow manual: customer ajukan → admin approve → saldo bertambah
   Future<String?> topUpSaldo({
     required String userId,
     required double amount,
@@ -27,7 +26,6 @@ class WalletService {
       if (amount <= 0) return 'Nominal harus lebih dari 0';
       if (amount < 10000) return 'Minimal isi saldo Rp 10.000';
 
-      // Simpan transaksi ke subcollection wallets/{uid}/transactions
       await _db
           .collection(AppConstants.colWallets)
           .doc(userId)
@@ -37,19 +35,18 @@ class WalletService {
         'type': AppConstants.txTopUp,
         'amount': amount,
         'status': AppConstants.txStatusPending,
-        'keterangan': 'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
+        'keterangan':
+            'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      return null; // Sukses
+      return null;
     } catch (e) {
       return 'Gagal mengajukan top-up: ${e.toString()}';
     }
   }
 
-
   // ── Potong saldo saat customer bayar dengan dompet digital ──
-  /// Menggunakan Firestore Transaction untuk mencegah race condition
   Future<String?> potongSaldo({
     required String userId,
     required double amount,
@@ -59,28 +56,19 @@ class WalletService {
       if (amount <= 0) return 'Nominal pembayaran tidak valid';
 
       await _db.runTransaction((transaction) async {
-        // 1. Baca saldo secara atomic
         final userRef = _db.collection(AppConstants.colUsers).doc(userId);
         final userDoc = await transaction.get(userRef);
 
-        if (!userDoc.exists) {
-          throw Exception('User tidak ditemukan');
-        }
+        if (!userDoc.exists) throw Exception('User tidak ditemukan');
 
         final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
-
-        // 2. Validasi saldo cukup
         if (currentSaldo < amount) {
           throw Exception(
               'Saldo tidak cukup. Saldo Anda: Rp ${_formatNominal(currentSaldo.toInt())}');
         }
 
-        // 3. Kurangi saldo (atomic)
-        transaction.update(userRef, {
-          'saldo': currentSaldo - amount,
-        });
+        transaction.update(userRef, {'saldo': currentSaldo - amount});
 
-        // 4. Catat transaksi pembayaran
         final txRef = _db
             .collection(AppConstants.colWallets)
             .doc(userId)
@@ -98,18 +86,17 @@ class WalletService {
         });
       });
 
-      return null; // Sukses
+      return null;
     } catch (e) {
       final msg = e.toString();
       if (msg.contains('Saldo tidak cukup')) {
-        // Ambil pesan error dari exception
         return msg.replaceAll('Exception: ', '');
       }
       return 'Gagal memproses pembayaran: $msg';
     }
   }
 
-  // ── Ambil riwayat transaksi dompet ──
+  // ── Ambil riwayat transaksi dompet milik 1 customer ──
   Stream<List<Map<String, dynamic>>> getRiwayatTransaksi(String userId) {
     return _db
         .collection(AppConstants.colWallets)
@@ -117,14 +104,40 @@ class WalletService {
         .collection(AppConstants.subColTransactions)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .handleError((error) {
-      return;
-    }).map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+        .handleError((error) => null)
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
   }
 
-  // ── Approve top-up (dipanggil admin) — tambah saldo ──
+  // ── Stream semua top-up untuk admin (REAKTIF INSTAN) ──────────────────────
+  /// Menggunakan collectionGroup agar satu listener menangkap perubahan
+  /// di SEMUA subcollection transactions/{userId}/transactions sekaligus.
+  /// Saat admin approve/reject, status langsung berubah tanpa delay.
+  ///
+  /// PENTING: Daftarkan collectionGroup index di Firebase Console:
+  ///   Collection: transactions | Field: type ASC, timestamp DESC
+  Stream<List<Map<String, dynamic>>> getSemuaTopUpAdmin() {
+    return _db
+        .collectionGroup(AppConstants.subColTransactions)
+        .where('type', isEqualTo: AppConstants.txTopUp)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .handleError((error) {
+          // Fallback jika composite index belum dibuat
+          print('getSemuaTopUpAdmin error: $error');
+          return null;
+        })
+        .map((snapshot) => snapshot.docs.map((doc) {
+              // Sertakan docPath agar detail screen bisa langsung akses dokumen
+              return {
+                'id': doc.id,
+                'docPath': doc.reference.path,
+                ...doc.data(),
+              };
+            }).toList());
+  }
+
+  // ── Approve top-up (dipanggil admin) ─────────────────────────────────────
   Future<String?> approveTopUp({
     required String userId,
     required String transactionId,
@@ -132,29 +145,26 @@ class WalletService {
   }) async {
     try {
       await _db.runTransaction((transaction) async {
-        // 1. Baca data user
         final userRef = _db.collection(AppConstants.colUsers).doc(userId);
         final userDoc = await transaction.get(userRef);
 
-        if (!userDoc.exists) {
-          throw Exception('User tidak ditemukan');
-        }
+        if (!userDoc.exists) throw Exception('User tidak ditemukan');
 
         final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
 
-        // 2. Update status transaksi
         final txRef = _db
             .collection(AppConstants.colWallets)
             .doc(userId)
             .collection(AppConstants.subColTransactions)
             .doc(transactionId);
 
+        // Update status transaksi
         transaction.update(txRef, {
           'status': AppConstants.txStatusApproved,
           'approvedAt': FieldValue.serverTimestamp(),
         });
 
-        // 3. Tambah saldo user (atomic)
+        // Tambah saldo user secara atomic
         transaction.update(userRef, {
           'saldo': currentSaldo + amount,
         });
@@ -166,7 +176,7 @@ class WalletService {
     }
   }
 
-  // ── Reject top-up (dipanggil admin) ──
+  // ── Reject top-up (dipanggil admin) ──────────────────────────────────────
   Future<String?> rejectTopUp({
     required String userId,
     required String transactionId,
@@ -188,36 +198,11 @@ class WalletService {
     }
   }
 
-  // ── [ADMIN] Ambil SEMUA permintaan top-up dari seluruh user ──
-  Stream<List<Map<String, dynamic>>> getSemuaTopUpAdmin({
-    String? filterStatus,
-  }) {
-    Query query = _db
-        .collectionGroup(AppConstants.subColTransactions)
-        .where('type', isEqualTo: AppConstants.txTopUp)
-        .orderBy('timestamp', descending: true);
-
-    if (filterStatus != null) {
-      query = query.where('status', isEqualTo: filterStatus);
-    }
-
-    return query.snapshots().handleError((e) {
-      return;
-    }).map((snapshot) => snapshot.docs.map((doc) {
-          final pathSegments = doc.reference.path.split('/');
-          final userId = pathSegments.length >= 2 ? pathSegments[1] : '';
-          return {
-            'id': doc.id,
-            'userId': userId,
-            'docPath': doc.reference.path,
-            ...doc.data() as Map<String, dynamic>,
-          };
-        }).toList());
-  }
-
   // ── Helper format nominal ──
   String _formatNominal(int nominal) {
-    return nominal.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+    return nominal
+        .toString()
+        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]}.');
   }
 }

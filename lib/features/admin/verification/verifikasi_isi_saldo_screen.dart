@@ -18,17 +18,17 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedFilter = 'Semua';
 
-  // ── Stream semua top-up, dikunci di initState ────────────────
-  // Ambil SEMUA status sekaligus — filter dilakukan di client
-  // agar dashboard card bisa reaktif tanpa ganti stream
+  // ── Filter: 'semua' = semua status, selain itu filter spesifik ──
+  // Default 'pending' agar admin langsung lihat yang perlu diverifikasi
+  String _selectedFilter = AppConstants.txStatusPending;
+
   late Stream<List<Map<String, dynamic>>> _topUpStream;
 
   @override
   void initState() {
     super.initState();
-    // null = ambil semua status (pending + approved + rejected)
+    // collectionGroup — reactive instan saat approve/reject
     _topUpStream = _walletService.getSemuaTopUpAdmin();
   }
 
@@ -38,7 +38,6 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
     super.dispose();
   }
 
-  // ── Format Rupiah ─────────────────────────────────────────────
   String _formatRupiah(double nominal) {
     return 'Rp ${nominal.toInt().toString().replaceAllMapped(
           RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
@@ -46,7 +45,6 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
         )}';
   }
 
-  // ── Waktu relatif ─────────────────────────────────────────────
   String _getTimeAgo(Timestamp? timestamp) {
     if (timestamp == null) return 'Baru saja';
     final diff = DateTime.now().difference(timestamp.toDate());
@@ -69,27 +67,19 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
 
         final allTopUp = snapshot.data ?? [];
 
-        // ── Filter status di sisi client ─────────────────────────
-        final List<Map<String, dynamic>> filtered;
-        if (_selectedFilter == 'Semua') {
-          // Default: hanya pending
-          filtered = allTopUp
-              .where((tx) =>
-                  (tx['status'] ?? '').toString().toLowerCase() ==
-                  AppConstants.txStatusPending)
-              .toList();
-        } else {
-          // Filter spesifik — approved / rejected juga tampil untuk riwayat
-          filtered = allTopUp
-              .where((tx) =>
-                  (tx['status'] ?? '').toString().toLowerCase() ==
-                  _selectedFilter.toLowerCase())
-              .toList();
-        }
+        // ── Filter di sisi client ──────────────────────────────────────────
+        // 'semua'  → tampilkan semua status (pending + approved + rejected)
+        // lainnya  → filter berdasarkan status spesifik
+        final List<Map<String, dynamic>> filtered = _selectedFilter == 'semua'
+            ? allTopUp
+            : allTopUp.where((tx) {
+                final s = (tx['status'] ?? '').toString().toLowerCase();
+                return s == _selectedFilter.toLowerCase();
+              }).toList();
 
         return CustomScrollView(
           slivers: [
-            // ─── DASHBOARD CARD — angka REAKTIF dari filtered.length ──
+            // ─── DASHBOARD CARD — REAKTIF dari filtered.length ───────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -97,7 +87,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
               ),
             ),
 
-            // ─── SEARCH BAR ──────────────────────────────────────
+            // ─── SEARCH BAR ──────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -130,7 +120,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
               ),
             ),
 
-            // ─── JUDUL + FILTER POPUP ─────────────────────────────
+            // ─── JUDUL + FILTER POPUP ─────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -146,10 +136,13 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                                   _selectedFilter ==
                                       AppConstants.txStatusRejected)
                               ? 'Riwayat Top-Up'
-                              : 'Permintaan Terbaru',
+                              : _selectedFilter == 'semua'
+                                  ? 'Semua Transaksi'
+                                  : 'Permintaan Terbaru',
                           style: AppTextStyles.h3,
                         ),
-                        if (_selectedFilter != 'Semua')
+                        // Tampilkan label filter aktif (kecuali pending yang jadi default)
+                        if (_selectedFilter != AppConstants.txStatusPending)
                           Text(
                             'Filter: ${_labelStatus(_selectedFilter)}',
                             style: AppTextStyles.caption.copyWith(
@@ -162,7 +155,8 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.tune,
-                        color: _selectedFilter == 'Semua'
+                        // Ikon hijau jika filter bukan default
+                        color: _selectedFilter == AppConstants.txStatusPending
                             ? AppColors.textPrimary
                             : AppColors.primaryGreen,
                       ),
@@ -171,18 +165,64 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                       onSelected: (v) =>
                           setState(() => _selectedFilter = v),
                       itemBuilder: (_) => [
+                        // ─ 4 pilihan yang jelas, tanpa duplikat ──────────
+                        PopupMenuItem(
+                          value: AppConstants.txStatusPending,
+                          child: Row(
+                            children: [
+                              Icon(Icons.pending_outlined,
+                                  size: 18,
+                                  color: _selectedFilter ==
+                                          AppConstants.txStatusPending
+                                      ? AppColors.primaryGreen
+                                      : AppColors.textPrimary),
+                              const SizedBox(width: 8),
+                              const Text('Menunggu Konfirmasi'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: AppConstants.txStatusApproved,
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle_outline,
+                                  size: 18,
+                                  color: _selectedFilter ==
+                                          AppConstants.txStatusApproved
+                                      ? AppColors.primaryGreen
+                                      : AppColors.textPrimary),
+                              const SizedBox(width: 8),
+                              const Text('Sudah Disetujui'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: AppConstants.txStatusRejected,
+                          child: Row(
+                            children: [
+                              Icon(Icons.cancel_outlined,
+                                  size: 18,
+                                  color: _selectedFilter ==
+                                          AppConstants.txStatusRejected
+                                      ? AppColors.primaryGreen
+                                      : AppColors.textPrimary),
+                              const SizedBox(width: 8),
+                              const Text('Ditolak'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
                         const PopupMenuItem(
-                            value: 'Semua',
-                            child: Text('Tampilkan Semua (Pending)')),
-                        PopupMenuItem(
-                            value: AppConstants.txStatusPending,
-                            child: const Text('Menunggu Konfirmasi')),
-                        PopupMenuItem(
-                            value: AppConstants.txStatusApproved,
-                            child: const Text('Riwayat: Disetujui')),
-                        PopupMenuItem(
-                            value: AppConstants.txStatusRejected,
-                            child: const Text('Riwayat: Ditolak')),
+                          value: 'semua',
+                          child: Row(
+                            children: [
+                              Icon(Icons.list_alt_outlined,
+                                  size: 18, color: AppColors.textPrimary),
+                              SizedBox(width: 8),
+                              Text('Tampilkan Semua'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -190,7 +230,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
               ),
             ),
 
-            // ─── LIST TOP-UP ──────────────────────────────────────
+            // ─── LIST TOP-UP ─────────────────────────────────────────────
             filtered.isEmpty
                 ? SliverToBoxAdapter(
                     child: Padding(
@@ -198,13 +238,16 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                       child: Center(
                         child: Column(
                           children: [
-                            Icon(Icons.account_balance_wallet_outlined,
-                                size: 56, color: AppColors.textHint),
+                            const Icon(
+                              Icons.account_balance_wallet_outlined,
+                              size: 56,
+                              color: AppColors.textHint,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'Tidak ada permintaan top-up.',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.textSecondary),
+                              style: AppTextStyles.bodyMedium
+                                  .copyWith(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -234,7 +277,6 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                                     ud['namaLengkap'] ?? 'Customer';
                               }
 
-                              // Sembunyikan jika tidak cocok search
                               if (_searchQuery.isNotEmpty &&
                                   !namaUser
                                       .toLowerCase()
@@ -243,8 +285,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                               }
 
                               return Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: _buildTopUpCard(
                                     tx: tx, namaUser: namaUser),
                               );
@@ -263,7 +304,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
     );
   }
 
-  // ─── DASHBOARD CARD ──────────────────────────────────────────
+  // ─── DASHBOARD CARD ──────────────────────────────────────────────────────
   Widget _buildDashboardCard(int total) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -304,7 +345,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Verifikasi pembayaran customer dengan teliti!',
+                  'Verifikasi bukti transfer customer dengan teliti!',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.white.withOpacity(0.9),
                   ),
@@ -317,7 +358,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
     );
   }
 
-  // ─── TOP-UP CARD ─────────────────────────────────────────────
+  // ─── TOP-UP CARD ─────────────────────────────────────────────────────────
   Widget _buildTopUpCard({
     required Map<String, dynamic> tx,
     required String namaUser,
@@ -345,12 +386,13 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─ Header: avatar, nama, waktu, badge status ──────────────────
           Row(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.inputBackground,
-                child: const Icon(Icons.person,
+                child: Icon(Icons.person,
                     color: AppColors.textHint, size: 28),
               ),
               const SizedBox(width: 12),
@@ -377,10 +419,10 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                   ],
                 ),
               ),
-              // Status Badge
+              // Badge status dengan warna dinamis
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _colorStatus(status).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(6),
@@ -397,6 +439,8 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
             ],
           ),
           const SizedBox(height: 12),
+
+          // ─ Nominal ───────────────────────────────────────────────────
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -404,12 +448,14 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
               const SizedBox(height: 4),
               Text(
                 _formatRupiah(amount),
-                style: AppTextStyles.h3
-                    .copyWith(color: AppColors.primaryGreen),
+                style:
+                    AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+          // ─ Tombol Detail ─────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -431,9 +477,10 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                 ),
                 elevation: 0,
               ),
-              child: Text('Detail',
-                  style:
-                      AppTextStyles.buttonPrimary.copyWith(fontSize: 13)),
+              child: Text(
+                'Detail',
+                style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13),
+              ),
             ),
           ),
         ],
@@ -441,7 +488,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
     );
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────────────────
   String _labelStatus(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -450,6 +497,8 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
         return 'Disetujui';
       case 'rejected':
         return 'Ditolak';
+      case 'semua':
+        return 'Semua';
       default:
         return status;
     }
