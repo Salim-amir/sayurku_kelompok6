@@ -24,13 +24,13 @@ class OrderService {
         'status': AppConstants.statusMenunggu,
         'tanggalPesan': FieldValue.serverTimestamp(),
       });
-      return null; // Sukses
+      return null;
     } catch (e) {
       return 'Gagal membuat pesanan: ${e.toString()}';
     }
   }
 
-// ── Ambil semua pesanan untuk Admin (Bypass Index) ──
+  // ── Ambil semua pesanan untuk Admin ──
   Stream<List<Map<String, dynamic>>> getSemuaPesananAdmin() {
     return _db
         .collection(AppConstants.colOrders)
@@ -41,6 +41,10 @@ class OrderService {
             .toList());
   }
 
+  // ── Alias agar screen yang pakai getAllPesananAdmin() tidak error ──
+  Stream<List<Map<String, dynamic>>> getAllPesananAdmin() =>
+      getSemuaPesananAdmin();
+
   // ── Ambil semua pesanan milik customer tertentu ──
   Stream<List<Map<String, dynamic>>> getPesananByUser(String userId) {
     return _db
@@ -49,8 +53,6 @@ class OrderService {
         .orderBy('tanggalPesan', descending: true)
         .snapshots()
         .handleError((error) {
-      // Jika composite index belum dibuat, fallback tanpa orderBy
-      // Error FAILED_PRECONDITION berarti index belum ada
       return;
     }).map((snapshot) => snapshot.docs
             .map((doc) => {'id': doc.id, ...doc.data()})
