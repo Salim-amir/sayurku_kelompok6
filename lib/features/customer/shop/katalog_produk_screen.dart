@@ -109,7 +109,7 @@ Widget _buildAppBar(BuildContext context) {
 }
 
   // ── SEARCH BAR ──────────────────────────────────────
- Widget _buildSearchBar() {
+Widget _buildSearchBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     decoration: BoxDecoration(
@@ -118,6 +118,7 @@ Widget _buildAppBar(BuildContext context) {
     ),
     child: TextField(
       controller: _searchController,
+      autofocus: true, // ← tambah ini
       onChanged: (value) => setState(() => _searchKeyword = value),
       decoration: InputDecoration(
         border: InputBorder.none,
