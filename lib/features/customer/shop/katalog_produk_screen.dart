@@ -47,7 +47,7 @@ void initState() {
 }
 
   final List<String> _kategoriList = [
-    'Sayur Hijau', 'Buah', 'Bumbu', 'Umbi-umbian'
+    'sayur_hijau', 'buah', 'bumbu', 'umbi_umbian'
   ];
 
   final List<Map<String, dynamic>> _produk = [

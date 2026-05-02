@@ -19,16 +19,15 @@ class ProductService {
   }
 
   // ── Ambil produk berdasarkan kategori (untuk filter Katalog) ──
-  Stream<List<ProductModel>> getProdukByKategori(String kategori) {
-    return _db
-        .collection(AppConstants.colProducts)
-        .where('tersedia', isEqualTo: true)
-        .where('kategori', isEqualTo: kategori)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ProductModel.fromMap(doc.data(), doc.id))
-            .toList());
-  }
+Stream<List<ProductModel>> getProdukByKategori(String kategori) {
+  return _db
+      .collection(AppConstants.colProducts)
+      .where('kategori', isEqualTo: kategori)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => ProductModel.fromMap(doc.data(), doc.id))
+          .toList());
+}
 
   // ── Ambil detail 1 produk (untuk halaman Detail Produk) ──
   Future<ProductModel?> getDetailProduk(String productId) async {
