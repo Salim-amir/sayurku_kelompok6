@@ -27,10 +27,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-          onPressed: () {},
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'SayurKu Admin',
           style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
@@ -56,15 +53,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: AppColors.inputBorder,
-                    ),
+                    borderSide: const BorderSide(color: AppColors.inputBorder),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: AppColors.inputBorder,
-                    ),
+                    borderSide: const BorderSide(color: AppColors.inputBorder),
                   ),
                   filled: true,
                   fillColor: AppColors.inputBackground,
@@ -85,10 +78,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Daftar Produk & Stok',
-                    style: AppTextStyles.h2,
-                  ),
+                  Text('Daftar Produk & Stok', style: AppTextStyles.h2),
                   const SizedBox(height: 4),
                   Text(
                     'Kelola ketersediaan produk pertanian hari ini',
@@ -122,10 +112,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text(
-                        'Belum ada produk',
-                        style: AppTextStyles.h3,
-                      ),
+                      child: Text('Belum ada produk', style: AppTextStyles.h3),
                     ),
                   ),
                 );
@@ -136,24 +123,19 @@ class _ProductStockPageState extends State<ProductStockPage> {
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        child: _buildProductCard(products[index]),
-                      );
-                    },
-                    childCount: products.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _buildProductCard(products[index]),
+                    );
+                  }, childCount: products.length),
                 ),
               );
             },
           ),
 
           // ─ Bottom Spacing
-          SliverToBoxAdapter(
-            child: const SizedBox(height: 20),
-          ),
+          SliverToBoxAdapter(child: const SizedBox(height: 20)),
         ],
       ),
 
@@ -252,10 +234,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        product.nama,
-                        style: AppTextStyles.h3,
-                      ),
+                      child: Text(product.nama, style: AppTextStyles.h3),
                     ),
                     PopupMenuButton(
                       onSelected: (value) {
@@ -272,10 +251,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             children: [
                               const Icon(Icons.edit, size: 18),
                               const SizedBox(width: 8),
-                              Text(
-                                'Edit',
-                                style: AppTextStyles.bodySmall,
-                              ),
+                              Text('Edit', style: AppTextStyles.bodySmall),
                             ],
                           ),
                         ),
@@ -312,10 +288,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                 // ─ Price
                 Text(
-                  'Rp ${product.harga.toString().replaceAllMapped(
-                        RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-                        (match) => '${match.group(1)}.',
-                      )}/${product.satuan}',
+                  'Rp ${product.harga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match.group(1)}.')}/${product.satuan}',
                   style: AppTextStyles.h3.copyWith(
                     color: AppColors.primaryGreen,
                   ),
@@ -354,10 +327,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'STOK:',
-                        style: AppTextStyles.labelUppercase,
-                      ),
+                      Text('STOK:', style: AppTextStyles.labelUppercase),
                       Row(
                         children: [
                           Text(
@@ -365,10 +335,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             style: AppTextStyles.h3,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            product.satuan,
-                            style: AppTextStyles.bodySmall,
-                          ),
+                          Text(product.satuan, style: AppTextStyles.bodySmall),
                         ],
                       ),
                     ],
@@ -394,9 +361,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                     ),
                     child: Text(
                       'Update Stok',
-                      style: AppTextStyles.buttonPrimary.copyWith(
-                        fontSize: 14,
-                      ),
+                      style: AppTextStyles.buttonPrimary.copyWith(fontSize: 14),
                     ),
                   ),
                 ),
@@ -428,10 +393,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: AppColors.white,
-              title: Text(
-                'Tambah Produk Baru',
-                style: AppTextStyles.h3,
-              ),
+              title: Text('Tambah Produk Baru', style: AppTextStyles.h3),
               content: Form(
                 key: formKey,
                 child: SingleChildScrollView(
@@ -448,9 +410,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                           decoration: BoxDecoration(
                             color: AppColors.inputBackground,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.inputBorder,
-                            ),
+                            border: Border.all(color: AppColors.inputBorder),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -490,8 +450,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 final ImagePicker picker = ImagePicker();
-                                final XFile? image =
-                                    await picker.pickImage(
+                                final XFile? image = await picker.pickImage(
                                   source: ImageSource.gallery,
                                 );
                                 if (image != null) {
@@ -509,8 +468,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                               ),
                               child: Text(
                                 selectedImage == null ? 'Galeri' : 'Ubah',
-                                style: AppTextStyles.buttonPrimary
-                                    .copyWith(fontSize: 12),
+                                style: AppTextStyles.buttonPrimary.copyWith(
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -519,8 +479,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 final ImagePicker picker = ImagePicker();
-                                final XFile? image =
-                                    await picker.pickImage(
+                                final XFile? image = await picker.pickImage(
                                   source: ImageSource.camera,
                                 );
                                 if (image != null) {
@@ -538,8 +497,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                               ),
                               child: Text(
                                 'Kamera',
-                                style: AppTextStyles.buttonPrimary
-                                    .copyWith(fontSize: 12),
+                                style: AppTextStyles.buttonPrimary.copyWith(
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -730,8 +690,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                         decoration: InputDecoration(
                           labelText: 'Deskripsi Sayuran',
                           labelStyle: AppTextStyles.bodySmall,
-                          hintText:
-                              'Ketikkan informasi tentang sayuran ini...',
+                          hintText: 'Ketikkan informasi tentang sayuran ini...',
                           hintStyle: AppTextStyles.inputHint,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -762,10 +721,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Batal',
-                    style: AppTextStyles.link,
-                  ),
+                  child: Text('Batal', style: AppTextStyles.link),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -775,8 +731,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                         // ✅ Upload gambar jika ada
                         if (selectedImage != null && !kIsWeb) {
-                          imageUrl = await _productService
-                              .uploadImage(selectedImage!);
+                          imageUrl = await _productService.uploadImage(
+                            selectedImage!,
+                          );
                         }
 
                         await _productService.addProduct(
@@ -833,10 +790,10 @@ class _ProductStockPageState extends State<ProductStockPage> {
   // ─── DIALOG UPDATE PRODUK ──────────────────────────────
   void _showUpdateProductDialog(ProductModel product) {
     final namaController = TextEditingController(text: product.nama);
-    final hargaController =
-        TextEditingController(text: product.harga.toString());
-    final deskripsiController =
-        TextEditingController(text: product.deskripsi);
+    final hargaController = TextEditingController(
+      text: product.harga.toString(),
+    );
+    final deskripsiController = TextEditingController(text: product.deskripsi);
     final formKey = GlobalKey<FormState>();
 
     String selectedKategori = product.kategori;
@@ -869,9 +826,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                         decoration: BoxDecoration(
                           color: AppColors.inputBackground,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.inputBorder,
-                          ),
+                          border: Border.all(color: AppColors.inputBorder),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -927,9 +882,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              Container(
-                                color: Colors.black.withOpacity(0.3),
-                              ),
+                              Container(color: Colors.black.withOpacity(0.3)),
                               Icon(
                                 Icons.edit,
                                 color: AppColors.white,
@@ -950,8 +903,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 final ImagePicker picker = ImagePicker();
-                                final XFile? image =
-                                    await picker.pickImage(
+                                final XFile? image = await picker.pickImage(
                                   source: ImageSource.gallery,
                                 );
                                 if (image != null) {
@@ -969,8 +921,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                               ),
                               child: Text(
                                 'Ubah Gambar',
-                                style: AppTextStyles.buttonPrimary
-                                    .copyWith(fontSize: 12),
+                                style: AppTextStyles.buttonPrimary.copyWith(
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -994,8 +947,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             ),
                             child: Text(
                               'Hapus',
-                              style: AppTextStyles.buttonPrimary
-                                  .copyWith(fontSize: 12),
+                              style: AppTextStyles.buttonPrimary.copyWith(
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -1022,8 +976,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                         ),
                         child: Text(
                           'Pilih Gambar',
-                          style: AppTextStyles.buttonPrimary
-                              .copyWith(fontSize: 12),
+                          style: AppTextStyles.buttonPrimary.copyWith(
+                            fontSize: 12,
+                          ),
                         ),
                       ),
 
@@ -1144,10 +1099,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Batal',
-                  style: AppTextStyles.link,
-                ),
+                child: Text('Batal', style: AppTextStyles.link),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -1157,8 +1109,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       // ✅ Upload gambar baru jika ada
                       if (selectedImage != null && !kIsWeb) {
-                        imageUrl = await _productService
-                            .uploadImage(selectedImage!);
+                        imageUrl = await _productService.uploadImage(
+                          selectedImage!,
+                        );
                       }
 
                       await _productService.updateProduct(
@@ -1214,18 +1167,13 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
   // ─── DIALOG UPDATE STOK ────────────────────────────────
   void _showUpdateStockDialog(ProductModel product) {
-    final stokController = TextEditingController(
-      text: product.stok.toString(),
-    );
+    final stokController = TextEditingController(text: product.stok.toString());
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.white,
-        title: Text(
-          'Update Stok - ${product.nama}',
-          style: AppTextStyles.h3,
-        ),
+        title: Text('Update Stok - ${product.nama}', style: AppTextStyles.h3),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1239,15 +1187,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                 suffixText: product.satuan,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: AppColors.inputBorder,
-                  ),
+                  borderSide: const BorderSide(color: AppColors.inputBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: AppColors.inputBorder,
-                  ),
+                  borderSide: const BorderSide(color: AppColors.inputBorder),
                 ),
               ),
               style: AppTextStyles.inputText,
@@ -1262,10 +1206,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Batal',
-              style: AppTextStyles.link,
-            ),
+            child: Text('Batal', style: AppTextStyles.link),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1301,10 +1242,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
               ),
               elevation: 0,
             ),
-            child: Text(
-              'Simpan',
-              style: AppTextStyles.buttonPrimary,
-            ),
+            child: Text('Simpan', style: AppTextStyles.buttonPrimary),
           ),
         ],
       ),
@@ -1317,10 +1255,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.white,
-        title: Text(
-          'Hapus Produk?',
-          style: AppTextStyles.h3,
-        ),
+        title: Text('Hapus Produk?', style: AppTextStyles.h3),
         content: Text(
           'Apakah Anda yakin ingin menghapus "${product.nama}"?',
           style: AppTextStyles.bodyMedium,
@@ -1330,10 +1265,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text(
-              'Batal',
-              style: AppTextStyles.link,
-            ),
+            child: Text('Batal', style: AppTextStyles.link),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1350,9 +1282,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    '${product.nama} berhasil dihapus',
-                  ),
+                  content: Text('${product.nama} berhasil dihapus'),
                   backgroundColor: AppColors.error,
                   duration: const Duration(seconds: 2),
                 ),

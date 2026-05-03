@@ -199,12 +199,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Verifikasi Antrean',
           style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),

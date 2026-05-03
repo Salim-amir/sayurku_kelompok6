@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
 import 'package:sayurku_kelompok6/core/text_styles.dart';
 import 'package:sayurku_kelompok6/core/constants.dart';
-import 'edit_data_admin_screen.dart'; 
+import 'edit_data_admin_screen.dart';
 import '../../customer/profile/ganti_password_screen.dart';
 
 class ProfilAdminScreen extends StatelessWidget {
@@ -36,12 +36,7 @@ class ProfilAdminScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.primaryGreen),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+        automaticallyImplyLeading: false, 
         title: Text(
           'Profil Admin',
           style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
@@ -50,14 +45,19 @@ class ProfilAdminScreen extends StatelessWidget {
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: user != null
-            ? FirebaseFirestore.instance.collection(AppConstants.colUsers).doc(user.uid).snapshots()
+            ? FirebaseFirestore.instance
+                  .collection(AppConstants.colUsers)
+                  .doc(user.uid)
+                  .snapshots()
             : const Stream.empty(),
         builder: (context, userSnapshot) {
           String namaAdmin = 'Memuat...';
           String noHpAdmin = '';
           String emailAdmin = user?.email ?? 'admin@sayurku.com';
 
-          if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.exists) {
+          if (userSnapshot.hasData &&
+              userSnapshot.data != null &&
+              userSnapshot.data!.exists) {
             final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
             if (userData != null) {
               namaAdmin = userData['namaLengkap'] ?? 'Admin SayurKu';
@@ -74,34 +74,52 @@ class ProfilAdminScreen extends StatelessWidget {
               return StreamBuilder<List<Map<String, dynamic>>>(
                 stream: topUpStream,
                 builder: (context, topUpSnapshot) {
-                  final bool isOrderLoading = orderSnapshot.connectionState == ConnectionState.waiting && !orderSnapshot.hasData;
-                  final bool isTopUpLoading = topUpSnapshot.connectionState == ConnectionState.waiting && !topUpSnapshot.hasData;
+                  final bool isOrderLoading =
+                      orderSnapshot.connectionState ==
+                          ConnectionState.waiting &&
+                      !orderSnapshot.hasData;
+                  final bool isTopUpLoading =
+                      topUpSnapshot.connectionState ==
+                          ConnectionState.waiting &&
+                      !topUpSnapshot.hasData;
 
                   if (isOrderLoading || isTopUpLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
                     );
                   }
 
                   final allOrders = orderSnapshot.data ?? [];
                   final allTopUps = topUpSnapshot.data ?? [];
 
-                  int totalTransaksi = allOrders.where((o) => (o['status'] ?? '').toString().toLowerCase() != 'dibatalkan').length;
+                  int totalTransaksi = allOrders
+                      .where(
+                        (o) =>
+                            (o['status'] ?? '').toString().toLowerCase() !=
+                            'dibatalkan',
+                      )
+                      .length;
                   List<Map<String, dynamic>> unreadNotifs = [];
 
                   for (var order in allOrders) {
                     final String orderId = order['id'] ?? '';
-                    final status = (order['status'] ?? '').toString().toLowerCase();
+                    final status = (order['status'] ?? '')
+                        .toString()
+                        .toLowerCase();
                     final timestamp = order['tanggalPesan'] as Timestamp?;
 
-                    if (status == 'menunggu konfirmasi' || status == 'diproses') {
+                    if (status == 'menunggu konfirmasi' ||
+                        status == 'diproses') {
                       if (!hiddenNotifs.contains(orderId)) {
                         unreadNotifs.add({
                           'type': 'order',
                           'id': orderId,
                           'userId': order['userId'],
                           'title': 'Pesanan Perlu Diproses',
-                          'subtitle': 'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
+                          'subtitle':
+                              'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
                           'timestamp': timestamp,
                           'icon': Icons.shopping_bag,
                           'color': const Color(0xFFE67E22),
@@ -113,9 +131,12 @@ class ProfilAdminScreen extends StatelessWidget {
                   for (var tx in allTopUps) {
                     final String txId = tx['id'] ?? '';
                     final String docPath = tx['docPath'] ?? '';
-                    final status = (tx['status'] ?? '').toString().toLowerCase();
+                    final status = (tx['status'] ?? '')
+                        .toString()
+                        .toLowerCase();
 
-                    if (status == 'pending' || status == AppConstants.txStatusPending.toLowerCase()) {
+                    if (status == 'pending' ||
+                        status == AppConstants.txStatusPending.toLowerCase()) {
                       if (!hiddenNotifs.contains(txId)) {
                         unreadNotifs.add({
                           'type': 'topup',
@@ -123,7 +144,8 @@ class ProfilAdminScreen extends StatelessWidget {
                           'userId': tx['userId'],
                           'docPath': docPath,
                           'title': 'Permintaan Isi Saldo',
-                          'subtitle': 'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
+                          'subtitle':
+                              'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
                           'timestamp': tx['timestamp'],
                           'icon': Icons.account_balance_wallet,
                           'color': AppColors.primaryGreen,
@@ -155,37 +177,67 @@ class ProfilAdminScreen extends StatelessWidget {
                               height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
                                 color: Colors.grey.shade300,
                                 image: const DecorationImage(
-                                  image: AssetImage('assets/images/default_avatar.png'),
+                                  image: AssetImage(
+                                    'assets/images/default_avatar.png',
+                                  ),
                                   fit: BoxFit.cover,
                                 ),
                               ),
-                              child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                              child: const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey,
+                              ),
                             ),
                             Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
                               child: Container(
                                 padding: const EdgeInsets.all(2),
-                                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-                                child: const Icon(Icons.check, color: Colors.white, size: 12),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Text(namaAdmin, style: AppTextStyles.h2.copyWith(fontSize: 24)),
+                        Text(
+                          namaAdmin,
+                          style: AppTextStyles.h2.copyWith(fontSize: 24),
+                        ),
                         const SizedBox(height: 4),
-                        Text(role, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          role,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
 
                         const SizedBox(height: 32),
 
                         // ── 2. CARD TOTAL TRANSAKSI ──
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5EF),
                             borderRadius: BorderRadius.circular(16),
@@ -195,12 +247,21 @@ class ProfilAdminScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'TOTAL TRANSAKSI',
-                                style: AppTextStyles.labelUppercase.copyWith(color: AppColors.textSecondary, letterSpacing: 1.0),
+                                style: AppTextStyles.labelUppercase.copyWith(
+                                  color: AppColors.textSecondary,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                totalTransaksi.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},'),
-                                style: AppTextStyles.h2.copyWith(fontSize: 22, color: AppColors.primaryGreen),
+                                totalTransaksi.toString().replaceAllMapped(
+                                  RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+                                  (m) => '${m[1]},',
+                                ),
+                                style: AppTextStyles.h2.copyWith(
+                                  fontSize: 22,
+                                  color: AppColors.primaryGreen,
+                                ),
                               ),
                             ],
                           ),
@@ -213,7 +274,10 @@ class ProfilAdminScreen extends StatelessWidget {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'MANAJEMEN',
-                            style: AppTextStyles.labelUppercase.copyWith(color: AppColors.textSecondary, letterSpacing: 1.0),
+                            style: AppTextStyles.labelUppercase.copyWith(
+                              color: AppColors.textSecondary,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -223,7 +287,11 @@ class ProfilAdminScreen extends StatelessWidget {
                             color: AppColors.white,
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
                             ],
                           ),
                           child: Column(
@@ -232,7 +300,9 @@ class ProfilAdminScreen extends StatelessWidget {
                                 icon: Icons.person_rounded,
                                 label: 'Edit Data Diri',
                                 iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(0.1),
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -254,7 +324,9 @@ class ProfilAdminScreen extends StatelessWidget {
                                 icon: Icons.notifications_none_rounded,
                                 label: 'Notifikasi',
                                 iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(0.1),
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
                                 onTap: () {
                                   onShowNotifications(unreadNotifs);
                                 },
@@ -266,10 +338,14 @@ class ProfilAdminScreen extends StatelessWidget {
                                 icon: Icons.lock_outline_rounded,
                                 label: 'Ganti Password',
                                 iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(0.1),
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
                                 onTap: () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const GantiPasswordScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const GantiPasswordScreen(),
+                                  ),
                                 ),
                               ),
                               _buildDivider(),
@@ -322,7 +398,10 @@ class ProfilAdminScreen extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Icon(icon, color: iconColor, size: 22),
                 ),
                 if (hasBadge)
@@ -332,7 +411,10 @@ class ProfilAdminScreen extends StatelessWidget {
                     child: Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
               ],
@@ -341,12 +423,19 @@ class ProfilAdminScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600, color: textColor ?? AppColors.textPrimary),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: textColor ?? AppColors.textPrimary,
+                ),
               ),
             ),
             Icon(
-              isLogout ? Icons.exit_to_app_rounded : Icons.chevron_right_rounded,
-              color: isLogout ? AppColors.error.withOpacity(0.5) : AppColors.textHint,
+              isLogout
+                  ? Icons.exit_to_app_rounded
+                  : Icons.chevron_right_rounded,
+              color: isLogout
+                  ? AppColors.error.withOpacity(0.5)
+                  : AppColors.textHint,
               size: 24,
             ),
           ],
