@@ -463,99 +463,232 @@ String _formatHarga(int harga) {
 
   // ── PRODUK SECTION (FIREBASE) ───────────────────────
   Widget _buildProdukSection() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Produk Segar', style: AppTextStyles.h3),
-          ],
-        ),
-        const SizedBox(height: 14),
-        StreamBuilder<List<ProductModel>>(
-          stream: _productService.getSemuaProduk(),
-          builder: (context, snapshot) {
-            // Loading
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryGreen,
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            }
-            // Error
-            if (snapshot.hasError) {
-              return Center(
-                child: Text('Gagal memuat produk',
-                    style: AppTextStyles.bodyMedium),
-              );
-            }
-            // Kosong
-            final produkList = snapshot.data ?? [];
-            if (produkList.isEmpty) {
-              return Center(
-                child: Text('Belum ada produk tersedia',
-                    style: AppTextStyles.bodyMedium),
-              );
-            }
-            // Tampilkan produk
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 0.72,
+                child: const Icon(Icons.eco_rounded,
+                    color: AppColors.primaryGreen, size: 18),
               ),
-              itemCount: produkList.length,
-              itemBuilder: (context, index) {
-                final produk = produkList[index];
-                return ProductCard(
-                  imagePath: produk.imageUrl,
-                  name: produk.nama,
-                  price: produk.harga.toInt(),
-                  unit: produk.satuan,
-                  isAvailable: produk.tersedia,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DetailProdukScreen(
-                        produk: {
-                          'id': produk.id,
-                          'nama': produk.nama,
-                          'harga': produk.harga.toInt(),
-                          'satuan': produk.satuan,
-                          'imageUrl': produk.imageUrl,
-                          'tersedia': produk.tersedia,
-                        },
-                      ),
+              const SizedBox(width: 8),
+              Text('Produk Segar', style: AppTextStyles.h3),
+            ],
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
+            ),
+            child: Text('Lihat Semua',
+                style: AppTextStyles.link.copyWith(fontSize: 13)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      StreamBuilder<List<ProductModel>>(
+        stream: _productService.getSemuaProduk(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Gagal memuat produk',
+                  style: AppTextStyles.bodyMedium),
+            );
+          }
+          final produkList = snapshot.data ?? [];
+          if (produkList.isEmpty) {
+            return Center(
+              child: Text('Belum ada produk tersedia',
+                  style: AppTextStyles.bodyMedium),
+            );
+          }
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 0.78,
+            ),
+            itemCount: produkList.length,
+            itemBuilder: (context, index) {
+              final produk = produkList[index];
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetailProdukScreen(
+                      produk: {
+                        'id': produk.id,
+                        'nama': produk.nama,
+                        'harga': produk.harga,
+                        'satuan': produk.satuan,
+                        'imageUrl': produk.imageUrl,
+                        'tersedia': produk.tersedia,
+                      },
                     ),
                   ),
-                  onAddToCart: () {
-  CartManager.instance.tambahProduk({
-    'nama': produk.nama,
-    'harga': produk.harga.toInt(),
-    'satuan': produk.satuan,
-    'imageUrl': produk.imageUrl,
-  }, 1);
-  setState(() {});
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('${produk.nama} ditambahkan ke keranjang!'),
-      backgroundColor: AppColors.primaryGreen,
-      duration: const Duration(seconds: 2),
-    ),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Foto
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                            child: produk.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    produk.imageUrl,
+                                    width: double.infinity,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      height: 120,
+                                      color: AppColors.inputBackground,
+                                      child: const Center(
+                                        child: Icon(Icons.eco_rounded,
+                                            color: AppColors.primaryGreen,
+                                            size: 40),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    height: 120,
+                                    color: AppColors.inputBackground,
+                                    child: const Center(
+                                      child: Icon(Icons.eco_rounded,
+                                          color: AppColors.primaryGreen,
+                                          size: 40),
+                                    ),
+                                  ),
+                          ),
+                          // Badge tersedia/habis
+                          if (!produk.tersedia)
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(20)),
+                                child: Container(
+                                  color: Colors.black.withOpacity(0.4),
+                                  child: const Center(
+                                    child: Text('Habis',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      // Info
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              produk.nama,
+                              style: AppTextStyles.bodyMedium
+                                  .copyWith(fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '/ ${produk.satuan}',
+                              style: AppTextStyles.caption,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Rp ${_formatHarga(produk.harga)}',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.primaryGreen,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                                GestureDetector(
+                                  onTap: produk.tersedia
+                                      ? () {
+                                          CartManager.instance.tambahProduk({
+                                            'nama': produk.nama,
+                                            'harga': produk.harga,
+                                            'satuan': produk.satuan,
+                                            'imageUrl': produk.imageUrl,
+                                          }, 1);
+                                          setState(() {});
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  '${produk.nama} ditambahkan!'),
+                                              backgroundColor:
+                                                  AppColors.primaryGreen,
+                                              duration: const Duration(
+                                                  seconds: 1),
+                                            ),
+                                          );
+                                        }
+                                      : null,
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: produk.tersedia
+                                          ? AppColors.primaryGreen
+                                          : AppColors.divider,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.add_rounded,
+                                        color: AppColors.white, size: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    ],
   );
-},
-                );
-              },
-            );
-          },
-        ),
-      ],
-    );
-  }
+}
 
   // ── BOTTOM NAV ──────────────────────────────────────
   Widget _buildBottomNav() {
