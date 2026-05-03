@@ -10,6 +10,9 @@ import 'package:sayurku_kelompok6/features/admin/verification/detail_topup_scree
 import '../../../services/auth_service.dart';
 import '../../../services/order_service.dart';
 import '../../../services/wallet_service.dart';
+import '../../customer/profile/ganti_password_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../customer/profile/edit_profil_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -20,7 +23,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
-  String _chartFilter = 'Mingguan'; 
+  String _chartFilter = 'Mingguan';
 
   Stream<List<Map<String, dynamic>>>? _ordersStream;
   Stream<List<Map<String, dynamic>>>? _topUpStream;
@@ -38,8 +41,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── HELPER FORMAT & TANGGAL ───
   String _getCurrentDate() {
     final date = DateTime.now();
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    const days = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+    ];
     return '${days[date.weekday % 7]}, ${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
@@ -66,22 +90,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); 
-              await AuthService().logoutUser(); 
+              Navigator.pop(context);
+              await AuthService().logoutUser();
               if (!mounted) return;
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               elevation: 0,
             ),
-            child: const Text('Ya, Logout', style: TextStyle(color: AppColors.white)),
+            child: const Text(
+              'Ya, Logout',
+              style: TextStyle(color: AppColors.white),
+            ),
           ),
         ],
       ),
@@ -107,11 +143,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   // Header Panel
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.white,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,16 +168,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           TextButton(
                             onPressed: () {
                               setState(() {
-                                for (var n in notifs) _hiddenNotifs.add(n['id']);
+                                for (var n in notifs)
+                                  _hiddenNotifs.add(n['id']);
                               });
                               setSheetState(() => notifs.clear());
                             },
-                            child: Text('Tandai Dibaca', style: AppTextStyles.caption.copyWith(color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
-                          )
+                            child: Text(
+                              'Tandai Dibaca',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  
+
                   // List Notifikasi
                   Expanded(
                     child: notifs.isEmpty
@@ -138,9 +192,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.notifications_off_outlined, size: 64, color: AppColors.textHint),
+                                const Icon(
+                                  Icons.notifications_off_outlined,
+                                  size: 64,
+                                  color: AppColors.textHint,
+                                ),
                                 const SizedBox(height: 16),
-                                Text('Tidak ada notifikasi baru', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                                Text(
+                                  'Tidak ada notifikasi baru',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -149,42 +212,52 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             itemCount: notifs.length,
                             itemBuilder: (context, index) {
                               final notif = notifs[index];
-                              
+
                               return Dismissible(
                                 key: Key(notif['id']),
                                 direction: DismissDirection.horizontal,
                                 onDismissed: (direction) {
-                                  setState(() => _hiddenNotifs.add(notif['id']));
+                                  setState(
+                                    () => _hiddenNotifs.add(notif['id']),
+                                  );
                                   setSheetState(() => notifs.removeAt(index));
                                 },
                                 background: Container(
                                   margin: const EdgeInsets.only(bottom: 12),
-                                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(12)),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   alignment: Alignment.centerRight,
                                   padding: const EdgeInsets.only(right: 20),
-                                  child: const Icon(Icons.delete, color: AppColors.white),
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: AppColors.white,
+                                  ),
                                 ),
-                                // 👇 BISA DIKLIK DAN REDIRECT 👇
                                 child: InkWell(
                                   onTap: () {
-                                    Navigator.pop(context); // Tutup Bottom Sheet
-                                    
+                                    Navigator.pop(context);
+
                                     if (notif['type'] == 'order') {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => DetailPesananScreen(orderId: notif['id']),
+                                          builder: (_) => DetailPesananScreen(
+                                            orderId: notif['id'],
+                                          ),
                                         ),
                                       );
                                     } else if (notif['type'] == 'topup') {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => DetailVerifikasiTopupScreen(
-                                            txId: notif['id'],
-                                            userId: notif['userId'],
-                                            docPath: notif['docPath'],
-                                          ),
+                                          builder: (_) =>
+                                              DetailVerifikasiTopupScreen(
+                                                txId: notif['id'],
+                                                userId: notif['userId'],
+                                                docPath: notif['docPath'],
+                                              ),
                                         ),
                                       );
                                     }
@@ -195,30 +268,63 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     decoration: BoxDecoration(
                                       color: AppColors.white,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.inputBorder, width: 0.5),
+                                      border: Border.all(
+                                        color: AppColors.inputBorder,
+                                        width: 0.5,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(color: notif['color'].withOpacity(0.1), shape: BoxShape.circle),
-                                          child: Icon(notif['icon'], color: notif['color'], size: 24),
+                                          decoration: BoxDecoration(
+                                            color: notif['color'].withOpacity(
+                                              0.1,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            notif['icon'],
+                                            color: notif['color'],
+                                            size: 24,
+                                          ),
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text(notif['title'], style: AppTextStyles.h3.copyWith(fontSize: 14)),
+                                              Text(
+                                                notif['title'],
+                                                style: AppTextStyles.h3
+                                                    .copyWith(fontSize: 14),
+                                              ),
                                               const SizedBox(height: 4),
-                                              Text(notif['subtitle'], style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                                              Text(
+                                                notif['subtitle'],
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                    ),
+                                              ),
                                               const SizedBox(height: 6),
-                                              Text(_getTimeAgo(notif['timestamp']), style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 10)),
+                                              Text(
+                                                _getTimeAgo(notif['timestamp']),
+                                                style: AppTextStyles.caption
+                                                    .copyWith(
+                                                      color: AppColors.textHint,
+                                                      fontSize: 10,
+                                                    ),
+                                              ),
                                             ],
                                           ),
                                         ),
-                                        // Panah indikator bisa diklik
-                                        const Icon(Icons.chevron_right, color: AppColors.textHint),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: AppColors.textHint,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -236,32 +342,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─── PAGE ROUTER ───
-  Widget _getBody() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildDashboardPage();
-      case 1:
-        return OrderVerificationPage(
-          onMenuTap: (index) => setState(() => _selectedIndex = index),
-        );
-      case 2:
-        return const ProductStockPage();
-      case 3:
-        return _buildProfilPage();
-      default:
-        return _buildDashboardPage();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _getBody(),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _buildDashboardPage(),
+          OrderVerificationPage(
+            onMenuTap: (index) => setState(() => _selectedIndex = index),
+          ),
+          const ProductStockPage(),
+          _buildProfilPage(),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: BottomNavigationBar(
           backgroundColor: AppColors.white,
@@ -272,10 +376,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
           elevation: 0,
           onTap: (index) => setState(() => _selectedIndex = index),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.verified_user_outlined), activeIcon: Icon(Icons.verified_user), label: 'Verifikasi'),
-            BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), activeIcon: Icon(Icons.shopping_bag), label: 'Produk'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profil'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.verified_user_outlined),
+              activeIcon: Icon(Icons.verified_user),
+              label: 'Verifikasi',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag_outlined),
+              activeIcon: Icon(Icons.shopping_bag),
+              label: 'Produk',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profil',
+            ),
           ],
         ),
       ),
@@ -300,16 +420,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const CircleAvatar(
                   backgroundColor: AppColors.white,
                   radius: 30,
-                  child: Icon(Icons.person, color: AppColors.primaryGreen, size: 35),
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.primaryGreen,
+                    size: 35,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text('Admin SayurKu', style: AppTextStyles.h3.copyWith(color: AppColors.white)),
-                Text('Pusat Kendali Toko', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white.withOpacity(0.8))),
+                Text(
+                  'Admin SayurKu',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.white),
+                ),
+                Text(
+                  'Pusat Kendali Toko',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.white.withOpacity(0.8),
+                  ),
+                ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard_outlined, color: AppColors.textPrimary),
+            leading: const Icon(
+              Icons.dashboard_outlined,
+              color: AppColors.textPrimary,
+            ),
             title: const Text('Dashboard'),
             onTap: () {
               Navigator.pop(context);
@@ -317,7 +452,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified_user_outlined, color: AppColors.textPrimary),
+            leading: const Icon(
+              Icons.verified_user_outlined,
+              color: AppColors.textPrimary,
+            ),
             title: const Text('Verifikasi'),
             onTap: () {
               Navigator.pop(context);
@@ -325,7 +463,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.shopping_bag_outlined, color: AppColors.textPrimary),
+            leading: const Icon(
+              Icons.shopping_bag_outlined,
+              color: AppColors.textPrimary,
+            ),
             title: const Text('Produk'),
             onTap: () {
               Navigator.pop(context);
@@ -335,10 +476,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Logout', style: TextStyle(color: AppColors.error)),
+            title: const Text(
+              'Logout',
+              style: TextStyle(color: AppColors.error),
+            ),
             onTap: () {
-              Navigator.pop(context); 
-              _showLogoutDialog(); 
+              Navigator.pop(context);
+              _showLogoutDialog();
             },
           ),
         ],
@@ -350,13 +494,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
   // ─── 1. DASHBOARD PAGE (DINAMIS & REAL-TIME) ─────────────────
   // ─────────────────────────────────────────────────────────────
   Widget _buildDashboardPage() {
-    // Scaffold pembungkus Stream untuk menyelesaikan bug Sidebar macet
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _ordersStream,
       builder: (context, orderSnapshot) {
         return StreamBuilder<List<Map<String, dynamic>>>(
           stream: _topUpStream,
           builder: (context, topUpSnapshot) {
+            final bool isOrderLoading =
+                orderSnapshot.connectionState == ConnectionState.waiting &&
+                !orderSnapshot.hasData;
+            final bool isTopUpLoading =
+                topUpSnapshot.connectionState == ConnectionState.waiting &&
+                !topUpSnapshot.hasData;
+
+            if (isOrderLoading || isTopUpLoading) {
+              return Scaffold(
+                backgroundColor: AppColors.background,
+                drawer: _buildAdminDrawer(),
+                appBar: AppBar(
+                  backgroundColor: AppColors.white,
+                  elevation: 0,
+                  leading: Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(
+                        Icons.menu,
+                        color: AppColors.textPrimary,
+                      ),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                  title: Text(
+                    'SayurKu Admin',
+                    style: AppTextStyles.h3.copyWith(
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  centerTitle: false,
+                ),
+                body: const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              );
+            }
+
             final allOrders = orderSnapshot.data ?? [];
             final allTopUps = topUpSnapshot.data ?? [];
 
@@ -365,11 +547,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
             int pendingTopUps = 0;
             double revenueToday = 0;
             double revenueTotalFiltered = 0;
-            
+
             List<Map<String, dynamic>> unreadNotifs = [];
 
             final now = DateTime.now();
-            List<double> chartData = _chartFilter == 'Mingguan' ? List.filled(7, 0.0) : List.filled(6, 0.0);
+            List<double> chartData = _chartFilter == 'Mingguan'
+                ? List.filled(7, 0.0)
+                : List.filled(6, 0.0);
 
             for (var order in allOrders) {
               final String orderId = order['id'] ?? '';
@@ -379,15 +563,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
               if (status != 'selesai' && status != 'dibatalkan') {
                 activeOrders++;
-                
+
                 if (status == 'menunggu konfirmasi' || status == 'diproses') {
                   if (!_hiddenNotifs.contains(orderId)) {
                     unreadNotifs.add({
                       'type': 'order',
                       'id': orderId,
-                      'userId': order['userId'], // Ditambahkan agar tidak error
+                      'userId': order['userId'],
                       'title': 'Pesanan Perlu Diproses',
-                      'subtitle': 'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
+                      'subtitle':
+                          'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
                       'timestamp': timestamp,
                       'icon': Icons.shopping_bag,
                       'color': const Color(0xFFE67E22),
@@ -399,7 +584,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                 if (timestamp != null) {
                   final date = timestamp.toDate();
-                  if (date.year == now.year && date.month == now.month && date.day == now.day) {
+                  if (date.year == now.year &&
+                      date.month == now.month &&
+                      date.day == now.day) {
                     revenueToday += harga;
                   }
                   if (_chartFilter == 'Mingguan') {
@@ -409,7 +596,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       chartData[dayIndex] += harga;
                     }
                   } else {
-                    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+                    if (date.year == now.year &&
+                        date.month == now.month &&
+                        date.day == now.day) {
                       revenueTotalFiltered += harga;
                       int interval = date.hour ~/ 4;
                       if (interval >= 0 && interval < 6) {
@@ -423,20 +612,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
             for (var tx in allTopUps) {
               final String txId = tx['id'] ?? '';
-              final String docPath = tx['docPath'] ?? ''; // Diambil untuk DetailVerifikasiTopupScreen
+              final String docPath = tx['docPath'] ?? '';
               final status = (tx['status'] ?? '').toString().toLowerCase();
-              
-              if (status == 'pending' || status == AppConstants.txStatusPending.toLowerCase()) {
+
+              if (status == 'pending' ||
+                  status == AppConstants.txStatusPending.toLowerCase()) {
                 pendingTopUps++;
-                
+
                 if (!_hiddenNotifs.contains(txId)) {
                   unreadNotifs.add({
                     'type': 'topup',
                     'id': txId,
                     'userId': tx['userId'],
-                    'docPath': docPath, // Dikirim ke bottom sheet
+                    'docPath': docPath,
                     'title': 'Permintaan Isi Saldo',
-                    'subtitle': 'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
+                    'subtitle':
+                        'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
                     'timestamp': tx['timestamp'],
                     'icon': Icons.account_balance_wallet,
                     'color': AppColors.primaryGreen,
@@ -454,11 +645,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
             bool hasUnreadNotifications = unreadNotifs.isNotEmpty;
 
-            // 👇 KUNCI SIDEBAR BEKERJA: Scaffold harus diletakkan di SINI 👇
             return Scaffold(
-               backgroundColor: AppColors.background,
-               drawer: _buildAdminDrawer(),
-               appBar: AppBar(
+              backgroundColor: AppColors.background,
+              drawer: _buildAdminDrawer(),
+              appBar: AppBar(
                 backgroundColor: AppColors.white,
                 elevation: 0,
                 leading: Builder(
@@ -467,36 +657,44 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
                 ),
-                title: Text('SayurKu Admin', style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+                title: Text(
+                  'SayurKu Admin',
+                  style: AppTextStyles.h3.copyWith(
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
                 centerTitle: false,
                 actions: [
-                   Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
-                            onPressed: () {
-                              _showNotificationSheet(unreadNotifs);
-                            },
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            color: AppColors.textPrimary,
                           ),
-                          if (hasUnreadNotifications)
-                            Positioned(
-                              right: 12,
-                              top: 12,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
-                                ),
+                          onPressed: () {
+                            _showNotificationSheet(unreadNotifs);
+                          },
+                        ),
+                        if (hasUnreadNotifications)
+                          Positioned(
+                            right: 12,
+                            top: 12,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                ]
+                  ),
+                ],
               ),
               body: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -509,9 +707,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Halo, Admin!', style: AppTextStyles.h2.copyWith(fontSize: 24)),
+                            Text(
+                              'Halo, Admin!',
+                              style: AppTextStyles.h2.copyWith(fontSize: 24),
+                            ),
                             const SizedBox(height: 4),
-                            Text(_getCurrentDate(), style: AppTextStyles.bodySmall),
+                            Text(
+                              _getCurrentDate(),
+                              style: AppTextStyles.bodySmall,
+                            ),
                           ],
                         ),
                         GestureDetector(
@@ -520,8 +724,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           },
                           child: Container(
                             padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen, width: 2)),
-                            child: const CircleAvatar(backgroundColor: AppColors.inputBackground, child: Icon(Icons.person, color: AppColors.primaryGreen)),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primaryGreen,
+                                width: 2,
+                              ),
+                            ),
+                            child: const CircleAvatar(
+                              backgroundColor: AppColors.inputBackground,
+                              child: Icon(
+                                Icons.person,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -530,17 +746,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                     Row(
                       children: [
-                        Expanded(child: _buildQuickStatCard(Icons.payments_outlined, _formatRupiah(revenueToday), 'Pendapatan Hari Ini', AppColors.success)),
+                        Expanded(
+                          child: _buildQuickStatCard(
+                            Icons.payments_outlined,
+                            _formatRupiah(revenueToday),
+                            'Pendapatan Hari Ini',
+                            AppColors.success,
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickStatCard(Icons.shopping_bag_outlined, '$activeOrders', 'Pesanan Aktif', const Color(0xFFE67E22))),
+                        Expanded(
+                          child: _buildQuickStatCard(
+                            Icons.shopping_bag_outlined,
+                            '$activeOrders',
+                            'Pesanan Aktif',
+                            const Color(0xFFE67E22),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: _buildQuickStatCard(Icons.account_balance_wallet_outlined, '$pendingTopUps', 'Antrean Top-Up', AppColors.primaryGreen)),
+                        Expanded(
+                          child: _buildQuickStatCard(
+                            Icons.account_balance_wallet_outlined,
+                            '$pendingTopUps',
+                            'Antrean Top-Up',
+                            AppColors.primaryGreen,
+                          ),
+                        ),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildQuickStatCard(Icons.check_circle_outline, '$completedOrders', 'Pesanan Selesai', AppColors.textPrimary)),
+                        Expanded(
+                          child: _buildQuickStatCard(
+                            Icons.check_circle_outline,
+                            '$completedOrders',
+                            'Pesanan Selesai',
+                            AppColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -548,7 +792,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(child: _buildSectionTitle('Grafik Penjualan', Icons.analytics)),
+                        Expanded(
+                          child: _buildSectionTitle(
+                            'Grafik Penjualan',
+                            Icons.analytics,
+                          ),
+                        ),
                         _buildChartToggle(),
                       ],
                     ),
@@ -584,32 +833,62 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(title, style: AppTextStyles.h3, overflow: TextOverflow.ellipsis),
+          child: Text(
+            title,
+            style: AppTextStyles.h3,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickStatCard(IconData icon, String value, String label, Color color) {
+  Widget _buildQuickStatCard(
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 16),
-          Text(value, style: AppTextStyles.h2.copyWith(fontSize: value.length > 8 ? 16 : 20), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            value,
+            style: AppTextStyles.h2.copyWith(
+              fontSize: value.length > 8 ? 16 : 20,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 4),
-          Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
     );
@@ -617,7 +896,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildChartToggle() {
     return Container(
-      decoration: BoxDecoration(color: AppColors.inputBackground, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Row(
         children: [_buildToggleItem('Harian'), _buildToggleItem('Mingguan')],
       ),
@@ -631,15 +913,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: isActive ? AppColors.primaryGreen : Colors.transparent, borderRadius: BorderRadius.circular(20)),
-        child: Text(label, style: AppTextStyles.caption.copyWith(color: isActive ? AppColors.white : AppColors.textPrimary, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: isActive ? AppColors.white : AppColors.textPrimary,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildInteractiveChart(List<double> chartData, double totalFilteredRevenue) {
+  Widget _buildInteractiveChart(
+    List<double> chartData,
+    double totalFilteredRevenue,
+  ) {
     final isMingguan = _chartFilter == 'Mingguan';
-    final labels = isMingguan ? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'] : ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
+    final labels = isMingguan
+        ? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+        : ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
     final maxHeight = 150.0;
 
     double maxVal = chartData.reduce((curr, next) => curr > next ? curr : next);
@@ -650,12 +946,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(isMingguan ? 'Total Pendapatan (7 Hari Terakhir)' : 'Total Pendapatan (Hari Ini)', style: AppTextStyles.caption),
+          Text(
+            isMingguan
+                ? 'Total Pendapatan (7 Hari Terakhir)'
+                : 'Total Pendapatan (Hari Ini)',
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: 4),
           Text(_formatRupiah(totalFilteredRevenue), style: AppTextStyles.h1),
           const SizedBox(height: 24),
@@ -676,7 +983,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       height: height == 0 ? 4 : height,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.primaryGreen, AppColors.primaryGreen.withOpacity(0.5)],
+                          colors: [
+                            AppColors.primaryGreen,
+                            AppColors.primaryGreen.withOpacity(0.5),
+                          ],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         ),
@@ -684,7 +994,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(labels[index], style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.textHint)),
+                    Text(
+                      labels[index],
+                      style: AppTextStyles.caption.copyWith(
+                        fontSize: 10,
+                        color: AppColors.textHint,
+                      ),
+                    ),
                   ],
                 );
               }),
@@ -695,7 +1011,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildRecentActivityList(List<Map<String, dynamic>> orders, List<Map<String, dynamic>> topUps) {
+  Widget _buildRecentActivityList(
+    List<Map<String, dynamic>> orders,
+    List<Map<String, dynamic>> topUps,
+  ) {
     List<Map<String, dynamic>> activities = [];
 
     for (var o in orders) {
@@ -735,7 +1054,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Text('Belum ada aktivitas terekam.', style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+          child: Text(
+            'Belum ada aktivitas terekam.',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textHint),
+          ),
         ),
       );
     }
@@ -746,22 +1068,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Color color = AppColors.textSecondary;
 
         if (act['type'] == 'order') {
-          if (act['status'] == 'selesai') { icon = Icons.check_circle; color = AppColors.success; }
-          else if (act['status'] == 'dibatalkan') { icon = Icons.cancel; color = AppColors.error; }
-          else { icon = Icons.shopping_bag; color = const Color(0xFFE67E22); }
+          if (act['status'] == 'selesai') {
+            icon = Icons.check_circle;
+            color = AppColors.success;
+          } else if (act['status'] == 'dibatalkan') {
+            icon = Icons.cancel;
+            color = AppColors.error;
+          } else {
+            icon = Icons.shopping_bag;
+            color = const Color(0xFFE67E22);
+          }
         } else {
           icon = Icons.account_balance_wallet;
-          if (act['status'] == 'approved') { color = AppColors.success; }
-          else if (act['status'] == 'rejected') { color = AppColors.error; }
-          else { color = AppColors.primaryGreen; }
+          if (act['status'] == 'approved') {
+            color = AppColors.success;
+          } else if (act['status'] == 'rejected') {
+            color = AppColors.error;
+          } else {
+            color = AppColors.primaryGreen;
+          }
         }
 
         return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection(AppConstants.colUsers).doc(act['userId']).get(),
+          future: FirebaseFirestore.instance
+              .collection(AppConstants.colUsers)
+              .doc(act['userId'])
+              .get(),
           builder: (context, userSnap) {
             String nama = 'Memuat...';
             if (userSnap.hasData && userSnap.data!.exists) {
-              nama = (userSnap.data!.data() as Map<String, dynamic>)['namaLengkap'] ?? 'Customer';
+              nama =
+                  (userSnap.data!.data()
+                      as Map<String, dynamic>)['namaLengkap'] ??
+                  'Customer';
             }
 
             return Container(
@@ -776,7 +1115,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(icon, color: color, size: 20),
                   ),
                   const SizedBox(width: 16),
@@ -784,53 +1126,465 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(act['title'], style: AppTextStyles.h3.copyWith(fontSize: 14)),
+                        Text(
+                          act['title'],
+                          style: AppTextStyles.h3.copyWith(fontSize: 14),
+                        ),
                         const SizedBox(height: 2),
-                        Text('$nama • ${_formatRupiah(act['amount'])}', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          '$nama • ${_formatRupiah(act['amount'])}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Text(_getTimeAgo(act['timestamp']), style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+                  Text(
+                    _getTimeAgo(act['timestamp']),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textHint,
+                    ),
+                  ),
                 ],
               ),
             );
-          }
+          },
         );
       }).toList(),
     );
   }
 
   // ─────────────────────────────────────────────────────────────
-  // ─── 2. PROFIL PAGE ──────────────────────────────────────────
+  // ─── 2. PROFIL PAGE (GAYA SESUAI REFERENSI UI & 100% DINAMIS)
   // ─────────────────────────────────────────────────────────────
   Widget _buildProfilPage() {
+    final user = FirebaseAuth.instance.currentUser;
+    final role = 'Admin Pengepul';
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAF7),
+      drawer: _buildAdminDrawer(),
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Profil', style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: AppColors.primaryGreen),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: Text(
+          'Profil Admin',
+          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
+        ),
         centerTitle: false,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: user != null
+            ? FirebaseFirestore.instance
+                  .collection(AppConstants.colUsers)
+                  .doc(user.uid)
+                  .snapshots()
+            : const Stream.empty(),
+        builder: (context, userSnapshot) {
+          String namaAdmin = 'Memuat...';
+          String noHpAdmin = '';
+          String emailAdmin = user?.email ?? 'admin@sayurku.com';
+
+          if (userSnapshot.hasData &&
+              userSnapshot.data != null &&
+              userSnapshot.data!.exists) {
+            final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+            if (userData != null) {
+              namaAdmin = userData['namaLengkap'] ?? 'Admin SayurKu';
+              noHpAdmin = userData['nomorHp'] ?? '';
+              emailAdmin = userData['email'] ?? emailAdmin;
+            }
+          } else if (userSnapshot.connectionState != ConnectionState.waiting) {
+            namaAdmin = 'Admin SayurKu';
+          }
+
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _ordersStream,
+            builder: (context, orderSnapshot) {
+              return StreamBuilder<List<Map<String, dynamic>>>(
+                stream: _topUpStream,
+                builder: (context, topUpSnapshot) {
+                  final bool isOrderLoading =
+                      orderSnapshot.connectionState ==
+                          ConnectionState.waiting &&
+                      !orderSnapshot.hasData;
+                  final bool isTopUpLoading =
+                      topUpSnapshot.connectionState ==
+                          ConnectionState.waiting &&
+                      !topUpSnapshot.hasData;
+
+                  if (isOrderLoading || isTopUpLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    );
+                  }
+
+                  final allOrders = orderSnapshot.data ?? [];
+                  final allTopUps = topUpSnapshot.data ?? [];
+
+                  int totalTransaksi = allOrders
+                      .where(
+                        (o) =>
+                            (o['status'] ?? '').toString().toLowerCase() !=
+                            'dibatalkan',
+                      )
+                      .length;
+                  List<Map<String, dynamic>> unreadNotifs = [];
+
+                  for (var order in allOrders) {
+                    final String orderId = order['id'] ?? '';
+                    final status = (order['status'] ?? '')
+                        .toString()
+                        .toLowerCase();
+                    final timestamp = order['tanggalPesan'] as Timestamp?;
+
+                    if (status == 'menunggu konfirmasi' ||
+                        status == 'diproses') {
+                      if (!_hiddenNotifs.contains(orderId)) {
+                        unreadNotifs.add({
+                          'type': 'order',
+                          'id': orderId,
+                          'userId': order['userId'],
+                          'title': 'Pesanan Perlu Diproses',
+                          'subtitle':
+                              'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
+                          'timestamp': timestamp,
+                          'icon': Icons.shopping_bag,
+                          'color': const Color(0xFFE67E22),
+                        });
+                      }
+                    }
+                  }
+
+                  for (var tx in allTopUps) {
+                    final String txId = tx['id'] ?? '';
+                    final String docPath = tx['docPath'] ?? '';
+                    final status = (tx['status'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
+                    if (status == 'pending' ||
+                        status == AppConstants.txStatusPending.toLowerCase()) {
+                      if (!_hiddenNotifs.contains(txId)) {
+                        unreadNotifs.add({
+                          'type': 'topup',
+                          'id': txId,
+                          'userId': tx['userId'],
+                          'docPath': docPath,
+                          'title': 'Permintaan Isi Saldo',
+                          'subtitle':
+                              'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
+                          'timestamp': tx['timestamp'],
+                          'icon': Icons.account_balance_wallet,
+                          'color': AppColors.primaryGreen,
+                        });
+                      }
+                    }
+                  }
+
+                  unreadNotifs.sort((a, b) {
+                    Timestamp? tA = a['timestamp'];
+                    Timestamp? tB = b['timestamp'];
+                    if (tA == null || tB == null) return 0;
+                    return tB.compareTo(tA);
+                  });
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+
+                        // ── 1. AVATAR & NAMA ──
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                color: Colors.grey.shade300,
+                                image: const DecorationImage(
+                                  image: AssetImage(
+                                    'assets/images/default_avatar.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          namaAdmin,
+                          style: AppTextStyles.h2.copyWith(fontSize: 24),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          role,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // ── 2. CARD TOTAL TRANSAKSI ──
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5EF),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TOTAL TRANSAKSI',
+                                style: AppTextStyles.labelUppercase.copyWith(
+                                  color: AppColors.textSecondary,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                totalTransaksi.toString().replaceAllMapped(
+                                  RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+                                  (m) => '${m[1]},',
+                                ),
+                                style: AppTextStyles.h2.copyWith(
+                                  fontSize: 22,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // ── 3. MANAJEMEN SECTION ──
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'MANAJEMEN',
+                            style: AppTextStyles.labelUppercase.copyWith(
+                              color: AppColors.textSecondary,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              _buildMenuItem(
+                                icon: Icons.person_rounded,
+                                label: 'Edit Data Diri',
+                                iconColor: AppColors.primaryGreen,
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EditProfilScreen(
+                                        userData: {
+                                          'namaLengkap': namaAdmin,
+                                          'nomorHp': noHpAdmin,
+                                          'email': emailAdmin,
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildDivider(),
+
+                              _buildMenuItem(
+                                icon: Icons.notifications_none_rounded,
+                                label: 'Notifikasi',
+                                iconColor: AppColors.primaryGreen,
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
+                                onTap: () {
+                                  _showNotificationSheet(unreadNotifs);
+                                },
+                                hasBadge: unreadNotifs.isNotEmpty,
+                              ),
+                              _buildDivider(),
+
+                              _buildMenuItem(
+                                icon: Icons.lock_outline_rounded,
+                                label: 'Ganti Password',
+                                iconColor: AppColors.primaryGreen,
+                                iconBgColor: AppColors.primaryGreen.withOpacity(
+                                  0.1,
+                                ),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const GantiPasswordScreen(),
+                                  ),
+                                ),
+                              ),
+                              _buildDivider(),
+
+                              _buildMenuItem(
+                                icon: Icons.logout_rounded,
+                                label: 'Keluar (Logout)',
+                                iconColor: AppColors.error,
+                                iconBgColor: AppColors.error.withOpacity(0.1),
+                                textColor: AppColors.error,
+                                isLogout: true,
+                                onTap: _showLogoutDialog,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // ── HELPER WIDGETS UNTUK PROFIL ──
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required Color iconBgColor,
+    required VoidCallback onTap,
+    Color? textColor,
+    bool hasBadge = false,
+    bool isLogout = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
           children: [
-            Text('Halaman Profil Admin', style: AppTextStyles.h2),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _showLogoutDialog(),
-              icon: const Icon(Icons.logout, color: AppColors.white),
-              label: const Text('Logout', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            Stack(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 22),
+                ),
+                if (hasBadge)
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: textColor ?? AppColors.textPrimary,
+                ),
               ),
+            ),
+            Icon(
+              isLogout
+                  ? Icons.exit_to_app_rounded
+                  : Icons.chevron_right_rounded,
+              color: isLogout
+                  ? AppColors.error.withOpacity(0.5)
+                  : AppColors.textHint,
+              size: 24,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 80, right: 20),
+      child: Divider(height: 1, color: Colors.grey.shade200, thickness: 1),
     );
   }
 }
