@@ -87,22 +87,72 @@ void initState() {
 
   // ── APP BAR ─────────────────────────────────────────
 Widget _buildAppBar(BuildContext context) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(8, 16, 20, 0),
-    child: Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: AppColors.primaryGreen),
-          onPressed: () => Navigator.pop(context),
+  return Container(
+    padding: const EdgeInsets.fromLTRB(8, 16, 20, 16),
+    decoration: BoxDecoration(
+      color: AppColors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
-        Expanded(
-          child: Center(
-            child: Text('Katalog Produk',
-                style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.primaryGreen),
+              onPressed: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: Center(
+                child: Text('Katalog Produk',
+                    style: AppTextStyles.h2
+                        .copyWith(color: AppColors.primaryGreen)),
+              ),
+            ),
+            const SizedBox(width: 48),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.location_on_rounded,
+                  color: AppColors.primaryGreen, size: 16),
+              const SizedBox(width: 4),
+              Text('Malang, Jawa Timur',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_offer_rounded,
+                        color: AppColors.primaryGreen, size: 12),
+                    const SizedBox(width: 4),
+                    Text('Harga Terjangkau',
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 48), // biar judul tetap center
       ],
     ),
   );
