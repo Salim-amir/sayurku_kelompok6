@@ -10,9 +10,8 @@ import 'package:sayurku_kelompok6/features/admin/verification/detail_topup_scree
 import '../../../services/auth_service.dart';
 import '../../../services/order_service.dart';
 import '../../../services/wallet_service.dart';
-import '../../customer/profile/ganti_password_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../customer/profile/edit_profil_screen.dart';
+import '../profile/profil_admin_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -28,7 +27,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Stream<List<Map<String, dynamic>>>? _ordersStream;
   Stream<List<Map<String, dynamic>>>? _topUpStream;
 
-  // Menyimpan ID notifikasi yang disembunyikan/dihapus Admin dari layar
   final Set<String> _hiddenNotifs = {};
 
   @override
@@ -38,7 +36,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _topUpStream = WalletService().getSemuaTopUpAdmin();
   }
 
-  // ─── HELPER FORMAT & TANGGAL ───
   String _getCurrentDate() {
     final date = DateTime.now();
     const months = [
@@ -80,7 +77,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return '${diff.inDays} hari lalu';
   }
 
-  // ─── FUNGSI LOGOUT DENGAN KONFIRMASI ───
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -124,7 +120,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─── BOTTOM SHEET NOTIFIKASI (BISA DIKLIK & REDIRECT) ───
   void _showNotificationSheet(List<Map<String, dynamic>> notifs) {
     showModalBottomSheet(
       context: context,
@@ -136,12 +131,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               decoration: const BoxDecoration(
-                color: AppColors.background,
+                color: Color(0xFFF8FAF7),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 children: [
-                  // Header Panel
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -184,8 +178,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                   ),
-
-                  // List Notifikasi
                   Expanded(
                     child: notifs.isEmpty
                         ? Center(
@@ -212,7 +204,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             itemCount: notifs.length,
                             itemBuilder: (context, index) {
                               final notif = notifs[index];
-
                               return Dismissible(
                                 key: Key(notif['id']),
                                 direction: DismissDirection.horizontal,
@@ -238,7 +229,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 child: InkWell(
                                   onTap: () {
                                     Navigator.pop(context);
-
                                     if (notif['type'] == 'order') {
                                       Navigator.push(
                                         context,
@@ -354,7 +344,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             onMenuTap: (index) => setState(() => _selectedIndex = index),
           ),
           const ProductStockPage(),
-          _buildProfilPage(),
+          ProfilAdminScreen(
+            drawer: _buildAdminDrawer(),
+            ordersStream: _ordersStream,
+            topUpStream: _topUpStream,
+            hiddenNotifs: _hiddenNotifs,
+            onShowNotifications: _showNotificationSheet,
+            onLogout: _showLogoutDialog,
+          ),
         ],
       ),
       bottomNavigationBar: Container(
@@ -402,9 +399,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // ─── SIDEBAR (DRAWER) ────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────────
   Widget _buildAdminDrawer() {
     return Drawer(
       backgroundColor: AppColors.white,
@@ -490,9 +484,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // ─── 1. DASHBOARD PAGE (DINAMIS & REAL-TIME) ─────────────────
-  // ─────────────────────────────────────────────────────────────
   Widget _buildDashboardPage() {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _ordersStream,
@@ -509,10 +500,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
             if (isOrderLoading || isTopUpLoading) {
               return Scaffold(
-                backgroundColor: AppColors.background,
+                backgroundColor: const Color(0xFFF8FAF7),
                 drawer: _buildAdminDrawer(),
                 appBar: AppBar(
-                  backgroundColor: AppColors.white,
+                  backgroundColor: Colors.transparent,
                   elevation: 0,
                   leading: Builder(
                     builder: (context) => IconButton(
@@ -547,9 +538,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             int pendingTopUps = 0;
             double revenueToday = 0;
             double revenueTotalFiltered = 0;
-
             List<Map<String, dynamic>> unreadNotifs = [];
-
             final now = DateTime.now();
             List<double> chartData = _chartFilter == 'Mingguan'
                 ? List.filled(7, 0.0)
@@ -563,7 +552,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
               if (status != 'selesai' && status != 'dibatalkan') {
                 activeOrders++;
-
                 if (status == 'menunggu konfirmasi' || status == 'diproses') {
                   if (!_hiddenNotifs.contains(orderId)) {
                     unreadNotifs.add({
@@ -581,14 +569,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 }
               } else if (status == 'selesai') {
                 completedOrders++;
-
                 if (timestamp != null) {
                   final date = timestamp.toDate();
                   if (date.year == now.year &&
                       date.month == now.month &&
-                      date.day == now.day) {
+                      date.day == now.day)
                     revenueToday += harga;
-                  }
                   if (_chartFilter == 'Mingguan') {
                     if (now.difference(date).inDays < 7) {
                       revenueTotalFiltered += harga;
@@ -601,9 +587,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         date.day == now.day) {
                       revenueTotalFiltered += harga;
                       int interval = date.hour ~/ 4;
-                      if (interval >= 0 && interval < 6) {
+                      if (interval >= 0 && interval < 6)
                         chartData[interval] += harga;
-                      }
                     }
                   }
                 }
@@ -614,11 +599,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
               final String txId = tx['id'] ?? '';
               final String docPath = tx['docPath'] ?? '';
               final status = (tx['status'] ?? '').toString().toLowerCase();
-
               if (status == 'pending' ||
                   status == AppConstants.txStatusPending.toLowerCase()) {
                 pendingTopUps++;
-
                 if (!_hiddenNotifs.contains(txId)) {
                   unreadNotifs.add({
                     'type': 'topup',
@@ -642,14 +625,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               if (tA == null || tB == null) return 0;
               return tB.compareTo(tA);
             });
-
             bool hasUnreadNotifications = unreadNotifs.isNotEmpty;
 
             return Scaffold(
-              backgroundColor: AppColors.background,
+              backgroundColor: const Color(0xFFF8FAF7),
               drawer: _buildAdminDrawer(),
               appBar: AppBar(
-                backgroundColor: AppColors.white,
+                backgroundColor: Colors.transparent,
                 elevation: 0,
                 leading: Builder(
                   builder: (context) => IconButton(
@@ -673,7 +655,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         IconButton(
                           icon: const Icon(
                             Icons.notifications_outlined,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primaryGreen,
                           ),
                           onPressed: () {
                             _showNotificationSheet(unreadNotifs);
@@ -743,7 +725,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                     const SizedBox(height: 24),
-
                     Row(
                       children: [
                         Expanded(
@@ -788,7 +769,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                     const SizedBox(height: 32),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -804,7 +784,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     const SizedBox(height: 16),
                     _buildInteractiveChart(chartData, revenueTotalFiltered),
                     const SizedBox(height: 32),
-
                     _buildSectionTitle('Aktivitas Terbaru', Icons.history),
                     const SizedBox(height: 16),
                     _buildRecentActivityList(allOrders, allTopUps),
@@ -819,7 +798,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // ─── KOMPONEN UI TAMBAHAN ───
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
@@ -937,10 +915,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
         : ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
     final maxHeight = 150.0;
-
     double maxVal = chartData.reduce((curr, next) => curr > next ? curr : next);
     if (maxVal == 0) maxVal = 1;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1016,7 +992,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     List<Map<String, dynamic>> topUps,
   ) {
     List<Map<String, dynamic>> activities = [];
-
     for (var o in orders) {
       activities.add({
         'type': 'order',
@@ -1028,7 +1003,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'status': (o['status'] ?? '').toString().toLowerCase(),
       });
     }
-
     for (var tx in topUps) {
       activities.add({
         'type': 'topup',
@@ -1040,16 +1014,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
         'status': (tx['status'] ?? '').toString().toLowerCase(),
       });
     }
-
     activities.sort((a, b) {
       Timestamp? tA = a['timestamp'];
       Timestamp? tB = b['timestamp'];
       if (tA == null || tB == null) return 0;
       return tB.compareTo(tA);
     });
-
     final recentActs = activities.take(5).toList();
-
     if (recentActs.isEmpty) {
       return Center(
         child: Padding(
@@ -1061,12 +1032,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       );
     }
-
     return Column(
       children: recentActs.map((act) {
         IconData icon = Icons.receipt_long;
         Color color = AppColors.textSecondary;
-
         if (act['type'] == 'order') {
           if (act['status'] == 'selesai') {
             icon = Icons.check_circle;
@@ -1088,7 +1057,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             color = AppColors.primaryGreen;
           }
         }
-
         return FutureBuilder<DocumentSnapshot>(
           future: FirebaseFirestore.instance
               .collection(AppConstants.colUsers)
@@ -1102,7 +1070,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       as Map<String, dynamic>)['namaLengkap'] ??
                   'Customer';
             }
-
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
@@ -1152,439 +1119,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           },
         );
       }).toList(),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // ─── 2. PROFIL PAGE (GAYA SESUAI REFERENSI UI & 100% DINAMIS)
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildProfilPage() {
-    final user = FirebaseAuth.instance.currentUser;
-    final role = 'Admin Pengepul';
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF7),
-      drawer: _buildAdminDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.primaryGreen),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(
-          'Profil Admin',
-          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
-        ),
-        centerTitle: false,
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: user != null
-            ? FirebaseFirestore.instance
-                  .collection(AppConstants.colUsers)
-                  .doc(user.uid)
-                  .snapshots()
-            : const Stream.empty(),
-        builder: (context, userSnapshot) {
-          String namaAdmin = 'Memuat...';
-          String noHpAdmin = '';
-          String emailAdmin = user?.email ?? 'admin@sayurku.com';
-
-          if (userSnapshot.hasData &&
-              userSnapshot.data != null &&
-              userSnapshot.data!.exists) {
-            final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
-            if (userData != null) {
-              namaAdmin = userData['namaLengkap'] ?? 'Admin SayurKu';
-              noHpAdmin = userData['nomorHp'] ?? '';
-              emailAdmin = userData['email'] ?? emailAdmin;
-            }
-          } else if (userSnapshot.connectionState != ConnectionState.waiting) {
-            namaAdmin = 'Admin SayurKu';
-          }
-
-          return StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _ordersStream,
-            builder: (context, orderSnapshot) {
-              return StreamBuilder<List<Map<String, dynamic>>>(
-                stream: _topUpStream,
-                builder: (context, topUpSnapshot) {
-                  final bool isOrderLoading =
-                      orderSnapshot.connectionState ==
-                          ConnectionState.waiting &&
-                      !orderSnapshot.hasData;
-                  final bool isTopUpLoading =
-                      topUpSnapshot.connectionState ==
-                          ConnectionState.waiting &&
-                      !topUpSnapshot.hasData;
-
-                  if (isOrderLoading || isTopUpLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryGreen,
-                      ),
-                    );
-                  }
-
-                  final allOrders = orderSnapshot.data ?? [];
-                  final allTopUps = topUpSnapshot.data ?? [];
-
-                  int totalTransaksi = allOrders
-                      .where(
-                        (o) =>
-                            (o['status'] ?? '').toString().toLowerCase() !=
-                            'dibatalkan',
-                      )
-                      .length;
-                  List<Map<String, dynamic>> unreadNotifs = [];
-
-                  for (var order in allOrders) {
-                    final String orderId = order['id'] ?? '';
-                    final status = (order['status'] ?? '')
-                        .toString()
-                        .toLowerCase();
-                    final timestamp = order['tanggalPesan'] as Timestamp?;
-
-                    if (status == 'menunggu konfirmasi' ||
-                        status == 'diproses') {
-                      if (!_hiddenNotifs.contains(orderId)) {
-                        unreadNotifs.add({
-                          'type': 'order',
-                          'id': orderId,
-                          'userId': order['userId'],
-                          'title': 'Pesanan Perlu Diproses',
-                          'subtitle':
-                              'Ada pesanan #${orderId.length > 8 ? orderId.substring(0, 8) : orderId} yang menunggu aksi dari admin.',
-                          'timestamp': timestamp,
-                          'icon': Icons.shopping_bag,
-                          'color': const Color(0xFFE67E22),
-                        });
-                      }
-                    }
-                  }
-
-                  for (var tx in allTopUps) {
-                    final String txId = tx['id'] ?? '';
-                    final String docPath = tx['docPath'] ?? '';
-                    final status = (tx['status'] ?? '')
-                        .toString()
-                        .toLowerCase();
-
-                    if (status == 'pending' ||
-                        status == AppConstants.txStatusPending.toLowerCase()) {
-                      if (!_hiddenNotifs.contains(txId)) {
-                        unreadNotifs.add({
-                          'type': 'topup',
-                          'id': txId,
-                          'userId': tx['userId'],
-                          'docPath': docPath,
-                          'title': 'Permintaan Isi Saldo',
-                          'subtitle':
-                              'Seseorang baru saja mengajukan top-up. Segera periksa bukti transfernya.',
-                          'timestamp': tx['timestamp'],
-                          'icon': Icons.account_balance_wallet,
-                          'color': AppColors.primaryGreen,
-                        });
-                      }
-                    }
-                  }
-
-                  unreadNotifs.sort((a, b) {
-                    Timestamp? tA = a['timestamp'];
-                    Timestamp? tB = b['timestamp'];
-                    if (tA == null || tB == null) return 0;
-                    return tB.compareTo(tA);
-                  });
-
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 20),
-
-                        // ── 1. AVATAR & NAMA ──
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                color: Colors.grey.shade300,
-                                image: const DecorationImage(
-                                  image: AssetImage(
-                                    'assets/images/default_avatar.png',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          namaAdmin,
-                          style: AppTextStyles.h2.copyWith(fontSize: 24),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          role,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // ── 2. CARD TOTAL TRANSAKSI ──
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5EF),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'TOTAL TRANSAKSI',
-                                style: AppTextStyles.labelUppercase.copyWith(
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                totalTransaksi.toString().replaceAllMapped(
-                                  RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-                                  (m) => '${m[1]},',
-                                ),
-                                style: AppTextStyles.h2.copyWith(
-                                  fontSize: 22,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // ── 3. MANAJEMEN SECTION ──
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'MANAJEMEN',
-                            style: AppTextStyles.labelUppercase.copyWith(
-                              color: AppColors.textSecondary,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _buildMenuItem(
-                                icon: Icons.person_rounded,
-                                label: 'Edit Data Diri',
-                                iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(
-                                  0.1,
-                                ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => EditProfilScreen(
-                                        userData: {
-                                          'namaLengkap': namaAdmin,
-                                          'nomorHp': noHpAdmin,
-                                          'email': emailAdmin,
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildDivider(),
-
-                              _buildMenuItem(
-                                icon: Icons.notifications_none_rounded,
-                                label: 'Notifikasi',
-                                iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(
-                                  0.1,
-                                ),
-                                onTap: () {
-                                  _showNotificationSheet(unreadNotifs);
-                                },
-                                hasBadge: unreadNotifs.isNotEmpty,
-                              ),
-                              _buildDivider(),
-
-                              _buildMenuItem(
-                                icon: Icons.lock_outline_rounded,
-                                label: 'Ganti Password',
-                                iconColor: AppColors.primaryGreen,
-                                iconBgColor: AppColors.primaryGreen.withOpacity(
-                                  0.1,
-                                ),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const GantiPasswordScreen(),
-                                  ),
-                                ),
-                              ),
-                              _buildDivider(),
-
-                              _buildMenuItem(
-                                icon: Icons.logout_rounded,
-                                label: 'Keluar (Logout)',
-                                iconColor: AppColors.error,
-                                iconBgColor: AppColors.error.withOpacity(0.1),
-                                textColor: AppColors.error,
-                                isLogout: true,
-                                onTap: _showLogoutDialog,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  // ── HELPER WIDGETS UNTUK PROFIL ──
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String label,
-    required Color iconColor,
-    required Color iconBgColor,
-    required VoidCallback onTap,
-    Color? textColor,
-    bool hasBadge = false,
-    bool isLogout = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 22),
-                ),
-                if (hasBadge)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: textColor ?? AppColors.textPrimary,
-                ),
-              ),
-            ),
-            Icon(
-              isLogout
-                  ? Icons.exit_to_app_rounded
-                  : Icons.chevron_right_rounded,
-              color: isLogout
-                  ? AppColors.error.withOpacity(0.5)
-                  : AppColors.textHint,
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 80, right: 20),
-      child: Divider(height: 1, color: Colors.grey.shade200, thickness: 1),
     );
   }
 }
