@@ -29,12 +29,37 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchKeyword = '';
   int _currentIndex = 0;
 
-  final List<Map<String, dynamic>> _kategori = const [
-    {'label': 'Sayur Hijau', 'kategoriKey': 'sayur_hijau', 'icon': Icons.eco_rounded, 'color': Color(0xFFE8F5E9)},
-    {'label': 'Buah', 'kategoriKey': 'buah', 'icon': Icons.circle_rounded, 'color': Color(0xFFFFF3E0)},
-    {'label': 'Bumbu', 'kategoriKey': 'bumbu', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFFCE4EC)},
-    {'label': 'Umbi-umbian', 'kategoriKey': 'umbi_umbian', 'icon': Icons.grass_rounded, 'color': Color(0xFFF3E5F5)},
-  ];
+final List<Map<String, dynamic>> _kategori = const [
+  {
+    'label': 'Sayur Hijau',
+    'kategoriKey': 'sayur_hijau',
+    'icon': Icons.eco_rounded,
+    'color': Color(0xFFE8F5E9),
+    'iconColor': Color(0xFF2E7D32),
+  },
+  {
+    'label': 'Buah',
+    'kategoriKey': 'buah',
+    'icon': Icons.apple_rounded,
+    'color': Color(0xFFFFF3E0),
+    'iconColor': Color(0xFFE65100),
+  },
+  {
+    'label': 'Bumbu',
+    'kategoriKey': 'bumbu',
+    'icon': Icons.restaurant_rounded,
+    'color': Color(0xFFFCE4EC),
+    'iconColor': Color(0xFFC62828),
+  },
+  {
+    'label': 'Umbi',
+    'kategoriKey': 'umbi_umbian',
+    'icon': Icons.grass_rounded,
+    'color': Color(0xFFF3E5F5),
+    'iconColor': Color(0xFF6A1B9A),
+  },
+];
+
 String _namaUser = 'Pengguna';
 
 @override
@@ -255,33 +280,41 @@ void _loadNamaUser() async {
 }
 
   // ── KATEGORI ────────────────────────────────────────
-  Widget _buildKategoriSection() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Kategori', style: AppTextStyles.h3),
-            TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
-              ),
-              child: Text('Lihat Semua',
-                  style: AppTextStyles.link.copyWith(fontSize: 13)),
+ Widget _buildKategoriSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Kategori', style: AppTextStyles.h3),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
             ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: _kategori.map((k) => _buildKategoriItem(k)).toList(),
-        ),
-      ],
-    );
-  }
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen.withOpacity(0.08),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+            child: Text('Lihat Semua',
+                style: AppTextStyles.link.copyWith(fontSize: 12)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: _kategori.map((k) => _buildKategoriItem(k)).toList(),
+      ),
+    ],
+  );
+}
 
-  Widget _buildKategoriItem(Map<String, dynamic> data) {
+Widget _buildKategoriItem(Map<String, dynamic> data) {
   return GestureDetector(
     onTap: () => Navigator.push(
       context,
@@ -294,18 +327,29 @@ void _loadNamaUser() async {
     child: Column(
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 62,
+          height: 62,
           decoration: BoxDecoration(
             color: data['color'],
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: (data['color'] as Color).withOpacity(0.5),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Icon(data['icon'], color: AppColors.primaryGreen, size: 26),
+          child: Icon(data['icon'],
+              color: data['iconColor'], size: 28),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           data['label'],
-          style: AppTextStyles.bodySmall,
+          style: AppTextStyles.bodySmall.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
       ],
