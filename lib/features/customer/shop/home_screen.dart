@@ -387,6 +387,7 @@ Widget _buildDefaultBanner() {
               itemBuilder: (context, index) {
                 final produk = produkList[index];
                 return ProductCard(
+                  imagePath: produk.imageUrl,
                   name: produk.nama,
                   price: produk.harga.toInt(),
                   unit: produk.satuan,

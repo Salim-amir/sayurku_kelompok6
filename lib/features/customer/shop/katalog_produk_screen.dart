@@ -220,6 +220,7 @@ Widget _buildProdukGrid() {
         itemBuilder: (context, index) {
           final produk = produkList[index];
           return ProductCard(
+            imagePath: produk.imageUrl,
             name: produk.nama,
             price: produk.harga,
             unit: produk.satuan,
@@ -264,6 +265,7 @@ Widget _buildProdukGrid() {
 
 Widget _buildProductCard(Map<String, dynamic> produk) {
   return ProductCard(
+    imagePath: produk['imageUrl'],
     name: produk['nama'],
     price: produk['harga'],
     unit: produk['satuan'],
