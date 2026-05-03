@@ -3,6 +3,7 @@ import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
 import '../../../../core/cart_manager.dart';
 import 'checkout_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class KeranjangBelanjaScreen extends StatefulWidget {
   const KeranjangBelanjaScreen({super.key});
@@ -43,12 +44,11 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
               child: _keranjang.isEmpty
                   ? _buildKeranjangKosong()
                   : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _keranjang.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) =>
-                          _buildItemKeranjang(index),
-                    ),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    itemCount: _keranjang.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) => _buildItemKeranjang(index),
+                  ),
             ),
             if (_keranjang.isNotEmpty) _buildBottomBar(context),
           ],
@@ -76,32 +76,56 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
   }
 
   // ── ITEM KERANJANG ───────────────────────────────────
-  Widget _buildItemKeranjang(int index) {
-    final item = _keranjang[index];
-    return Row(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: 90,
-            height: 90,
-            color: AppColors.inputBackground,
-            child: const Icon(Icons.eco_rounded,
-                color: AppColors.primaryGreen, size: 36),
-          ),
+Widget _buildItemKeranjang(int index) {
+  final item = _keranjang[index];
+  final imageUrl = item['imageUrl'] ?? '';
+
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
-        const SizedBox(width: 14),
+      ],
+    ),
+    child: Row(
+      children: [
+        // Foto produk
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: imageUrl.isNotEmpty
+              ? Image.network(
+                  imageUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
+                )
+              : _buildFotoPlaceholder(),
+        ),
+        const SizedBox(width: 12),
+        // Info produk
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item['nama'], style: AppTextStyles.h3),
+              Text(item['nama'],
+                  style: AppTextStyles.h3,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 2),
               Text(
                 'Rp ${_formatHarga(item['harga'])} /${item['satuan']}',
-                style: AppTextStyles.bodyMedium
+                style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
+              // Tombol +/-
               Row(
                 children: [
                   _buildQtyButton(
@@ -110,9 +134,17 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
                         CartManager.instance.updateJumlah(
                             index, item['jumlah'] - 1)),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('${item['jumlah']}', style: AppTextStyles.h3),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('${item['jumlah']}',
+                        style: AppTextStyles.h3.copyWith(
+                            color: AppColors.primaryGreen)),
                   ),
                   _buildQtyButton(
                     icon: Icons.add_rounded,
@@ -125,16 +157,38 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
             ],
           ),
         ),
-        IconButton(
-          onPressed: () =>
-              setState(() => CartManager.instance.hapusProduk(index)),
-          icon: const Icon(Icons.delete_outline_rounded,
-              color: Colors.redAccent, size: 22),
+        // Harga total + tombol hapus
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            IconButton(
+              onPressed: () =>
+                  setState(() => CartManager.instance.hapusProduk(index)),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: Colors.redAccent, size: 20),
+            ),
+            Text(
+              'Rp ${_formatHarga(item['harga'] * item['jumlah'])}',
+              style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
+Widget _buildFotoPlaceholder() {
+  return Container(
+    width: 80,
+    height: 80,
+    color: AppColors.inputBackground,
+    child: const Icon(Icons.eco_rounded,
+        color: AppColors.primaryGreen, size: 36),
+  );
+}
   Widget _buildQtyButton(
       {required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
