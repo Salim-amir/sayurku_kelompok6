@@ -128,8 +128,14 @@ void _loadNamaUser() async {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: AppColors.accentGreen.withOpacity(0.15),
-              child: const Icon(Icons.person_rounded, color: AppColors.primaryGreen),
+              backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
+              child: Text(
+                _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
+                style: AppTextStyles.h3.copyWith(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Text('Halo, $_namaUser', style: AppTextStyles.h2),
