@@ -128,8 +128,14 @@ void _loadNamaUser() async {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: AppColors.accentGreen.withOpacity(0.15),
-              child: const Icon(Icons.person_rounded, color: AppColors.primaryGreen),
+              backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
+              child: Text(
+                _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
+                style: AppTextStyles.h3.copyWith(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Text('Halo, $_namaUser', style: AppTextStyles.h2),
@@ -141,43 +147,25 @@ void _loadNamaUser() async {
 }
   // ── SEARCH BAR ──────────────────────────────────────
  Widget _buildSearchBar() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    decoration: BoxDecoration(
-      color: AppColors.inputBackground,
-      borderRadius: BorderRadius.circular(30),
+  return GestureDetector(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const KatalogProdukScreen(),
+      ),
     ),
-    child: TextField(
-      controller: _searchController,
-      onChanged: (value) {
-        setState(() => _searchKeyword = value);
-        if (value.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => KatalogProdukScreen(
-                searchKeyword: value,
-              ),
-            ),
-          );
-        }
-      },
-      decoration: InputDecoration(
-        border: InputBorder.none,
-        hintText: 'Cari sayur segar hari ini...',
-        hintStyle: AppTextStyles.inputHint,
-        prefixIcon: const Icon(Icons.search_rounded,
-            color: AppColors.textHint, size: 20),
-        suffixIcon: _searchKeyword.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: AppColors.textHint, size: 20),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchKeyword = '');
-                },
-              )
-            : null,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search_rounded, color: AppColors.textHint, size: 20),
+          const SizedBox(width: 10),
+          Text('Cari sayur segar hari ini...', style: AppTextStyles.inputHint),
+        ],
       ),
     ),
   );
@@ -399,6 +387,7 @@ Widget _buildDefaultBanner() {
               itemBuilder: (context, index) {
                 final produk = produkList[index];
                 return ProductCard(
+                  imagePath: produk.imageUrl,
                   name: produk.nama,
                   price: produk.harga.toInt(),
                   unit: produk.satuan,

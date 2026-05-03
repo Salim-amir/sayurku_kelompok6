@@ -68,14 +68,22 @@ class ProductCard extends StatelessWidget {
                     topRight: Radius.circular(AppConstants.radiusLG),
                   ),
                   child: imagePath != null
-                      ? Image.asset(
+                  ? imagePath!.startsWith('http')
+                      ? Image.network(
                           imagePath!,
                           width: double.infinity,
                           height: AppConstants.cardImageHeight,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
                         )
-                      : _buildImagePlaceholder(),
+                      : Image.asset(
+                          imagePath!,
+                          width: double.infinity,
+                          height: AppConstants.cardImageHeight,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+                        )
+                  : _buildImagePlaceholder(),
                 ),
                 // Badge tidak tersedia
                 if (!isAvailable)

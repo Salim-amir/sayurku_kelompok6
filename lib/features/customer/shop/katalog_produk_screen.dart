@@ -109,7 +109,7 @@ Widget _buildAppBar(BuildContext context) {
 }
 
   // ── SEARCH BAR ──────────────────────────────────────
- Widget _buildSearchBar() {
+Widget _buildSearchBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     decoration: BoxDecoration(
@@ -118,6 +118,7 @@ Widget _buildAppBar(BuildContext context) {
     ),
     child: TextField(
       controller: _searchController,
+      autofocus: true, // ← tambah ini
       onChanged: (value) => setState(() => _searchKeyword = value),
       decoration: InputDecoration(
         border: InputBorder.none,
@@ -219,6 +220,7 @@ Widget _buildProdukGrid() {
         itemBuilder: (context, index) {
           final produk = produkList[index];
           return ProductCard(
+            imagePath: produk.imageUrl,
             name: produk.nama,
             price: produk.harga,
             unit: produk.satuan,
@@ -263,6 +265,7 @@ Widget _buildProdukGrid() {
 
 Widget _buildProductCard(Map<String, dynamic> produk) {
   return ProductCard(
+    imagePath: produk['imageUrl'],
     name: produk['nama'],
     price: produk['harga'],
     unit: produk['satuan'],
