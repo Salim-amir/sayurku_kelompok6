@@ -13,8 +13,6 @@ import '../profile/dompet_digital_screen.dart';
 import '../profile/profile_screen.dart';
 import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
-import '../../../services/promo_service.dart';
-import '../../../models/promo_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,7 +24,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
-  final PromoService _promoService = PromoService();
   final user = FirebaseAuth.instance.currentUser;
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
@@ -107,7 +104,7 @@ void _loadNamaUser() async {
             const SizedBox(height: 24),
             _buildKategoriSection(),
             const SizedBox(height: 24),
-            _buildPromoBanner(),
+            _buildProdukTerlaris(),
             const SizedBox(height: 24),
             _buildProdukSection(),
             const SizedBox(height: 100),
@@ -230,112 +227,240 @@ void _loadNamaUser() async {
   );
 }
 
-  // ── PROMO BANNER ────────────────────────────────────
-Widget _buildPromoBanner() {
-  return StreamBuilder<List<PromoModel>>(
-    stream: _promoService.getPromos(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Container(
-          height: 160,
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryGreen),
-          ),
-        );
-      }
-
-      final promos = snapshot.data ?? [];
-      if (promos.isEmpty) {
-        return _buildDefaultBanner();
-      }
-
-      // Tampilkan promo pertama
-      final promo = promos.first;
-      return Container(
-        width: double.infinity,
-        height: 160,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: AppColors.accentGreen,
-          image: promo.imageUrl.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(promo.imageUrl),
-                  fit: BoxFit.cover,
-                  colorFilter: const ColorFilter.mode(
-                      Colors.black26, BlendMode.darken),
-                )
-              : null,
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.accentGreen,
-                borderRadius: BorderRadius.circular(20),
+Widget _buildProdukTerlaris() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.local_fire_department_rounded,
+                    color: Colors.orange, size: 18),
               ),
-              child: Text('PROMO HARI INI',
-                  style: AppTextStyles.labelUppercase
-                      .copyWith(color: AppColors.white, fontSize: 10)),
+              const SizedBox(width: 8),
+              Text('Produk Terlaris', style: AppTextStyles.h3),
+            ],
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
             ),
-            const SizedBox(height: 8),
-            Text(promo.title,
-                style: AppTextStyles.h2.copyWith(color: AppColors.white)),
-            if (promo.subtitle.isNotEmpty)
-              Text(promo.subtitle,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.white)),
-          ],
-        ),
-      );
-    },
+            child: Text('Lihat Semua',
+                style: AppTextStyles.link.copyWith(fontSize: 13)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      StreamBuilder<List<ProductModel>>(
+        stream: _productService.getSemuaProduk(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            );
+          }
+          final produkList = snapshot.data ?? [];
+          if (produkList.isEmpty) return const SizedBox();
+
+          final terlaris = produkList.take(5).toList();
+
+          return SizedBox(
+            height: 220,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: terlaris.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final produk = terlaris[index];
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DetailProdukScreen(
+                        produk: {
+                          'id': produk.id,
+                          'nama': produk.nama,
+                          'harga': produk.harga,
+                          'satuan': produk.satuan,
+                          'imageUrl': produk.imageUrl,
+                          'tersedia': produk.tersedia,
+                        },
+                      ),
+                    ),
+                  ),
+                  child: Container(
+                    width: 150,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Foto dengan badge
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                              child: produk.imageUrl.isNotEmpty
+                                  ? Image.network(
+                                      produk.imageUrl,
+                                      width: 150,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 150,
+                                        height: 120,
+                                        color: AppColors.inputBackground,
+                                        child: const Icon(Icons.eco_rounded,
+                                            color: AppColors.primaryGreen, size: 40),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 150,
+                                      height: 120,
+                                      color: AppColors.inputBackground,
+                                      child: const Icon(Icons.eco_rounded,
+                                          color: AppColors.primaryGreen, size: 40),
+                                    ),
+                            ),
+                            // Badge ranking
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: index == 0
+                                      ? Colors.amber
+                                      : index == 1
+                                          ? Colors.grey[400]
+                                          : index == 2
+                                              ? Colors.brown[300]
+                                              : AppColors.primaryGreen,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      index < 3
+                                          ? Icons.emoji_events_rounded
+                                          : Icons.local_fire_department_rounded,
+                                      color: AppColors.white,
+                                      size: 10,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '#${index + 1}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Info produk
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                produk.nama,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w700),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Rp ${_formatHarga(produk.harga)}',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.primaryGreen,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      CartManager.instance.tambahProduk({
+                                        'nama': produk.nama,
+                                        'harga': produk.harga,
+                                        'satuan': produk.satuan,
+                                        'imageUrl': produk.imageUrl,
+                                      }, 1);
+                                      setState(() {});
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              '${produk.nama} ditambahkan!'),
+                                          backgroundColor:
+                                              AppColors.primaryGreen,
+                                          duration:
+                                              const Duration(seconds: 1),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGreen,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.add_rounded,
+                                          color: AppColors.white, size: 18),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    ],
   );
 }
 
-Widget _buildDefaultBanner() {
-  return Container(
-    width: double.infinity,
-    height: 160,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      color: AppColors.accentGreen,
-      image: const DecorationImage(
-        image: NetworkImage(
-            'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800'),
-        fit: BoxFit.cover,
-        colorFilter: ColorFilter.mode(Colors.black26, BlendMode.darken),
-      ),
-    ),
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.accentGreen,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text('PROMO HARI INI',
-              style: AppTextStyles.labelUppercase
-                  .copyWith(color: AppColors.white, fontSize: 10)),
-        ),
-        const SizedBox(height: 8),
-        Text('Diskon 20%\nSayur Organik',
-            style: AppTextStyles.h2.copyWith(color: AppColors.white)),
-      ],
-    ),
-  );
+String _formatHarga(int harga) {
+  return harga.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
 }
+
   // ── PRODUK SECTION (FIREBASE) ───────────────────────
   Widget _buildProdukSection() {
     return Column(
