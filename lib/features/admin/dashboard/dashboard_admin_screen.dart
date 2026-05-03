@@ -34,6 +34,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
     super.initState();
     _ordersStream = OrderService().getAllPesananAdmin();
     _topUpStream = WalletService().getSemuaTopUpAdmin();
+    _loadHiddenNotifs();
+  }
+
+  Future<void> _loadHiddenNotifs() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection(AppConstants.colUsers)
+            .doc(user.uid)
+            .get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data.containsKey('hidden_notifs')) {
+            setState(() {
+              _hiddenNotifs.addAll(List<String>.from(data['hidden_notifs']));
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint("Gagal memuat memori notifikasi: $e");
+      }
+    }
   }
 
   String _getCurrentDate() {
@@ -161,10 +184,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         if (notifs.isNotEmpty)
                           TextButton(
                             onPressed: () {
+                              final ids = notifs
+                                  .map((n) => n['id'].toString())
+                                  .toList();
+
                               setState(() {
-                                for (var n in notifs)
-                                  _hiddenNotifs.add(n['id']);
+                                _hiddenNotifs.addAll(ids);
                               });
+
+                              final user = FirebaseAuth.instance.currentUser;
+                              if (user != null) {
+                                FirebaseFirestore.instance
+                                    .collection(AppConstants.colUsers)
+                                    .doc(user.uid)
+                                    .update({
+                                      'hidden_notifs': FieldValue.arrayUnion(
+                                        ids,
+                                      ),
+                                    });
+                              }
+
                               setSheetState(() => notifs.clear());
                             },
                             child: Text(
@@ -208,9 +247,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 key: Key(notif['id']),
                                 direction: DismissDirection.horizontal,
                                 onDismissed: (direction) {
-                                  setState(
-                                    () => _hiddenNotifs.add(notif['id']),
-                                  );
+                                  final id = notif['id'].toString();
+
+                                  setState(() => _hiddenNotifs.add(id));
+
+                                  // 👇 Simpan permanen ke Firebase saat di-swipe
+                                  final user =
+                                      FirebaseAuth.instance.currentUser;
+                                  if (user != null) {
+                                    FirebaseFirestore.instance
+                                        .collection(AppConstants.colUsers)
+                                        .doc(user.uid)
+                                        .update({
+                                          'hidden_notifs':
+                                              FieldValue.arrayUnion([id]),
+                                        });
+                                  }
+
                                   setSheetState(() => notifs.removeAt(index));
                                 },
                                 background: Container(
