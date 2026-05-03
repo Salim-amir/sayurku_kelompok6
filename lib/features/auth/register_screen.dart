@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/colors.dart';
 import '../../core/text_styles.dart';
 import '../../services/auth_service.dart'; 
@@ -11,15 +12,12 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // 1. Siapkan Controller untuk menangkap teks
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-  // 2. Variabel Loading
   bool _isLoading = false;
 
   @override
@@ -32,18 +30,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // 3. Fungsi Utama Mendaftar ke Firebase
   void _prosesDaftar() async {
-    // Cek apakah ada kolom yang kosong
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _phoneController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
-      // Cek kolom konfirmasi
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Harap isi semua data!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap isi semua data!')),
+      );
+      return;
+    }
+
+    // ── Validasi nomor HP ──────────────────────────────────────────
+    final phone = _phoneController.text.trim();
+    if (!phone.startsWith('08')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nomor HP harus diawali dengan 08!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (phone.length < 10 || phone.length > 13) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nomor HP harus 10–13 digit!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -56,27 +72,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    // B. Nyalakan efek loading
-    setState(() {
-      _isLoading = true;
-    });
 
-    // C. Panggil AuthService
+    setState(() => _isLoading = true);
+
     String? pesanError = await AuthService().registerUser(
       email: _emailController.text.trim(),
       password: _passwordController.text,
       namaLengkap: _nameController.text.trim(),
-      nomorHp: _phoneController.text.trim(),
+      nomorHp: phone,
     );
 
-    // D. Matikan efek loading
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
 
-    // E. Cek Hasilnya
     if (pesanError == null) {
-      // SUKSES! Tampilkan pesan dan tutup layar daftar (kembali ke Login)
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Akun berhasil dibuat! Silakan masuk.'),
@@ -85,7 +93,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (mounted) Navigator.pop(context);
     } else {
-      // GAGAL! Tampilkan pesan error dari Firebase
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(pesanError), backgroundColor: Colors.red),
       );
@@ -152,14 +159,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Masukkan controller ke masing-masing sub-widget
                   _NameTextField(controller: _nameController),
                   const SizedBox(height: 16),
 
-                  // NEW: Field Email
                   _EmailTextField(controller: _emailController),
                   const SizedBox(height: 16),
 
+                  // ── Kirim controller password agar bisa validasi live ──
                   _PhoneTextField(controller: _phoneController),
                   const SizedBox(height: 16),
 
@@ -168,26 +174,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   _ConfirmPasswordTextField(
                     controller: _confirmPasswordController,
-                    originalPasswordController:
-                        _passwordController,
+                    originalPasswordController: _passwordController,
                   ),
                   const SizedBox(height: 32),
 
-                  // Tombol Daftar (Bisa berubah jadi Loading)
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      // Jika lagi loading, matikan tombol (null)
                       onPressed: _isLoading ? null : _prosesDaftar,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        // Biar warnanya agak pudar kalau tombol dimatikan
-                        disabledBackgroundColor: AppColors.primaryGreen
-                            .withValues(alpha: 0.6),
+                        disabledBackgroundColor:
+                            AppColors.primaryGreen.withValues(alpha: 0.6),
                       ),
                       child: _isLoading
                           ? const SizedBox(
@@ -201,16 +203,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  'Daftar Sekarang',
-                                  style: AppTextStyles.buttonPrimary,
-                                ),
+                                Text('Daftar Sekarang',
+                                    style: AppTextStyles.buttonPrimary),
                                 SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
+                                Icon(Icons.arrow_forward_rounded,
+                                    size: 20, color: Colors.white),
                               ],
                             ),
                     ),
@@ -220,16 +217,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Sudah punya akun? ',
-                        style: AppTextStyles.labelLink,
-                      ),
+                      const Text('Sudah punya akun? ',
+                          style: AppTextStyles.labelLink),
                       InkWell(
                         onTap: () => Navigator.pop(context),
-                        child: const Text(
-                          'Masuk di sini',
-                          style: AppTextStyles.link,
-                        ),
+                        child: const Text('Masuk di sini',
+                            style: AppTextStyles.link),
                       ),
                     ],
                   ),
@@ -244,7 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// ─── SUB-WIDGETS ───────────────────────────────────────────────
+// ─── SUB-WIDGETS ──────────────────────────────────────────────────────────
 
 class _NameTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -271,7 +264,6 @@ class _NameTextField extends StatelessWidget {
   }
 }
 
-// Sub-widget baru untuk Email
 class _EmailTextField extends StatelessWidget {
   final TextEditingController controller;
   const _EmailTextField({required this.controller});
@@ -297,9 +289,33 @@ class _EmailTextField extends StatelessWidget {
   }
 }
 
-class _PhoneTextField extends StatelessWidget {
+// ─── PHONE TEXT FIELD — dengan validasi 08 & maks 13 digit ───────────────
+class _PhoneTextField extends StatefulWidget {
   final TextEditingController controller;
   const _PhoneTextField({required this.controller});
+
+  @override
+  State<_PhoneTextField> createState() => _PhoneTextFieldState();
+}
+
+class _PhoneTextFieldState extends State<_PhoneTextField> {
+  String? _errorText;
+
+  void _validate(String value) {
+    String? error;
+
+    if (value.isEmpty) {
+      error = null; // Biarkan kosong — validasi utama di tombol Daftar
+    } else if (!value.startsWith('08')) {
+      error = 'Nomor HP harus diawali dengan 08';
+    } else if (value.length > 13) {
+      error = 'Nomor HP maksimal 13 digit';
+    } else if (value.length < 10) {
+      error = 'Nomor HP minimal 10 digit';
+    }
+
+    setState(() => _errorText = error);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -309,12 +325,50 @@ class _PhoneTextField extends StatelessWidget {
         const Text('NOMOR HP', style: AppTextStyles.labelUppercase),
         const SizedBox(height: 8),
         TextField(
-          controller: controller,
+          controller: widget.controller,
           keyboardType: TextInputType.phone,
           style: AppTextStyles.inputText,
-          decoration: _buildInputDecoration(
-            hintText: '0812 XXXX XXXX',
-            icon: Icons.phone_outlined,
+          // ── Hanya angka, maks 13 karakter ─────────────────────
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(13),
+          ],
+          onChanged: _validate,
+          decoration: InputDecoration(
+            hintText: '08xx xxxx xxxx',
+            hintStyle: AppTextStyles.inputHint,
+            prefixIcon: const Icon(Icons.phone_outlined,
+                color: AppColors.textHint, size: 20),
+            filled: true,
+            fillColor: AppColors.inputBackground,
+            // Garis tepi merah kalau ada error
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: _errorText != null
+                  ? const BorderSide(color: AppColors.error, width: 1.5)
+                  : BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color:
+                    _errorText != null ? AppColors.error : AppColors.primaryGreen,
+                width: 1.5,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            // Pesan error inline di bawah field
+            errorText: _errorText,
+            errorStyle: const TextStyle(
+              color: AppColors.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -332,8 +386,6 @@ class _PasswordTextField extends StatefulWidget {
 
 class _PasswordTextFieldState extends State<_PasswordTextField> {
   bool _isObscured = true;
-
-  // Variabel untuk indikator kekuatan sandi
   double _strengthScore = 0.0;
   Color _strengthColor = Colors.transparent;
   String _strengthText = '';
@@ -349,14 +401,8 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
     }
 
     double score = 0.0;
-
-    // Kriteria 1: Panjang minimal 6 karakter
     if (value.length >= 6) score += 0.33;
-
-    // Kriteria 2: Panjang di atas 8 karakter
     if (value.length >= 8) score += 0.33;
-
-    // Kriteria 3: Mengandung kombinasi Huruf dan Angka
     if (value.contains(RegExp(r'[a-zA-Z]')) &&
         value.contains(RegExp(r'[0-9]'))) {
       score += 0.34;
@@ -387,16 +433,13 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
         TextField(
           controller: widget.controller,
           obscureText: _isObscured,
-          onChanged: _checkPasswordStrength, // Deteksi ketikan secara real-time
+          onChanged: _checkPasswordStrength,
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••',
             hintStyle: AppTextStyles.inputHint.copyWith(fontSize: 18),
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.textHint,
-              size: 20,
-            ),
+            prefixIcon: const Icon(Icons.lock_outline_rounded,
+                color: AppColors.textHint, size: 20),
             suffixIcon: IconButton(
               icon: Icon(
                 _isObscured
@@ -405,11 +448,7 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
                 color: AppColors.textHint,
                 size: 20,
               ),
-              onPressed: () {
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
+              onPressed: () => setState(() => _isObscured = !_isObscured),
             ),
             filled: true,
             fillColor: AppColors.inputBackground,
@@ -423,20 +462,14 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryGreen,
-                width: 1.5,
-              ),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryGreen, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           ),
         ),
-
-        // --- BAR INDIKATOR KEKUATAN SANDI ---
-        if (_strengthText.isNotEmpty) // Hanya muncul kalau ada ketikan
+        if (_strengthText.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 12.0, left: 4.0, right: 4.0),
             child: Row(
@@ -454,7 +487,7 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
                 ),
                 const SizedBox(width: 12),
                 SizedBox(
-                  width: 50, // Agar teks tidak menggeser bar saat berubah
+                  width: 50,
                   child: Text(
                     _strengthText,
                     style: TextStyle(
@@ -472,7 +505,6 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
   }
 }
 
-// Fungsi pembantu agar kodingan dekorasi TextField tidak berulang-ulang
 InputDecoration _buildInputDecoration({
   required String hintText,
   required IconData icon,
@@ -493,9 +525,11 @@ InputDecoration _buildInputDecoration({
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+      borderSide:
+          const BorderSide(color: AppColors.primaryGreen, width: 1.5),
     ),
-    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+    contentPadding:
+        const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
   );
 }
 
@@ -506,7 +540,7 @@ class _ConfirmPasswordTextField extends StatefulWidget {
   const _ConfirmPasswordTextField({
     super.key,
     required this.controller,
-    required this.originalPasswordController, 
+    required this.originalPasswordController,
   });
 
   @override
@@ -514,14 +548,12 @@ class _ConfirmPasswordTextField extends StatefulWidget {
       _ConfirmPasswordTextFieldState();
 }
 
-class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
+class _ConfirmPasswordTextFieldState
+    extends State<_ConfirmPasswordTextField> {
   bool _isObscured = true;
-
-  // Variabel untuk indikator kecocokan
   String _matchText = '';
   Color _matchColor = Colors.transparent;
 
-  // Ini "otak" yang kelupaan tadi, Lim!
   void _checkMatch(String value) {
     if (value.isEmpty) {
       setState(() {
@@ -530,8 +562,6 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
       });
       return;
     }
-
-    // Cek apakah ketikan sama dengan sandi pertama
     if (value == widget.originalPasswordController.text) {
       setState(() {
         _matchText = 'Sandi Cocok';
@@ -540,7 +570,7 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
     } else {
       setState(() {
         _matchText = 'Sandi Tidak Cocok';
-        _matchColor = AppColors.error; // Warna merah
+        _matchColor = AppColors.error;
       });
     }
   }
@@ -550,24 +580,19 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'KONFIRMASI KATA SANDI',
-          style: AppTextStyles.labelUppercase,
-        ),
+        const Text('KONFIRMASI KATA SANDI',
+            style: AppTextStyles.labelUppercase),
         const SizedBox(height: 8),
         TextField(
           controller: widget.controller,
           obscureText: _isObscured,
-          onChanged: _checkMatch, // Deteksi ketikan secara real-time
+          onChanged: _checkMatch,
           style: AppTextStyles.inputText,
           decoration: InputDecoration(
             hintText: '••••••••',
             hintStyle: AppTextStyles.inputHint.copyWith(fontSize: 18),
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.textHint,
-              size: 20,
-            ),
+            prefixIcon: const Icon(Icons.lock_outline_rounded,
+                color: AppColors.textHint, size: 20),
             suffixIcon: IconButton(
               icon: Icon(
                 _isObscured
@@ -576,11 +601,7 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
                 color: AppColors.textHint,
                 size: 20,
               ),
-              onPressed: () {
-                setState(() {
-                  _isObscured = !_isObscured;
-                });
-              },
+              onPressed: () => setState(() => _isObscured = !_isObscured),
             ),
             filled: true,
             fillColor: AppColors.inputBackground,
@@ -597,18 +618,14 @@ class _ConfirmPasswordTextFieldState extends State<_ConfirmPasswordTextField> {
               borderSide: BorderSide(
                 color: _matchColor == Colors.transparent
                     ? AppColors.primaryGreen
-                    : _matchColor, // Garis tepi ikut berubah warna
+                    : _matchColor,
                 width: 1.5,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16,
-            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           ),
         ),
-
-        // --- TEXT INDIKATOR KECOCOKAN ---
         if (_matchText.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0, left: 4.0),
