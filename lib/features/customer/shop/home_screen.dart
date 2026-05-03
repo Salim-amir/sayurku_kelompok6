@@ -116,26 +116,112 @@ void _loadNamaUser() async {
 
   // ── HEADER ──────────────────────────────────────────
  Widget _buildHeader() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  final now = DateTime.now();
+  final hour = now.hour;
+  String greeting;
+  IconData greetingIcon;
+
+  if (hour < 11) {
+    greeting = 'Selamat Pagi';
+    greetingIcon = Icons.wb_sunny_rounded;
+  } else if (hour < 15) {
+    greeting = 'Selamat Siang';
+    greetingIcon = Icons.wb_sunny_rounded;
+  } else if (hour < 18) {
+    greeting = 'Selamat Sore';
+    greetingIcon = Icons.wb_cloudy_rounded;
+  } else {
+    greeting = 'Selamat Malam';
+    greetingIcon = Icons.nightlight_round;
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      GestureDetector(
-        onTap: () => setState(() => _currentIndex = 4),
+      // Header utama
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _currentIndex = 4),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
+                  child: Text(
+                    _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
+                    style: AppTextStyles.h2.copyWith(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(greeting,
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textSecondary)),
+                    const SizedBox(height: 2),
+                    Text('Halo, $_namaUser!',
+                        style: AppTextStyles.h2),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+      // Banner info ongkir gratis
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primaryGreen,
+              AppColors.accentGreen,
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
-              child: Text(
-                _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
-                style: AppTextStyles.h3.copyWith(
-                  color: AppColors.primaryGreen,
-                  fontWeight: FontWeight.w700,
-                ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: const Icon(Icons.delivery_dining_rounded,
+                  color: AppColors.white, size: 22),
             ),
             const SizedBox(width: 12),
-            Text('Halo, $_namaUser', style: AppTextStyles.h2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gratis Ongkir Hari Ini! 🎉',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    'Untuk pembelian min. Rp 25.000',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.white.withOpacity(0.85)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white70, size: 14),
           ],
         ),
       ),
