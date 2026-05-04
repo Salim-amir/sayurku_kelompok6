@@ -544,7 +544,7 @@ Widget _buildProdukTerlaris() {
                                         'satuan': produk.satuan,
                                         'imageUrl': produk.imageUrl,
                                       }, 1);
-                                      setState(() {});
+
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
@@ -776,7 +776,7 @@ String _formatHarga(int harga) {
                                             'satuan': produk.satuan,
                                             'imageUrl': produk.imageUrl,
                                           }, 1);
-                                          setState(() {});
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(
@@ -848,45 +848,47 @@ String _formatHarga(int harga) {
 
   // ── CART FAB ────────────────────────────────────────
 Widget _buildCartFAB() {
-  return Stack(
-    clipBehavior: Clip.none,
-    children: [
-      FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const KeranjangBelanjaScreen()),
-          );
-          setState(() {}); // refresh badge setelah balik dari keranjang
-        },
-        backgroundColor: AppColors.primaryGreen,
-        child: const Icon(Icons.shopping_basket_rounded,
-            color: AppColors.white),
-      ),
-      if (CartManager.instance.totalProduk > 0)
-        Positioned(
-          right: -2,
-          top: -2,
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: const BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '${CartManager.instance.totalProduk}',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold),
+  return ValueListenableBuilder<int>(
+    valueListenable: CartManager.instance.jumlahNotifier,
+    builder: (context, jumlah, _) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          FloatingActionButton(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
+              );
+            },
+            backgroundColor: AppColors.primaryGreen,
+            child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
+          ),
+          if (jumlah > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '$jumlah',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-    ],
+        ],
+      );
+    },
   );
 }
 }
