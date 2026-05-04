@@ -10,7 +10,7 @@ import '../../../services/auth_service.dart';
 
 class OrderVerificationPage extends StatefulWidget {
   // 👇 INI REMOTE CONTROL-NYA 👇
-  final Function(int)? onMenuTap; 
+  final Function(int)? onMenuTap;
 
   const OrderVerificationPage({Key? key, this.onMenuTap}) : super(key: key);
 
@@ -23,7 +23,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedFilter = 'Menunggu Konfirmasi'; 
+  String _selectedFilter = 'Menunggu Konfirmasi';
 
   late Stream<List<Map<String, dynamic>>> _ordersStream;
 
@@ -64,22 +64,34 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); 
-              await AuthService().logoutUser(); 
+              Navigator.pop(context);
+              await AuthService().logoutUser();
               if (!mounted) return;
-              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               elevation: 0,
             ),
-            child: const Text('Ya, Logout', style: TextStyle(color: AppColors.white)),
+            child: const Text(
+              'Ya, Logout',
+              style: TextStyle(color: AppColors.white),
+            ),
           ),
         ],
       ),
@@ -94,9 +106,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: AppColors.primaryGreen,
-            ),
+            decoration: const BoxDecoration(color: AppColors.primaryGreen),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -104,44 +114,76 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                 const CircleAvatar(
                   backgroundColor: AppColors.white,
                   radius: 30,
-                  child: Icon(Icons.person, color: AppColors.primaryGreen, size: 35),
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.primaryGreen,
+                    size: 35,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text('Admin SayurKu', style: AppTextStyles.h3.copyWith(color: AppColors.white)),
-                Text('Pusat Kendali Toko', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white.withOpacity(0.8))),
+                Text(
+                  'Admin SayurKu',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.white),
+                ),
+                Text(
+                  'Pusat Kendali Toko',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.white.withOpacity(0.8),
+                  ),
+                ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard_outlined, color: AppColors.textPrimary),
+            leading: const Icon(
+              Icons.dashboard_outlined,
+              color: AppColors.textPrimary,
+            ),
             title: const Text('Dashboard'),
             onTap: () {
               Navigator.pop(context);
-              if (widget.onMenuTap != null) widget.onMenuTap!(0); // 👈 Lompat ke Dashboard
+              if (widget.onMenuTap != null)
+                widget.onMenuTap!(0); // 👈 Lompat ke Dashboard
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified_user_outlined, color: AppColors.primaryGreen),
-            title: const Text('Verifikasi', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+            leading: const Icon(
+              Icons.verified_user_outlined,
+              color: AppColors.primaryGreen,
+            ),
+            title: const Text(
+              'Verifikasi',
+              style: TextStyle(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             onTap: () {
               Navigator.pop(context); // Tetap di sini
             },
           ),
           ListTile(
-            leading: const Icon(Icons.shopping_bag_outlined, color: AppColors.textPrimary),
+            leading: const Icon(
+              Icons.shopping_bag_outlined,
+              color: AppColors.textPrimary,
+            ),
             title: const Text('Produk'),
             onTap: () {
               Navigator.pop(context);
-              if (widget.onMenuTap != null) widget.onMenuTap!(2); // 👈 Lompat ke Produk
+              if (widget.onMenuTap != null)
+                widget.onMenuTap!(2); // 👈 Lompat ke Produk
             },
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Logout', style: TextStyle(color: AppColors.error)),
+            title: const Text(
+              'Logout',
+              style: TextStyle(color: AppColors.error),
+            ),
             onTap: () {
-              Navigator.pop(context); 
-              _showLogoutDialog(); 
+              Navigator.pop(context);
+              _showLogoutDialog();
             },
           ),
         ],
@@ -152,17 +194,12 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAF7),
       drawer: _buildAdminDrawer(),
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Verifikasi Antrean',
           style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
@@ -173,7 +210,9 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
         stream: _ordersStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            );
           }
 
           final allOrders = snapshot.data ?? [];
@@ -188,7 +227,10 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: [
                       _buildTab(label: 'Pesanan', index: 0),
@@ -211,14 +253,32 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                     padding: const EdgeInsets.all(16),
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                      onChanged: (v) =>
+                          setState(() => _searchQuery = v.toLowerCase()),
                       decoration: InputDecoration(
                         hintText: 'Cari Berdasarkan Nama...',
                         hintStyle: AppTextStyles.inputHint,
-                        prefixIcon: const Icon(Icons.search, color: AppColors.textHint, size: 18),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorder)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.inputBorder)),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.textHint,
+                          size: 18,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputBorder,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppColors.inputBorder,
+                          ),
+                        ),
                         filled: true,
                         fillColor: AppColors.white,
                       ),
@@ -237,36 +297,134 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              (_selectedFilter == 'Selesai' || _selectedFilter == 'Dibatalkan')
+                              (_selectedFilter == 'Selesai' ||
+                                      _selectedFilter == 'Dibatalkan')
                                   ? 'Riwayat Pesanan'
                                   : _selectedFilter == 'Semua'
-                                      ? 'Semua Pesanan'
-                                      : 'Pesanan Terbaru',
+                                  ? 'Semua Pesanan'
+                                  : 'Pesanan Terbaru',
                               style: AppTextStyles.h3,
                             ),
                             if (_selectedFilter != 'Menunggu Konfirmasi')
                               Text(
                                 'Filter: $_selectedFilter',
-                                style: AppTextStyles.caption.copyWith(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                           ],
                         ),
                         PopupMenuButton<String>(
                           icon: Icon(
                             Icons.tune,
-                            color: _selectedFilter == 'Menunggu Konfirmasi' ? AppColors.textPrimary : AppColors.primaryGreen,
+                            color: _selectedFilter == 'Menunggu Konfirmasi'
+                                ? AppColors.textPrimary
+                                : AppColors.primaryGreen,
                           ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          onSelected: (v) => setState(() => _selectedFilter = v),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onSelected: (v) =>
+                              setState(() => _selectedFilter = v),
                           itemBuilder: (_) => [
-                            PopupMenuItem(value: 'Menunggu Konfirmasi', child: Row(children: [Icon(Icons.pending_outlined, size: 18, color: _selectedFilter == 'Menunggu Konfirmasi' ? AppColors.primaryGreen : AppColors.textPrimary), const SizedBox(width: 8), const Text('Menunggu Konfirmasi')])),
-                            PopupMenuItem(value: 'Diproses', child: Row(children: [Icon(Icons.autorenew_outlined, size: 18, color: _selectedFilter == 'Diproses' ? AppColors.primaryGreen : AppColors.textPrimary), const SizedBox(width: 8), const Text('Diproses')])),
-                            PopupMenuItem(value: 'Dikirim', child: Row(children: [Icon(Icons.local_shipping_outlined, size: 18, color: _selectedFilter == 'Dikirim' ? AppColors.primaryGreen : AppColors.textPrimary), const SizedBox(width: 8), const Text('Dikirim')])),
+                            PopupMenuItem(
+                              value: 'Menunggu Konfirmasi',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.pending_outlined,
+                                    size: 18,
+                                    color:
+                                        _selectedFilter == 'Menunggu Konfirmasi'
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Menunggu Konfirmasi'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'Diproses',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.autorenew_outlined,
+                                    size: 18,
+                                    color: _selectedFilter == 'Diproses'
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Diproses'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'Dikirim',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_shipping_outlined,
+                                    size: 18,
+                                    color: _selectedFilter == 'Dikirim'
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Dikirim'),
+                                ],
+                              ),
+                            ),
                             const PopupMenuDivider(),
-                            PopupMenuItem(value: 'Selesai', child: Row(children: [Icon(Icons.check_circle_outline, size: 18, color: _selectedFilter == 'Selesai' ? AppColors.primaryGreen : AppColors.textPrimary), const SizedBox(width: 8), const Text('Riwayat: Selesai')])),
-                            PopupMenuItem(value: 'Dibatalkan', child: Row(children: [Icon(Icons.cancel_outlined, size: 18, color: _selectedFilter == 'Dibatalkan' ? AppColors.primaryGreen : AppColors.textPrimary), const SizedBox(width: 8), const Text('Riwayat: Dibatalkan')])),
+                            PopupMenuItem(
+                              value: 'Selesai',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 18,
+                                    color: _selectedFilter == 'Selesai'
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Riwayat: Selesai'),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'Dibatalkan',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.cancel_outlined,
+                                    size: 18,
+                                    color: _selectedFilter == 'Dibatalkan'
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Riwayat: Dibatalkan'),
+                                ],
+                              ),
+                            ),
                             const PopupMenuDivider(),
-                            const PopupMenuItem(value: 'Semua', child: Row(children: [Icon(Icons.list_alt_outlined, size: 18, color: AppColors.textPrimary), const SizedBox(width: 8), const Text('Tampilkan Semua')])),
+                            const PopupMenuItem(
+                              value: 'Semua',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.list_alt_outlined,
+                                    size: 18,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Tampilkan Semua'),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -280,9 +438,18 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                           child: Center(
                             child: Column(
                               children: [
-                                const Icon(Icons.inbox_outlined, size: 56, color: AppColors.textHint),
+                                const Icon(
+                                  Icons.inbox_outlined,
+                                  size: 56,
+                                  color: AppColors.textHint,
+                                ),
                                 const SizedBox(height: 12),
-                                Text('Belum ada pesanan.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                                Text(
+                                  'Belum ada pesanan.',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -291,45 +458,61 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                     : SliverPadding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final orderData = filtered[index];
-                              final userId = orderData['userId'] ?? '';
-                              final orderId = orderData['id'] ?? '';
-                              final status = (orderData['status'] ?? 'MENUNGGU KONFIRMASI').toString();
-                              final totalHarga = (orderData['totalHarga'] ?? 0).toInt();
-                              final timestamp = orderData['tanggalPesan'] as Timestamp?;
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final orderData = filtered[index];
+                            final userId = orderData['userId'] ?? '';
+                            final orderId = orderData['id'] ?? '';
+                            final status =
+                                (orderData['status'] ?? 'MENUNGGU KONFIRMASI')
+                                    .toString();
+                            final totalHarga = (orderData['totalHarga'] ?? 0)
+                                .toInt();
+                            final timestamp =
+                                orderData['tanggalPesan'] as Timestamp?;
 
-                              return FutureBuilder<DocumentSnapshot>(
-                                future: FirebaseFirestore.instance.collection(AppConstants.colUsers).doc(userId).get(),
-                                builder: (context, userSnap) {
-                                  String namaUser = 'Memuat...';
-                                  if (userSnap.hasData && userSnap.data!.exists) {
-                                    final ud = userSnap.data!.data() as Map<String, dynamic>;
-                                    namaUser = ud['namaLengkap'] ?? 'Customer';
-                                  }
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: FirebaseFirestore.instance
+                                  .collection(AppConstants.colUsers)
+                                  .doc(userId)
+                                  .get(),
+                              builder: (context, userSnap) {
+                                String namaUser = 'Memuat...';
+                                if (userSnap.hasData && userSnap.data!.exists) {
+                                  final ud =
+                                      userSnap.data!.data()
+                                          as Map<String, dynamic>;
+                                  namaUser = ud['namaLengkap'] ?? 'Customer';
+                                }
 
-                                  if (_searchQuery.isNotEmpty && !namaUser.toLowerCase().contains(_searchQuery)) {
-                                    return const SizedBox.shrink();
-                                  }
+                                if (_searchQuery.isNotEmpty &&
+                                    !namaUser.toLowerCase().contains(
+                                      _searchQuery,
+                                    )) {
+                                  return const SizedBox.shrink();
+                                }
 
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: _buildOrderCard(orderId: orderId, namaUser: namaUser, status: status, timeAgo: _getTimeAgo(timestamp), totalHarga: totalHarga),
-                                  );
-                                },
-                              );
-                            },
-                            childCount: filtered.length,
-                          ),
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildOrderCard(
+                                    orderId: orderId,
+                                    namaUser: namaUser,
+                                    status: status,
+                                    timeAgo: _getTimeAgo(timestamp),
+                                    totalHarga: totalHarga,
+                                  ),
+                                );
+                              },
+                            );
+                          }, childCount: filtered.length),
                         ),
                       ),
               ],
 
               if (_selectedTabIndex == 1)
-                const SliverFillRemaining(
-                  child: VerifikasiIsiSaldoPage(),
-                ),
+                const SliverFillRemaining(child: VerifikasiIsiSaldoPage()),
 
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
@@ -349,10 +532,18 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
           decoration: BoxDecoration(
             color: isActive ? AppColors.primaryGreen : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
-            border: isActive ? null : Border.all(color: AppColors.divider, width: 1),
+            border: isActive
+                ? null
+                : Border.all(color: AppColors.divider, width: 1),
           ),
           child: Center(
-            child: Text(label, style: AppTextStyles.buttonSecondary.copyWith(color: isActive ? AppColors.white : AppColors.textPrimary, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: AppTextStyles.buttonSecondary.copyWith(
+                color: isActive ? AppColors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ),
@@ -366,20 +557,44 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
       decoration: BoxDecoration(
         color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppColors.primaryGreen.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('DASHBOARD ADMIN', style: AppTextStyles.labelUppercase.copyWith(color: AppColors.white.withOpacity(0.8))),
+          Text(
+            'DASHBOARD ADMIN',
+            style: AppTextStyles.labelUppercase.copyWith(
+              color: AppColors.white.withOpacity(0.8),
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Total Pesanan: $total Pesanan', style: AppTextStyles.h2.copyWith(color: AppColors.white, fontSize: 22)),
+          Text(
+            'Total Pesanan: $total Pesanan',
+            style: AppTextStyles.h2.copyWith(
+              color: AppColors.white,
+              fontSize: 22,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
               const Icon(Icons.check_circle, color: AppColors.white, size: 16),
               const SizedBox(width: 8),
-              Expanded(child: Text('Semua sayuran siap dikemas!', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white.withOpacity(0.9)))),
+              Expanded(
+                child: Text(
+                  'Semua sayuran siap dikemas!',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.white.withOpacity(0.9),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -387,20 +602,36 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
     );
   }
 
-  Widget _buildOrderCard({required String orderId, required String namaUser, required String status, required String timeAgo, required int totalHarga}) {
+  Widget _buildOrderCard({
+    required String orderId,
+    required String namaUser,
+    required String status,
+    required String timeAgo,
+    required int totalHarga,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const CircleAvatar(radius: 24, backgroundColor: AppColors.inputBackground, child: Icon(Icons.person, color: AppColors.textHint, size: 28)),
+              const CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.inputBackground,
+                child: Icon(Icons.person, color: AppColors.textHint, size: 28),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -410,7 +641,13 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Expanded(child: Text('#${orderId.length > 8 ? orderId.substring(0, 8) : orderId}', style: AppTextStyles.bodySmall, overflow: TextOverflow.ellipsis)),
+                        Expanded(
+                          child: Text(
+                            '#${orderId.length > 8 ? orderId.substring(0, 8) : orderId}',
+                            style: AppTextStyles.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Text('• $timeAgo', style: AppTextStyles.bodySmall),
                       ],
@@ -420,8 +657,18 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: _colorStatus(status).withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-                child: Text(status.toUpperCase(), style: AppTextStyles.caption.copyWith(color: _colorStatus(status), fontWeight: FontWeight.w600, fontSize: 9)),
+                decoration: BoxDecoration(
+                  color: _colorStatus(status).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: _colorStatus(status),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 9,
+                  ),
+                ),
               ),
             ],
           ),
@@ -431,16 +678,34 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
             children: [
               Text('TOTAL PESANAN', style: AppTextStyles.labelUppercase),
               const SizedBox(height: 4),
-              Text('Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}', style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+              Text(
+                'Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetailPesananScreen(orderId: orderId))),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
-              child: Text('Detail', style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13)),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailPesananScreen(orderId: orderId),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Detail',
+                style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13),
+              ),
             ),
           ),
         ],

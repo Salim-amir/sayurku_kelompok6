@@ -38,8 +38,7 @@ class _DetailVerifikasiTopupScreenState
 
   Future<Map<String, dynamic>?> _fetchDetail() async {
     try {
-      final txDoc =
-          await FirebaseFirestore.instance.doc(widget.docPath).get();
+      final txDoc = await FirebaseFirestore.instance.doc(widget.docPath).get();
       final userDoc = await FirebaseFirestore.instance
           .collection(AppConstants.colUsers)
           .doc(widget.userId)
@@ -48,8 +47,9 @@ class _DetailVerifikasiTopupScreenState
       if (!txDoc.exists) return null;
 
       final txData = txDoc.data() as Map<String, dynamic>;
-      final userData =
-          userDoc.exists ? userDoc.data() as Map<String, dynamic> : {};
+      final userData = userDoc.exists
+          ? userDoc.data() as Map<String, dynamic>
+          : {};
 
       return {
         ...txData,
@@ -68,8 +68,18 @@ class _DetailVerifikasiTopupScreenState
     if (timestamp == null) return '-';
     final date = timestamp.toDate();
     const months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}, '
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} WIB';
@@ -77,10 +87,7 @@ class _DetailVerifikasiTopupScreenState
 
   // ── Format Rupiah ─────────────────────────────────────────────
   String _formatRupiah(double nominal) {
-    return 'Rp ${nominal.toInt().toString().replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]}.',
-        )}';
+    return 'Rp ${nominal.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
   }
 
   // ── Approve top-up & tambah saldo user ───────────────────────
@@ -131,9 +138,9 @@ class _DetailVerifikasiTopupScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryGreen),
@@ -154,9 +161,7 @@ class _DetailVerifikasiTopupScreenState
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(
-              child: Text('Data transaksi tidak ditemukan.'),
-            );
+            return const Center(child: Text('Data transaksi tidak ditemukan.'));
           }
 
           final data = snapshot.data!;
@@ -164,7 +169,8 @@ class _DetailVerifikasiTopupScreenState
           final emailUser = data['emailUser'] ?? '-';
           final nomorHp = data['nomorHp'] ?? '-';
           final amount = (data['amount'] ?? 0).toDouble();
-          final status = (data['status'] ?? AppConstants.txStatusPending).toString();
+          final status = (data['status'] ?? AppConstants.txStatusPending)
+              .toString();
           final timestamp = data['timestamp'] as Timestamp?;
           final imageUrl = data['buktiTransfer'] as String?;
           final txId = data['id'] ?? widget.txId;
@@ -222,10 +228,7 @@ class _DetailVerifikasiTopupScreenState
                 const SizedBox(height: 24),
 
                 // ─── BUKTI TRANSFER ──────────────────────────────────
-                Text(
-                  'BUKTI TRANSFER',
-                  style: AppTextStyles.labelUppercase,
-                ),
+                Text('BUKTI TRANSFER', style: AppTextStyles.labelUppercase),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -247,8 +250,11 @@ class _DetailVerifikasiTopupScreenState
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.receipt_long,
-                                  color: Colors.white54, size: 48),
+                              Icon(
+                                Icons.receipt_long,
+                                color: Colors.white54,
+                                size: 48,
+                              ),
                               SizedBox(height: 8),
                               Text(
                                 'Belum ada foto bukti transfer',
@@ -265,7 +271,9 @@ class _DetailVerifikasiTopupScreenState
                             onTap: () => _showFullImage(context, imageUrl),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
@@ -273,8 +281,11 @@ class _DetailVerifikasiTopupScreenState
                               ),
                               child: const Row(
                                 children: [
-                                  Icon(Icons.zoom_in,
-                                      color: Colors.white, size: 18),
+                                  Icon(
+                                    Icons.zoom_in,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Perbesar Gambar',
@@ -313,7 +324,9 @@ class _DetailVerifikasiTopupScreenState
                           Text('Rincian\nTop-Up', style: AppTextStyles.h2),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: _bgStatus(status),
                               borderRadius: BorderRadius.circular(20),
@@ -368,8 +381,11 @@ class _DetailVerifikasiTopupScreenState
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline,
-                          color: AppColors.primaryGreen, size: 20),
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppColors.primaryGreen,
+                        size: 20,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -401,8 +417,8 @@ class _DetailVerifikasiTopupScreenState
 
           final data = snapshot.data!;
           final amount = (data['amount'] ?? 0).toDouble();
-          final status =
-              (data['status'] ?? AppConstants.txStatusPending).toString();
+          final status = (data['status'] ?? AppConstants.txStatusPending)
+              .toString();
           final isPending = status == AppConstants.txStatusPending;
 
           if (!isPending) return const SizedBox.shrink();
@@ -446,8 +462,9 @@ class _DetailVerifikasiTopupScreenState
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed:
-                        _isLoading ? null : () => _konfirmasiApprove(amount),
+                    onPressed: _isLoading
+                        ? null
+                        : () => _konfirmasiApprove(amount),
                     icon: _isLoading
                         ? const SizedBox(
                             width: 20,
@@ -457,8 +474,11 @@ class _DetailVerifikasiTopupScreenState
                               strokeWidth: 2,
                             ),
                           )
-                        : const Icon(Icons.check_circle,
-                            color: AppColors.white, size: 20),
+                        : const Icon(
+                            Icons.check_circle,
+                            color: AppColors.white,
+                            size: 20,
+                          ),
                     label: Text(
                       _isLoading ? 'Memproses...' : 'Terima & Isi Saldo',
                       style: AppTextStyles.buttonPrimary,
@@ -487,9 +507,7 @@ class _DetailVerifikasiTopupScreenState
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Konfirmasi Persetujuan'),
-        content: Text(
-          'Tambahkan ${_formatRupiah(amount)} ke saldo customer?',
-        ),
+        content: Text('Tambahkan ${_formatRupiah(amount)} ke saldo customer?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -503,8 +521,10 @@ class _DetailVerifikasiTopupScreenState
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
             ),
-            child: const Text('Ya, ACC Saldo',
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Ya, ACC Saldo',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -528,11 +548,11 @@ class _DetailVerifikasiTopupScreenState
               Navigator.pop(context);
               _rejectTopUp();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text(
+              'Ya, Tolak',
+              style: TextStyle(color: Colors.white),
             ),
-            child:
-                const Text('Ya, Tolak', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -570,10 +590,7 @@ class _DetailVerifikasiTopupScreenState
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
-        ),
+        Text(label, style: AppTextStyles.bodySmall.copyWith(fontSize: 14)),
         Flexible(
           child: Text(
             value,

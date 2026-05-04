@@ -8,7 +8,8 @@ import '/../services/order_service.dart';
 class DetailPesananScreen extends StatefulWidget {
   final String orderId;
 
-  const DetailPesananScreen({Key? key, required this.orderId}) : super(key: key);
+  const DetailPesananScreen({Key? key, required this.orderId})
+    : super(key: key);
 
   @override
   State<DetailPesananScreen> createState() => _DetailPesananScreenState();
@@ -97,9 +98,9 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryGreen),
@@ -125,26 +126,34 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
 
           final orderData = snapshot.data!;
           final userId = orderData['userId'] ?? '';
-          final items = List<Map<String, dynamic>>.from(orderData['items'] ?? []);
+          final items = List<Map<String, dynamic>>.from(
+            orderData['items'] ?? [],
+          );
           final totalHarga = (orderData['totalHarga'] ?? 0).toInt();
-          final alamat = orderData['alamatPengiriman'] ?? 'Alamat tidak tersedia';
+          final alamat =
+              orderData['alamatPengiriman'] ?? 'Alamat tidak tersedia';
           final imageUrl = orderData['buktiTransfer'] as String?;
-          
+
           // Pelacak Status Pintar (Abaikan Huruf Besar/Kecil)
-          final rawStatus = (orderData['status'] ?? 'Menunggu Konfirmasi').toString();
+          final rawStatus = (orderData['status'] ?? 'Menunggu Konfirmasi')
+              .toString();
           final statusSaatIni = _statusOptions.firstWhere(
             (option) => option.toLowerCase() == rawStatus.toLowerCase(),
             orElse: () => _statusOptions[0],
           );
 
           return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance.collection(AppConstants.colUsers).doc(userId).get(),
+            future: FirebaseFirestore.instance
+                .collection(AppConstants.colUsers)
+                .doc(userId)
+                .get(),
             builder: (context, userSnapshot) {
               String namaCustomer = 'Memuat...';
               String emailCustomer = '-';
-              
+
               if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+                final userData =
+                    userSnapshot.data!.data() as Map<String, dynamic>;
                 namaCustomer = userData['namaLengkap'] ?? 'Customer';
                 emailCustomer = userData['email'] ?? '-';
               }
@@ -173,7 +182,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                           CircleAvatar(
                             radius: 26,
                             backgroundColor: AppColors.inputBackground,
-                            child: const Icon(Icons.person, color: AppColors.textHint, size: 30),
+                            child: const Icon(
+                              Icons.person,
+                              color: AppColors.textHint,
+                              size: 30,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -187,7 +200,10 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                                   style: AppTextStyles.bodySmall,
                                 ),
                                 const SizedBox(height: 2),
-                                Text(emailCustomer, style: AppTextStyles.bodySmall),
+                                Text(
+                                  emailCustomer,
+                                  style: AppTextStyles.bodySmall,
+                                ),
                               ],
                             ),
                           ),
@@ -219,7 +235,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.receipt_long, color: Colors.white54, size: 48),
+                                  Icon(
+                                    Icons.receipt_long,
+                                    color: Colors.white54,
+                                    size: 48,
+                                  ),
                                   SizedBox(height: 8),
                                   Text(
                                     'Belum ada foto bukti transfer',
@@ -235,7 +255,10 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                               child: GestureDetector(
                                 onTap: () => _showFullImage(context, imageUrl),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(20),
@@ -243,7 +266,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                                   ),
                                   child: const Row(
                                     children: [
-                                      Icon(Icons.zoom_in, color: Colors.white, size: 18),
+                                      Icon(
+                                        Icons.zoom_in,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
                                       SizedBox(width: 8),
                                       Text(
                                         'Perbesar Gambar',
@@ -281,7 +308,10 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                             children: [
                               Text('Rincian\nBelanja', style: AppTextStyles.h2),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _bgStatus(statusSaatIni),
                                   borderRadius: BorderRadius.circular(20),
@@ -311,35 +341,58 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                                       color: AppColors.inputBackground,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(Icons.eco, color: AppColors.primaryGreen),
+                                    child: const Icon(
+                                      Icons.eco,
+                                      color: AppColors.primaryGreen,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(item['nama'] ?? 'Produk', style: AppTextStyles.h3),
-                                        Text('x${item['jumlah']} ${item['satuan'] ?? 'unit'}', style: AppTextStyles.bodySmall),
+                                        Text(
+                                          item['nama'] ?? 'Produk',
+                                          style: AppTextStyles.h3,
+                                        ),
+                                        Text(
+                                          'x${item['jumlah']} ${item['satuan'] ?? 'unit'}',
+                                          style: AppTextStyles.bodySmall,
+                                        ),
                                       ],
                                     ),
                                   ),
                                   Text(
                                     'Rp ${item['harga'].toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                                    style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.w600),
+                                    style: AppTextStyles.h3.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             );
                           }).toList(),
 
-                          const Divider(height: 24, thickness: 1, color: AppColors.divider),
+                          const Divider(
+                            height: 24,
+                            thickness: 1,
+                            color: AppColors.divider,
+                          ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Total Pembayaran', style: AppTextStyles.bodySmall.copyWith(fontSize: 14)),
+                              Text(
+                                'Total Pembayaran',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontSize: 14,
+                                ),
+                              ),
                               Text(
                                 'Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match.group(1)}.')}',
-                                style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen),
+                                style: AppTextStyles.h2.copyWith(
+                                  color: AppColors.primaryGreen,
+                                ),
                               ),
                             ],
                           ),
@@ -351,9 +404,17 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                     // ─── ALAMAT PENGIRIMAN ───
                     Row(
                       children: [
-                        const Icon(Icons.local_shipping_outlined, color: AppColors.primaryGreen),
+                        const Icon(
+                          Icons.local_shipping_outlined,
+                          color: AppColors.primaryGreen,
+                        ),
                         const SizedBox(width: 8),
-                        Text('Alamat Pengiriman', style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+                        Text(
+                          'Alamat Pengiriman',
+                          style: AppTextStyles.h3.copyWith(
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -364,7 +425,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: Column(
@@ -372,7 +437,12 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                         children: [
                           Text(namaCustomer, style: AppTextStyles.h3),
                           const SizedBox(height: 8),
-                          Text(alamat, style: AppTextStyles.bodySmall.copyWith(height: 1.5)),
+                          Text(
+                            alamat,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              height: 1.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -394,8 +464,9 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
           }
 
           final orderData = snapshot.data!;
-          final rawStatus = (orderData['status'] ?? 'Menunggu Konfirmasi').toString();
-          
+          final rawStatus = (orderData['status'] ?? 'Menunggu Konfirmasi')
+              .toString();
+
           // Cari status yang sama persis
           final statusSaatIni = _statusOptions.firstWhere(
             (option) => option.toLowerCase() == rawStatus.toLowerCase(),
@@ -421,7 +492,10 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.inputBackground,
                     borderRadius: BorderRadius.circular(12),
@@ -431,11 +505,17 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                     child: DropdownButton<String>(
                       value: _selectedStatus,
                       isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryGreen),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.primaryGreen,
+                      ),
                       items: _statusOptions.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text('Update Status: $value', style: AppTextStyles.inputText),
+                          child: Text(
+                            'Update Status: $value',
+                            style: AppTextStyles.inputText,
+                          ),
                         );
                       }).toList(),
                       onChanged: (newValue) {
@@ -455,10 +535,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                         ? null
                         : () async {
                             setState(() => _isLoading = true);
-                            final error = await _orderService.updateStatusPesanan(
-                              orderId: widget.orderId,
-                              statusBaru: _selectedStatus!,
-                            );
+                            final error = await _orderService
+                                .updateStatusPesanan(
+                                  orderId: widget.orderId,
+                                  statusBaru: _selectedStatus!,
+                                );
 
                             if (!mounted) return;
                             setState(() => _isLoading = false);
@@ -484,7 +565,10 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: AppColors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.verified, color: AppColors.white),
                     label: Text(
@@ -493,7 +577,9 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
