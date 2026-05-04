@@ -27,6 +27,22 @@ final ProductService _productService = ProductService();
   final TextEditingController _searchController = TextEditingController(); // ← tambah ini
   String _searchKeyword = '';
 
+ Stream<List<ProductModel>>? _stream;
+  String _lastKategori = '';
+  String _lastKeyword = '';
+
+Stream<List<ProductModel>> _getStream() {
+  if (_searchKeyword != _lastKeyword || _selectedKategori != _lastKategori) {
+    _lastKeyword = _searchKeyword;
+    _lastKategori = _selectedKategori;
+    _stream = _searchKeyword.isEmpty
+        ? _productService.getProdukByKategori(_selectedKategori)
+        : _productService.cariProduk(_searchKeyword);
+  }
+  return _stream!;
+}
+
+
   @override
 void dispose() {
   _searchController.dispose();
@@ -238,9 +254,7 @@ Widget _buildKategoriFilter() {
   // ── PRODUK GRID ─────────────────────────────────────
 Widget _buildProdukGrid() {
   return StreamBuilder<List<ProductModel>>(
-    stream: _searchKeyword.isEmpty
-        ? _productService.getProdukByKategori(_selectedKategori)
-        : _productService.cariProduk(_searchKeyword),
+    stream:  _getStream(),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(
@@ -298,7 +312,7 @@ Widget _buildProdukGrid() {
     'satuan': produk.satuan,
     'imageUrl': produk.imageUrl,
   }, 1);
-  setState(() {});
+
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text('${produk.nama} ditambahkan ke keranjang!'),
@@ -362,45 +376,45 @@ String _getLabelKategori(String kategori) {
 
   // ── CART FAB ────────────────────────────────────────
 Widget _buildCartFAB() {
-  return Stack(
-    clipBehavior: Clip.none,
-    children: [
-      FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const KeranjangBelanjaScreen()),
-          );
-          setState(() {}); // refresh badge setelah balik dari keranjang
-        },
-        backgroundColor: AppColors.primaryGreen,
-        child: const Icon(Icons.shopping_basket_rounded,
-            color: AppColors.white),
-      ),
-      if (CartManager.instance.totalProduk > 0)
-        Positioned(
-          right: -2,
-          top: -2,
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: const BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
+  return ValueListenableBuilder<int>(
+    valueListenable: CartManager.instance.jumlahNotifier,
+    builder: (context, jumlah, _) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          FloatingActionButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
             ),
-            child: Center(
-              child: Text(
-                '${CartManager.instance.totalProduk}',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold),
+            backgroundColor: AppColors.primaryGreen,
+            child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
+          ),
+          if (jumlah > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '$jumlah',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-    ],
+        ],
+      );
+    },
   );
 }
   String _formatHarga(int harga) {
