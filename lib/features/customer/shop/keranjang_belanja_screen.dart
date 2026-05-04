@@ -84,12 +84,12 @@ Widget _buildItemKeranjang(int index) {
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: AppColors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
       ],
     ),
@@ -97,18 +97,18 @@ Widget _buildItemKeranjang(int index) {
       children: [
         // Foto produk
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: imageUrl.isNotEmpty
+          borderRadius: BorderRadius.circular(14),
+          child: imageUrl.isNotEmpty && imageUrl.startsWith('http')
               ? Image.network(
                   imageUrl,
-                  width: 80,
-                  height: 80,
+                  width: 85,
+                  height: 85,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
                 )
               : _buildFotoPlaceholder(),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         // Info produk
         Expanded(
           child: Column(
@@ -120,32 +120,36 @@ Widget _buildItemKeranjang(int index) {
                   overflow: TextOverflow.ellipsis),
               const SizedBox(height: 2),
               Text(
-                'Rp ${_formatHarga(item['harga'])} /${item['satuan']}',
+                'Rp ${_formatHarga(item['harga'])} / ${item['satuan']}',
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textSecondary),
               ),
-              const SizedBox(height: 8),
-              // Tombol +/-
+              const SizedBox(height: 10),
               Row(
                 children: [
+                  // Tombol kurangi
                   _buildQtyButton(
                     icon: Icons.remove_rounded,
                     onTap: () => setState(() =>
                         CartManager.instance.updateJumlah(
                             index, item['jumlah'] - 1)),
                   ),
+                  // Jumlah
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 4),
+                        horizontal: 16, vertical: 5),
                     decoration: BoxDecoration(
                       color: AppColors.primaryGreen.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.primaryGreen.withOpacity(0.2)),
                     ),
                     child: Text('${item['jumlah']}',
                         style: AppTextStyles.h3.copyWith(
                             color: AppColors.primaryGreen)),
                   ),
+                  // Tombol tambah
                   _buildQtyButton(
                     icon: Icons.add_rounded,
                     onTap: () => setState(() =>
@@ -157,16 +161,25 @@ Widget _buildItemKeranjang(int index) {
             ],
           ),
         ),
-        // Harga total + tombol hapus
+        // Kolom kanan — total + hapus
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(
-              onPressed: () =>
+            GestureDetector(
+              onTap: () =>
                   setState(() => CartManager.instance.hapusProduk(index)),
-              icon: const Icon(Icons.delete_outline_rounded,
-                  color: Colors.redAccent, size: 20),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.delete_outline_rounded,
+                    color: Colors.redAccent, size: 18),
+              ),
             ),
+            const SizedBox(height: 20),
             Text(
               'Rp ${_formatHarga(item['harga'] * item['jumlah'])}',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -182,28 +195,33 @@ Widget _buildItemKeranjang(int index) {
 
 Widget _buildFotoPlaceholder() {
   return Container(
-    width: 80,
-    height: 80,
-    color: AppColors.inputBackground,
+    width: 85,
+    height: 85,
+    decoration: BoxDecoration(
+      color: AppColors.inputBackground,
+      borderRadius: BorderRadius.circular(14),
+    ),
     child: const Icon(Icons.eco_rounded,
         color: AppColors.primaryGreen, size: 36),
   );
 }
   Widget _buildQtyButton(
-      {required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 16, color: AppColors.textPrimary),
+    {required IconData icon, required VoidCallback onTap}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: AppColors.primaryGreen.withOpacity(0.2)),
       ),
-    );
-  }
+      child: Icon(icon, size: 16, color: AppColors.primaryGreen),
+    ),
+  );
+}
 
   // ── KERANJANG KOSONG ────────────────────────────────
   Widget _buildKeranjangKosong() {
