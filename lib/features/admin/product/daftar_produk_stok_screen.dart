@@ -17,6 +17,25 @@ class ProductStockPage extends StatefulWidget {
 
 class _ProductStockPageState extends State<ProductStockPage> {
   final ProductService _productService = ProductService();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // ─── FUNGSI FILTER PRODUK BERDASARKAN PENCARIAN ─────
+  List<ProductModel> _filterProducts(List<ProductModel> products) {
+    if (_searchQuery.isEmpty) {
+      return products;
+    }
+    return products
+        .where((product) =>
+            product.nama.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +58,17 @@ class _ProductStockPageState extends State<ProductStockPage> {
             child: SizedBox(
               width: 140,
               child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                onSubmitted: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
                 decoration: InputDecoration(
                   hintText: 'Cari Produk...',
                   hintStyle: AppTextStyles.inputHint,
@@ -47,6 +77,21 @@ class _ProductStockPageState extends State<ProductStockPage> {
                     color: AppColors.textHint,
                     size: 18,
                   ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                          child: Icon(
+                            Icons.clear,
+                            color: AppColors.textHint,
+                            size: 18,
+                          ),
+                        )
+                      : null,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
@@ -58,6 +103,13 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: AppColors.inputBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: AppColors.primaryGreen,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: AppColors.inputBackground,
@@ -118,7 +170,39 @@ class _ProductStockPageState extends State<ProductStockPage> {
                 );
               }
 
-              final products = snapshot.data!;
+              // ─ FILTER PRODUK BERDASARKAN PENCARIAN
+              final allProducts = snapshot.data!;
+              final filteredProducts = _filterProducts(allProducts);
+
+              // ─ JIKA HASIL PENCARIAN KOSONG
+              if (filteredProducts.isEmpty && _searchQuery.isNotEmpty) {
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 60,
+                            color: AppColors.textHint,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Produk tidak ditemukan',
+                            style: AppTextStyles.h3,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Coba cari dengan kata kunci lain',
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
 
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -126,9 +210,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20),
-                      child: _buildProductCard(products[index]),
+                      child: _buildProductCard(filteredProducts[index]),
                     );
-                  }, childCount: products.length),
+                  }, childCount: filteredProducts.length),
                 ),
               );
             },
