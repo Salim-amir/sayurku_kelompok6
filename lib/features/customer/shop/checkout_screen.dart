@@ -524,7 +524,7 @@ onPressed: _isLoading
               'metodePembayaran': _metodePembayaran,
               'status': 'Menunggu Konfirmasi',
             };
-            CartManager.instance.items.clear();
+            CartManager.instance.kosongkanKeranjang();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

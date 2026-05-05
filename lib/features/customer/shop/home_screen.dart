@@ -860,6 +860,7 @@ Widget _buildCartFAB() {
                 context,
                 MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
               );
+              setState(() {}); 
             },
             backgroundColor: AppColors.primaryGreen,
             child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),

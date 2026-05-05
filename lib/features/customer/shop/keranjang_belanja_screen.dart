@@ -19,6 +19,21 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
   int get _totalProduk => CartManager.instance.totalProduk;
 
   @override
+    void initState() {
+      super.initState();
+      CartManager.instance.jumlahNotifier.addListener(_refreshKeranjang);
+    }
+
+    @override
+    void dispose() {
+      CartManager.instance.jumlahNotifier.removeListener(_refreshKeranjang);
+      super.dispose();
+    }
+
+    void _refreshKeranjang() {
+      if (mounted) setState(() {});
+    }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
