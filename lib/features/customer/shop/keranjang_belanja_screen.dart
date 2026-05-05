@@ -4,6 +4,7 @@ import '../../../../core/text_styles.dart';
 import '../../../../core/cart_manager.dart';
 import 'checkout_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'detail_produk_screen.dart';
 
 class KeranjangBelanjaScreen extends StatefulWidget {
   const KeranjangBelanjaScreen({super.key});
@@ -80,11 +81,36 @@ Widget _buildItemKeranjang(int index) {
   final item = _keranjang[index];
   final imageUrl = item['imageUrl'] ?? '';
 
-  return Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+  onTap: () => Navigator.push(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => DetailProdukScreen(
+        produk: {
+          'id': item['id'] ?? '',
+          'nama': item['nama'],
+          'harga': item['harga'],
+          'satuan': item['satuan'],
+          'imageUrl': item['imageUrl'] ?? '',
+          'tersedia': true,
+        },
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+            .chain(CurveTween(curve: Curves.easeInOut));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+  ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(0.06),
@@ -185,13 +211,14 @@ Widget _buildItemKeranjang(int index) {
               style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.primaryGreen,
                   fontWeight: FontWeight.w700),
-            ),
+           ),
           ],
-        ),
+        ),       
       ],
-    ),
-  );
-}
+    ),           
+  ),             
+);               
+}              
 
 Widget _buildFotoPlaceholder() {
   return Container(

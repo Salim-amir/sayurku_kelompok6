@@ -23,6 +23,7 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
   @override
   void initState() {
     super.initState();
+     _isLoading = false; 
     _loadDetail();
   }
 
