@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
   int _currentIndex = 0;
+  late Stream<List<ProductModel>> _streamProduk;
 
 final List<Map<String, dynamic>> _kategori = const [
   {
@@ -66,6 +67,7 @@ String _namaUser = 'Pengguna';
 void initState() {
   super.initState();
   _loadNamaUser();
+  _streamProduk = _productService.getSemuaProduk();
 }
 
 void _loadNamaUser() async {
@@ -391,7 +393,7 @@ Widget _buildProdukTerlaris() {
       ),
       const SizedBox(height: 12),
       StreamBuilder<List<ProductModel>>(
-        stream: _productService.getSemuaProduk(),
+        stream: _streamProduk,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -626,7 +628,7 @@ String _formatHarga(int harga) {
       ),
       const SizedBox(height: 12),
       StreamBuilder<List<ProductModel>>(
-        stream: _productService.getSemuaProduk(),
+        stream: _streamProduk,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
