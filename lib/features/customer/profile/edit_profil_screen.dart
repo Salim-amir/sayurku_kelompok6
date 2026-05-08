@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
@@ -23,8 +25,11 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
   late TextEditingController _emailController;
 
   bool _isLoading = false;
+  bool _isUploadingPhoto = false;
   bool _emailChanged = false;
   late String _originalEmail;
+  File? _selectedImage;
+  String _currentFotoUrl = '';
 
   @override
   void initState() {
@@ -37,6 +42,7 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
         TextEditingController(text: widget.userData['email'] ?? '');
 
     _originalEmail = widget.userData['email'] ?? '';
+    _currentFotoUrl = widget.userData['fotoUrl'] ?? '';
 
     // Listener untuk deteksi perubahan email
     _emailController.addListener(() {
@@ -276,30 +282,222 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
     );
   }
 
-  // ── AVATAR ──────────────────────────────────────────
+  // ── AVATAR WITH PHOTO PICKER ───────────────────────────
   Widget _buildAvatar() {
     final nama = _namaController.text;
     return Column(
       children: [
-        CircleAvatar(
-          radius: 48,
-          backgroundColor: AppColors.accentGreen.withOpacity(0.15),
-          child: Text(
-            nama.isNotEmpty ? nama[0].toUpperCase() : '?',
-            style: AppTextStyles.h1.copyWith(
-              color: AppColors.primaryGreen,
-              fontSize: 36,
-            ),
+        GestureDetector(
+          onTap: _showPhotoOptions,
+          child: Stack(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: AppColors.accentGreen.withOpacity(0.15),
+                backgroundImage: _selectedImage != null
+                    ? FileImage(_selectedImage!)
+                    : (_currentFotoUrl.isNotEmpty
+                        ? NetworkImage(_currentFotoUrl) as ImageProvider
+                        : null),
+                child: (_selectedImage == null && _currentFotoUrl.isEmpty)
+                    ? Text(
+                        nama.isNotEmpty ? nama[0].toUpperCase() : '?',
+                        style: AppTextStyles.h1.copyWith(
+                          color: AppColors.primaryGreen,
+                          fontSize: 36,
+                        ),
+                      )
+                    : null,
+              ),
+              // Camera badge
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.white, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: _isUploadingPhoto
+                      ? const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.white),
+                        )
+                      : const Icon(Icons.camera_alt_rounded,
+                          color: AppColors.white, size: 16),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          'Ubah data profil Anda',
-          style:
-              AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          'Ketuk foto untuk mengubah',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint),
         ),
       ],
     );
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text('Foto Profil', style: AppTextStyles.h3),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPhotoOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Kamera',
+                  color: AppColors.primaryGreen,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildPhotoOption(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Galeri',
+                  color: AppColors.info,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                if (_currentFotoUrl.isNotEmpty || _selectedImage != null)
+                  _buildPhotoOption(
+                    icon: Icons.delete_rounded,
+                    label: 'Hapus',
+                    color: AppColors.error,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _hapusFoto();
+                    },
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color, size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: AppTextStyles.bodySmall),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+
+      if (pickedFile == null) return;
+
+      final imageFile = File(pickedFile.path);
+      setState(() => _selectedImage = imageFile);
+
+      // Upload langsung
+      await _uploadFoto(imageFile);
+    } catch (e) {
+      if (mounted) {
+        _showSnackbar('Gagal memilih foto: $e', AppColors.error);
+      }
+    }
+  }
+
+  Future<void> _uploadFoto(File file) async {
+    setState(() => _isUploadingPhoto = true);
+
+    final error = await _profileService.uploadFotoProfil(
+      uid: user!.uid,
+      imageFile: file,
+    );
+
+    if (mounted) {
+      setState(() => _isUploadingPhoto = false);
+      if (error != null) {
+        _showSnackbar(error, AppColors.error);
+        setState(() => _selectedImage = null); // revert
+      } else {
+        _showSnackbar('Foto profil berhasil diperbarui!', AppColors.success);
+      }
+    }
+  }
+
+  Future<void> _hapusFoto() async {
+    setState(() => _isUploadingPhoto = true);
+
+    final error = await _profileService.hapusFotoProfil(uid: user!.uid);
+
+    if (mounted) {
+      setState(() {
+        _isUploadingPhoto = false;
+        if (error == null) {
+          _selectedImage = null;
+          _currentFotoUrl = '';
+        }
+      });
+      _showSnackbar(
+        error ?? 'Foto profil dihapus', error != null ? AppColors.error : AppColors.success);
+    }
   }
 
   // ── FORM ────────────────────────────────────────────
