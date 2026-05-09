@@ -14,6 +14,7 @@ import '../profile/profile_screen.dart';
 import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'produk_terlaris_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
   int _currentIndex = 0;
+  late Stream<List<ProductModel>> _streamProduk;
 
 final List<Map<String, dynamic>> _kategori = const [
   {
@@ -66,6 +68,7 @@ String _namaUser = 'Pengguna';
 void initState() {
   super.initState();
   _loadNamaUser();
+  _streamProduk = _productService.getSemuaProduk();
 }
 
 void _loadNamaUser() async {
@@ -382,7 +385,7 @@ Widget _buildProdukTerlaris() {
           TextButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
+              MaterialPageRoute(builder: (_) => const ProdukTerlarisScreen()),
             ),
             child: Text('Lihat Semua',
                 style: AppTextStyles.link.copyWith(fontSize: 13)),
@@ -391,7 +394,7 @@ Widget _buildProdukTerlaris() {
       ),
       const SizedBox(height: 12),
       StreamBuilder<List<ProductModel>>(
-        stream: _productService.getSemuaProduk(),
+        stream: _streamProduk,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -626,7 +629,7 @@ String _formatHarga(int harga) {
       ),
       const SizedBox(height: 12),
       StreamBuilder<List<ProductModel>>(
-        stream: _productService.getSemuaProduk(),
+        stream: _streamProduk,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -860,6 +863,7 @@ Widget _buildCartFAB() {
                 context,
                 MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
               );
+              setState(() {}); 
             },
             backgroundColor: AppColors.primaryGreen,
             child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),

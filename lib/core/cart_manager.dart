@@ -42,4 +42,9 @@ class CartManager {
       jumlahNotifier.value = totalProduk; // ← tambah ini
     }
   }
+
+  void kosongkanKeranjang() {
+    _items.clear();
+    jumlahNotifier.value = 0;
+  }
 }

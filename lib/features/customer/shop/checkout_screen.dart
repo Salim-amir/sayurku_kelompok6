@@ -20,7 +20,7 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String _metodePembayaran = 'COD';
-  final int _ongkosKirim = 10000;
+  final int _ongkosKirim = 0;
   final OrderService _orderService = OrderService();
   final _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
@@ -189,8 +189,12 @@ Widget _buildItemPesanan(Map<String, dynamic> item) {
   return GestureDetector(
     onTap: () => Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => DetailProdukScreen(produk: item),
+      PageRouteBuilder(
+        pageBuilder: (_, animation, __) => DetailProdukScreen(produk: item),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 200),
       ),
     ),
     child: Padding(
@@ -199,13 +203,27 @@ Widget _buildItemPesanan(Map<String, dynamic> item) {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 64,
-              height: 64,
-              color: AppColors.inputBackground,
-              child: const Icon(Icons.image_rounded,
-                  color: AppColors.textHint, size: 28),
-            ),
+            child: item['imageUrl'] != null && item['imageUrl'].toString().startsWith('http')
+                ? Image.network(
+                    item['imageUrl'],
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 64,
+                      height: 64,
+                      color: AppColors.inputBackground,
+                      child: const Icon(Icons.eco_rounded,
+                          color: AppColors.primaryGreen, size: 28),
+                    ),
+                  )
+                : Container(
+                    width: 64,
+                    height: 64,
+                    color: AppColors.inputBackground,
+                    child: const Icon(Icons.eco_rounded,
+                        color: AppColors.primaryGreen, size: 28),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -506,7 +524,7 @@ onPressed: _isLoading
               'metodePembayaran': _metodePembayaran,
               'status': 'Menunggu Konfirmasi',
             };
-            CartManager.instance.items.clear();
+            CartManager.instance.kosongkanKeranjang();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
