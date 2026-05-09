@@ -107,13 +107,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           CircleAvatar(
             radius: 40,
             backgroundColor: AppColors.accentGreen.withOpacity(0.15),
-            child: Text(
-              nama.isNotEmpty ? nama[0].toUpperCase() : '?',
-              style: AppTextStyles.h1.copyWith(
-                color: AppColors.primaryGreen,
-                fontSize: 32,
-              ),
-            ),
+            backgroundImage: (userData?.fotoUrl ?? '').isNotEmpty
+                ? NetworkImage(userData!.fotoUrl)
+                : null,
+            child: (userData?.fotoUrl ?? '').isEmpty
+                ? Text(
+                    nama.isNotEmpty ? nama[0].toUpperCase() : '?',
+                    style: AppTextStyles.h1.copyWith(
+                      color: AppColors.primaryGreen,
+                      fontSize: 32,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(height: 14),
           Text(nama, style: AppTextStyles.h2),
@@ -135,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'namaLengkap': userData?.namaLengkap ?? '',
                 'nomorHp': userData?.nomorHp ?? '',
                 'email': userData?.email ?? '',
+                'fotoUrl': userData?.fotoUrl ?? '',
               };
               Navigator.push(
                 context,

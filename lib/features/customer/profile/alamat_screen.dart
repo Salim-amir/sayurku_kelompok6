@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
@@ -353,9 +354,13 @@ class _AlamatScreenState extends State<AlamatScreen> {
                         namaCtrl, Icons.person_rounded),
                     _buildFormField('Nomor HP', '08xx xxxx xxxx', hpCtrl,
                         Icons.phone_rounded,
-                        keyboardType: TextInputType.phone),
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(13),
+                        ]),
                     _buildFormField('Alamat Lengkap',
-                        'Jl, RT/RW, No. Rumah', alamatCtrl,
+                        'Jl, RT/RW, No. Rumah, Kelurahan', alamatCtrl,
                         Icons.location_on_rounded,
                         maxLines: 2),
                     _buildFormField(
@@ -365,7 +370,11 @@ class _AlamatScreenState extends State<AlamatScreen> {
                         Icons.location_city_rounded),
                     _buildFormField('Kode Pos', '12345', posCtrl,
                         Icons.markunread_mailbox_rounded,
-                        keyboardType: TextInputType.number),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(5),
+                        ]),
                     const SizedBox(height: 16),
                     // Tombol Simpan
                     SizedBox(
@@ -373,23 +382,47 @@ class _AlamatScreenState extends State<AlamatScreen> {
                       height: AppConstants.buttonHeight,
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (labelCtrl.text.isEmpty ||
-                              namaCtrl.text.isEmpty ||
-                              hpCtrl.text.isEmpty ||
-                              alamatCtrl.text.isEmpty) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Lengkapi field yang wajib diisi',
-                                  style: AppTextStyles.bodyMedium
-                                      .copyWith(color: AppColors.white),
-                                ),
-                                backgroundColor: AppColors.warning,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
+                          // ── Validasi field wajib ──
+                          if (labelCtrl.text.trim().isEmpty ||
+                              namaCtrl.text.trim().isEmpty ||
+                              hpCtrl.text.trim().isEmpty ||
+                              alamatCtrl.text.trim().isEmpty ||
+                              kecCtrl.text.trim().isEmpty ||
+                              kotaCtrl.text.trim().isEmpty) {
+                            _showValidationError(ctx, 'Lengkapi semua field yang wajib diisi (Label, Nama, HP, Alamat, Kecamatan, Kota)');
+                            return;
+                          }
+
+                          // ── Validasi nomor HP ──
+                          final hp = hpCtrl.text.trim();
+                          if (hp.length < 10 || hp.length > 13) {
+                            _showValidationError(ctx, 'Nomor HP harus 10-13 digit');
+                            return;
+                          }
+                          if (!hp.startsWith('08')) {
+                            _showValidationError(ctx, 'Nomor HP harus diawali dengan 08');
+                            return;
+                          }
+
+                          // ── Validasi alamat lengkap ──
+                          if (alamatCtrl.text.trim().length < 10) {
+                            _showValidationError(ctx, 'Alamat lengkap minimal 10 karakter');
+                            return;
+                          }
+
+                          // ── Validasi kecamatan & kota ──
+                          if (kecCtrl.text.trim().length < 3) {
+                            _showValidationError(ctx, 'Nama kecamatan minimal 3 karakter');
+                            return;
+                          }
+                          if (kotaCtrl.text.trim().length < 3) {
+                            _showValidationError(ctx, 'Nama kota minimal 3 karakter');
+                            return;
+                          }
+
+                          // ── Validasi kode pos (opsional tapi kalau diisi harus 5 digit) ──
+                          if (posCtrl.text.trim().isNotEmpty && posCtrl.text.trim().length != 5) {
+                            _showValidationError(ctx, 'Kode pos harus 5 digit');
                             return;
                           }
 
@@ -409,7 +442,7 @@ class _AlamatScreenState extends State<AlamatScreen> {
                           if (isEdit) {
                             error = await _addressService.updateAlamat(
                               userId: user!.uid,
-                              addressId: alamat!.id,
+                              addressId: alamat.id,
                               alamat: newAlamat,
                             );
                           } else {
@@ -448,9 +481,23 @@ class _AlamatScreenState extends State<AlamatScreen> {
     );
   }
 
+  void _showValidationError(BuildContext ctx, String message) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(message,
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
+        backgroundColor: AppColors.warning,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   Widget _buildFormField(String label, String hint,
       TextEditingController controller, IconData icon,
-      {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+      {TextInputType keyboardType = TextInputType.text,
+      int maxLines = 1,
+      List<TextInputFormatter>? inputFormatters}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
@@ -462,6 +509,7 @@ class _AlamatScreenState extends State<AlamatScreen> {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            inputFormatters: inputFormatters,
             style: AppTextStyles.inputText,
             decoration: InputDecoration(
               hintText: hint,
