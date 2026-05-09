@@ -14,6 +14,7 @@ import '../profile/profile_screen.dart';
 import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'produk_terlaris_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -384,7 +385,7 @@ Widget _buildProdukTerlaris() {
           TextButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
+              MaterialPageRoute(builder: (_) => const ProdukTerlarisScreen()),
             ),
             child: Text('Lihat Semua',
                 style: AppTextStyles.link.copyWith(fontSize: 13)),

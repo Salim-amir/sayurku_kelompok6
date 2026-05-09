@@ -18,6 +18,18 @@ class ProductService {
             .toList());
   }
 
+Stream<List<ProductModel>> cariProdukByKategori(String keyword, String kategori) {
+  return _db
+      .collection(AppConstants.colProducts)
+      .where('kategori', isEqualTo: kategori)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => ProductModel.fromMap(doc.data(), doc.id))
+          .where((produk) =>
+              produk.nama.toLowerCase().contains(keyword.toLowerCase()))
+          .toList());
+}
+
   // ── Ambil produk berdasarkan kategori (untuk filter Katalog) ──
 Stream<List<ProductModel>> getProdukByKategori(String kategori) {
   return _db

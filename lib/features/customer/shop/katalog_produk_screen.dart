@@ -254,7 +254,9 @@ Widget _buildKategoriFilter() {
   // ── PRODUK GRID ─────────────────────────────────────
 Widget _buildProdukGrid() {
   return StreamBuilder<List<ProductModel>>(
-    stream:  _getStream(),
+   stream: _searchKeyword.isEmpty
+    ? _productService.getProdukByKategori(_selectedKategori)
+    : _productService.cariProdukByKategori(_searchKeyword, _selectedKategori),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(
