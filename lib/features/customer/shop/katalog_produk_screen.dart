@@ -78,7 +78,6 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _buildCartFAB(),
       body: SafeArea(
         child: Column(
@@ -355,27 +354,7 @@ String _getLabelKategori(String kategori) {
     default: return kategori;
   }
 }
-  // ── BOTTOM NAV ──────────────────────────────────────
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      backgroundColor: AppColors.white,
-      selectedItemColor: AppColors.primaryGreen,
-      unselectedItemColor: AppColors.textHint,
-      type: BottomNavigationBarType.fixed,
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded), label: 'Beranda'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_rounded), label: 'Pesanan'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_rounded), label: 'Dompet'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded), label: 'Profil'),
-      ],
-    );
-  }
-
+  
   // ── CART FAB ────────────────────────────────────────
 Widget _buildCartFAB() {
   return ValueListenableBuilder<int>(
