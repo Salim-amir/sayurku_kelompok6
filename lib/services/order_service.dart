@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/constants.dart';
+import 'notification_service.dart';
 
 class OrderService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -36,9 +37,11 @@ class OrderService {
         .collection(AppConstants.colOrders)
         .orderBy('tanggalPesan', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList(),
+        );
   }
 
   // ── Alias agar screen yang pakai getAllPesananAdmin() tidak error ──
@@ -53,10 +56,13 @@ class OrderService {
         .orderBy('tanggalPesan', descending: true)
         .snapshots()
         .handleError((error) {
-      return;
-    }).map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+          return;
+        })
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList(),
+        );
   }
 
   // ── Update status pesanan (untuk admin) ──
@@ -69,6 +75,31 @@ class OrderService {
         'status': statusBaru,
         'tanggalUpdate': FieldValue.serverTimestamp(),
       });
+      // --- MULAILAH MENARIK PELATUK FCM ---
+      // 1. Ambil data pesanan untuk mengetahui siapa pembelinya
+      final orderDoc = await _db
+          .collection(AppConstants.colOrders)
+          .doc(orderId)
+          .get();
+      final userId = orderDoc.data()?['userId'];
+
+      if (userId != null) {
+        // 2. Ambil FCM Token milik pembeli dari database user
+        final userDoc = await _db
+            .collection(AppConstants.colUsers)
+            .doc(userId)
+            .get();
+        final fcmToken = userDoc.data()?['fcmToken'];
+
+        // 3. Tembak Notifikasinya!
+        if (fcmToken != null) {
+          await NotificationService.sendPushNotification(
+            fcmToken,
+            'Pesanan SayurKu Diperbarui 🥦',
+            'Status pesanan kamu sekarang: $statusBaru. Cek aplikasi ya!',
+          );
+        }
+      }
       return null;
     } catch (e) {
       return 'Gagal update status: ${e.toString()}';
@@ -77,7 +108,9 @@ class OrderService {
 
   // ── Ambil pesanan berdasarkan status tertentu ──
   Stream<List<Map<String, dynamic>>> getPesananByStatus(
-      String userId, String status) {
+    String userId,
+    String status,
+  ) {
     return _db
         .collection(AppConstants.colOrders)
         .where('userId', isEqualTo: userId)
@@ -85,17 +118,22 @@ class OrderService {
         .orderBy('tanggalPesan', descending: true)
         .snapshots()
         .handleError((error) {
-      return;
-    }).map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+          return;
+        })
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList(),
+        );
   }
 
   // ── Ambil detail 1 pesanan ──
   Future<Map<String, dynamic>?> getDetailPesanan(String orderId) async {
     try {
-      final doc =
-          await _db.collection(AppConstants.colOrders).doc(orderId).get();
+      final doc = await _db
+          .collection(AppConstants.colOrders)
+          .doc(orderId)
+          .get();
       if (doc.exists) {
         return {'id': doc.id, ...doc.data()!};
       }

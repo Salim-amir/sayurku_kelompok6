@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; 
-import 'firebase_options.dart'; 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'core/colors.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/splash_screen.dart';
@@ -12,14 +12,22 @@ import 'features/customer/profile/isi_saldo_screen.dart';
 import 'features/customer/profile/alamat_screen.dart';
 import 'features/customer/profile/ganti_password_screen.dart';
 import 'features/admin/dashboard/dashboard_admin_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
-void main() async { 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Menerima pesan saat aplikasi ditutup: ${message.messageId}");
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   runApp(const MyApp());
 }
 
@@ -31,15 +39,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SayurKu',
-      
+
       // Tema Global Aplikasi
       theme: ThemeData(
         fontFamily: 'Manrope', // Pastikan sudah di-setup di pubspec.yaml
-        scaffoldBackgroundColor: AppColors.background, 
+        scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
         useMaterial3: true,
       ),
-home: const SplashScreen(),
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
