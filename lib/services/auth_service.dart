@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../core/constants.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // ─── Model Hasil Login ─────────────────────────────────────────────────────
 /// Membawa dua informasi sekaligus:
@@ -46,7 +47,17 @@ class AuthService {
       final data = doc.data() as Map<String, dynamic>;
       final String role = data['role'] ?? AppConstants.roleCustomer;
 
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _firestore
+            .collection(AppConstants.colUsers)
+            .doc(credential.user!.uid)
+            .update({'fcmToken': fcmToken});
+        print("Plat Nomor FCM Token berhasil disimpan!");
+      }
+
       print("Login sukses. Role: $role");
+
       return LoginResult(role: role);
     } on FirebaseAuthException catch (e) {
       return LoginResult(error: e.message);
@@ -71,8 +82,9 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential result =
-          await _auth.signInWithCredential(credential);
+      final UserCredential result = await _auth.signInWithCredential(
+        credential,
+      );
       final User? user = result.user;
       if (user == null) return 'Gagal mendapatkan data user.';
 
@@ -82,10 +94,7 @@ class AuthService {
           .get();
 
       if (!doc.exists) {
-        await _firestore
-            .collection(AppConstants.colUsers)
-            .doc(user.uid)
-            .set({
+        await _firestore.collection(AppConstants.colUsers).doc(user.uid).set({
           'uid': user.uid,
           'namaLengkap': user.displayName ?? '',
           'email': user.email ?? '',
@@ -94,7 +103,15 @@ class AuthService {
           'photoUrl': user.photoURL ?? '',
         });
       }
-
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _firestore.collection(AppConstants.colUsers).doc(user.uid).update(
+          {
+            'fcmToken': fcmToken,
+          },
+        );
+        print("Plat Nomor FCM Token berhasil disimpan (via Google)!");
+      }
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
@@ -143,7 +160,14 @@ class AuthService {
           .collection(AppConstants.colUsers)
           .doc(credential.user!.uid)
           .set(userData);
-
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _firestore
+            .collection(AppConstants.colUsers)
+            .doc(credential.user!.uid)
+            .update({'fcmToken': fcmToken});
+        print("Plat Nomor FCM Token berhasil disimpan!");
+      }
       print("5. SUKSES SIMPAN KE FIRESTORE!");
       return null;
     } on FirebaseAuthException catch (e) {
