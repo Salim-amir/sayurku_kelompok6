@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../core/constants.dart';
 
 class WalletService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // ── Stream saldo real-time dari users/{uid} ──
   Stream<double> getSaldo(String userId) {
@@ -21,6 +24,7 @@ class WalletService {
   Future<String?> topUpSaldo({
     required String userId,
     required double amount,
+    String? buktiTransferUrl,
   }) async {
     try {
       if (amount <= 0) return 'Nominal harus lebih dari 0';
@@ -35,6 +39,7 @@ class WalletService {
         'type': AppConstants.txTopUp,
         'amount': amount,
         'status': AppConstants.txStatusPending,
+        'buktiTransfer': buktiTransferUrl ?? '',
         'keterangan':
             'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
         'timestamp': FieldValue.serverTimestamp(),
@@ -43,6 +48,26 @@ class WalletService {
       return null;
     } catch (e) {
       return 'Gagal mengajukan top-up: ${e.toString()}';
+    }
+  }
+
+  // ── Upload bukti transfer ke Firebase Storage ──
+  Future<String?> uploadBuktiTransfer({
+    required String userId,
+    required File imageFile,
+  }) async {
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final ref = _storage
+          .ref()
+          .child('bukti_transfer/${userId}_$timestamp.jpg');
+      final uploadTask = await ref.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      return await uploadTask.ref.getDownloadURL();
+    } catch (e) {
+      return null;
     }
   }
 
@@ -124,7 +149,6 @@ class WalletService {
         .snapshots()
         .handleError((error) {
           // Fallback jika composite index belum dibuat
-          print('getSemuaTopUpAdmin error: $error');
           return null;
         })
         .map((snapshot) => snapshot.docs.map((doc) {
