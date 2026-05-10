@@ -1,19 +1,15 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../core/constants.dart';
 
 class WalletService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // ── Stream saldo real-time dari users/{uid} ──
   Stream<double> getSaldo(String userId) {
-    return _db
-        .collection(AppConstants.colUsers)
-        .doc(userId)
-        .snapshots()
-        .map((doc) {
+    return _db.collection(AppConstants.colUsers).doc(userId).snapshots().map((
+      doc,
+    ) {
       final data = doc.data();
       if (data == null) return 0.0;
       return (data['saldo'] ?? 0).toDouble();
@@ -24,7 +20,7 @@ class WalletService {
   Future<String?> topUpSaldo({
     required String userId,
     required double amount,
-    String? buktiTransferUrl,
+    String? buktiTransferBase64, // Diubah menjadi penerima Base64
   }) async {
     try {
       if (amount <= 0) return 'Nominal harus lebih dari 0';
@@ -35,39 +31,20 @@ class WalletService {
           .doc(userId)
           .collection(AppConstants.subColTransactions)
           .add({
-        'userId': userId,
-        'type': AppConstants.txTopUp,
-        'amount': amount,
-        'status': AppConstants.txStatusPending,
-        'buktiTransfer': buktiTransferUrl ?? '',
-        'keterangan':
-            'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+            'userId': userId,
+            'type': AppConstants.txTopUp,
+            'amount': amount,
+            'status': AppConstants.txStatusPending,
+            'buktiTransfer':
+                buktiTransferBase64 ?? '', // Menyimpan sandi teks ke database
+            'keterangan':
+                'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
+            'timestamp': FieldValue.serverTimestamp(),
+          });
 
       return null;
     } catch (e) {
       return 'Gagal mengajukan top-up: ${e.toString()}';
-    }
-  }
-
-  // ── Upload bukti transfer ke Firebase Storage ──
-  Future<String?> uploadBuktiTransfer({
-    required String userId,
-    required File imageFile,
-  }) async {
-    try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final ref = _storage
-          .ref()
-          .child('bukti_transfer/${userId}_$timestamp.jpg');
-      final uploadTask = await ref.putFile(
-        imageFile,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      return await uploadTask.ref.getDownloadURL();
-    } catch (e) {
-      return null;
     }
   }
 
@@ -89,7 +66,8 @@ class WalletService {
         final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
         if (currentSaldo < amount) {
           throw Exception(
-              'Saldo tidak cukup. Saldo Anda: Rp ${_formatNominal(currentSaldo.toInt())}');
+            'Saldo tidak cukup. Saldo Anda: Rp ${_formatNominal(currentSaldo.toInt())}',
+          );
         }
 
         transaction.update(userRef, {'saldo': currentSaldo - amount});
@@ -130,8 +108,11 @@ class WalletService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .handleError((error) => null)
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList(),
+        );
   }
 
   // ── Stream semua top-up untuk admin (REAKTIF INSTAN) ──────────────────────
@@ -151,14 +132,12 @@ class WalletService {
           // Fallback jika composite index belum dibuat
           return null;
         })
-        .map((snapshot) => snapshot.docs.map((doc) {
-              // Sertakan docPath agar detail screen bisa langsung akses dokumen
-              return {
-                'id': doc.id,
-                'docPath': doc.reference.path,
-                ...doc.data(),
-              };
-            }).toList());
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            // Sertakan docPath agar detail screen bisa langsung akses dokumen
+            return {'id': doc.id, 'docPath': doc.reference.path, ...doc.data()};
+          }).toList(),
+        );
   }
 
   // ── Approve top-up (dipanggil admin) ─────────────────────────────────────
@@ -189,9 +168,7 @@ class WalletService {
         });
 
         // Tambah saldo user secara atomic
-        transaction.update(userRef, {
-          'saldo': currentSaldo + amount,
-        });
+        transaction.update(userRef, {'saldo': currentSaldo + amount});
       });
 
       return null;
@@ -212,9 +189,9 @@ class WalletService {
           .collection(AppConstants.subColTransactions)
           .doc(transactionId)
           .update({
-        'status': AppConstants.txStatusRejected,
-        'rejectedAt': FieldValue.serverTimestamp(),
-      });
+            'status': AppConstants.txStatusRejected,
+            'rejectedAt': FieldValue.serverTimestamp(),
+          });
 
       return null;
     } catch (e) {
@@ -224,9 +201,9 @@ class WalletService {
 
   // ── Helper format nominal ──
   String _formatNominal(int nominal) {
-    return nominal
-        .toString()
-        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (m) => '${m[1]}.');
+    return nominal.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
   }
 }
