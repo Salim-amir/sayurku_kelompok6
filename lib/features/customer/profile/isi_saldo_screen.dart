@@ -1,7 +1,9 @@
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
@@ -20,9 +22,10 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   final _nominalController = TextEditingController();
 
   int? _selectedNominal;
-  // Steps: 0=pilih nominal, 1=konfirmasi, 2=qris, 3=menunggu admin
+  // Steps: 0=pilih nominal, 1=konfirmasi, 2=qris, 3=upload bukti, 4=menunggu admin
   int _currentStep = 0;
   bool _isLoading = false;
+  File? _buktiImage;
   late AnimationController _pulseController;
 
   @override
@@ -61,14 +64,45 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   }
 
   void _tampilkanQris() => setState(() => _currentStep = 2);
+  void _keUploadBukti() => setState(() => _currentStep = 3);
 
-  Future<void> _sudahBayar() async {
+  Future<void> _pickBukti(ImageSource source) async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 80,
+      );
+      if (picked != null) setState(() => _buktiImage = File(picked.path));
+    } catch (e) {
+      if (mounted) _showSnackbar('Gagal memilih gambar', AppColors.error);
+    }
+  }
+
+  Future<void> _kirimBukti() async {
+    if (_buktiImage == null) {
+      _showSnackbar('Upload bukti pembayaran terlebih dahulu', AppColors.warning);
+      return;
+    }
+
     setState(() => _isLoading = true);
 
-    // Kirim sebagai pending — admin yang akan approve
+    // 1. Upload gambar ke Storage
+    final imageUrl = await _walletService.uploadBuktiTransfer(
+      userId: user!.uid, imageFile: _buktiImage!,
+    );
+
+    if (imageUrl == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackbar('Gagal upload bukti. Coba lagi.', AppColors.error);
+      }
+      return;
+    }
+
+    // 2. Kirim top-up request dengan bukti
     final error = await _walletService.topUpSaldo(
       userId: user!.uid,
       amount: _nominal.toDouble(),
+      buktiTransferUrl: imageUrl,
     );
 
     if (mounted) {
@@ -76,7 +110,7 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
       if (error != null) {
         _showSnackbar(error, AppColors.error);
       } else {
-        setState(() => _currentStep = 3);
+        setState(() => _currentStep = 4);
       }
     }
   }
@@ -95,43 +129,36 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _currentStep == 0 || _currentStep == 3,
+      canPop: _currentStep == 0 || _currentStep == 4,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _currentStep > 0 && _currentStep < 3) {
+        if (!didPop && _currentStep > 0 && _currentStep < 4) {
           setState(() => _currentStep--);
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(),
-              Expanded(child: _buildStepContent()),
-            ],
-          ),
+          child: Column(children: [_buildAppBar(), Expanded(child: _buildStepContent())]),
         ),
       ),
     );
   }
 
   Widget _buildAppBar() {
-    final titles = ['Isi Saldo', 'Konfirmasi', 'Pembayaran QRIS', 'Menunggu Konfirmasi'];
+    final titles = ['Isi Saldo', 'Konfirmasi', 'Pembayaran QRIS', 'Upload Bukti', 'Menunggu Konfirmasi'];
     return Padding(
-      padding: EdgeInsets.fromLTRB(_currentStep == 3 ? 20 : 8, 16, 20, 0),
+      padding: EdgeInsets.fromLTRB(_currentStep == 4 ? 20 : 8, 16, 20, 0),
       child: Row(children: [
-        if (_currentStep < 3)
+        if (_currentStep < 4)
           IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryGreen),
             onPressed: () {
-              if (_currentStep == 0) { Navigator.pop(context); }
-              else { setState(() => _currentStep--); }
+              if (_currentStep == 0) Navigator.pop(context);
+              else setState(() => _currentStep--);
             },
           ),
-        Expanded(
-          child: Text(titles[_currentStep],
-              style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
-        ),
+        Expanded(child: Text(titles[_currentStep],
+            style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen))),
       ]),
     );
   }
@@ -141,7 +168,8 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
       case 0: return _buildStep0PilihNominal();
       case 1: return _buildStep1Konfirmasi();
       case 2: return _buildStep2Qris();
-      case 3: return _buildStep3MenungguAdmin();
+      case 3: return _buildStep3UploadBukti();
+      case 4: return _buildStep4MenungguAdmin();
       default: return const SizedBox();
     }
   }
@@ -253,22 +281,9 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
             ]),
           ),
           const SizedBox(height: 16),
-          Container(
-            width: double.infinity, padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.info.withOpacity(0.2))),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(child: Text(
-                'Setelah scan QRIS, pembayaran akan diverifikasi oleh admin. Saldo akan bertambah setelah admin mengkonfirmasi.',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.info))),
-            ]),
+          _buildInfoBanner(
+            'Setelah scan QRIS, Anda wajib mengirim bukti pembayaran. '
+            'Saldo akan bertambah setelah admin mengkonfirmasi.',
           ),
         ]),
       )),
@@ -313,11 +328,9 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
                   border: Border.all(color: AppColors.primaryGreen, width: 3)),
                 child: AnimatedBuilder(
                   animation: _pulseController,
-                  builder: (_, __) => Opacity(
+                  builder: (_, child) => Opacity(
                     opacity: 0.8 + (_pulseController.value * 0.2),
-                    child: CustomPaint(
-                      size: const Size(196, 196),
-                      painter: _FakeQrisPainter()),
+                    child: CustomPaint(size: const Size(196, 196), painter: _FakeQrisPainter()),
                   ),
                 ),
               ),
@@ -344,22 +357,153 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               ]),
             ]),
           ),
+        ]),
+      )),
+      _buildBottomButton('Sudah Bayar, Upload Bukti →', _keUploadBukti),
+    ]);
+  }
+
+  // ═══════ STEP 3: UPLOAD BUKTI PEMBAYARAN ═══════
+  Widget _buildStep3UploadBukti() {
+    return Column(children: [
+      Expanded(child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(children: [
+          _buildStepIndicator(3),
+          const SizedBox(height: 24),
+          // Preview area
+          GestureDetector(
+            onTap: () => _showPickerOptions(),
+            child: Container(
+              width: double.infinity,
+              height: _buktiImage != null ? 320 : 200,
+              decoration: BoxDecoration(
+                color: AppColors.white, borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _buktiImage != null ? AppColors.primaryGreen : AppColors.inputBorder,
+                  width: _buktiImage != null ? 2 : 1,
+                  style: _buktiImage != null ? BorderStyle.solid : BorderStyle.none,
+                ),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10, offset: const Offset(0, 2))],
+                image: _buktiImage != null
+                    ? DecorationImage(image: FileImage(_buktiImage!), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: _buktiImage == null
+                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Container(
+                        width: 64, height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16)),
+                        child: const Icon(Icons.cloud_upload_rounded,
+                            color: AppColors.primaryGreen, size: 32),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Upload Bukti Pembayaran', style: AppTextStyles.h3),
+                      const SizedBox(height: 6),
+                      Text('Ketuk untuk memilih foto dari kamera atau galeri',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint),
+                          textAlign: TextAlign.center),
+                    ])
+                  : Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                            onPressed: () => _showPickerOptions(),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
           const SizedBox(height: 16),
-          Text('Menunggu pembayaran...',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+          // Nominal summary
+          Container(
+            width: double.infinity, padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white, borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03),
+                blurRadius: 6, offset: const Offset(0, 2))],
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('Nominal Top-Up', style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.textSecondary)),
+              Text('Rp ${_formatHarga(_nominal)}',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen)),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          _buildInfoBanner(
+            'Pastikan bukti pembayaran terlihat jelas (nominal, tanggal, dan nama pengirim). '
+            'Admin akan memverifikasi pembayaran Anda.',
+          ),
         ]),
       )),
       _buildBottomButton(
-        _isLoading ? '' : 'Saya Sudah Bayar',
-        _isLoading ? null : _sudahBayar,
+        _isLoading ? '' : 'Kirim Bukti Pembayaran',
+        _isLoading ? null : _kirimBukti,
         isLoading: _isLoading,
       ),
     ]);
   }
 
-  // ═══════ STEP 3: MENUNGGU KONFIRMASI ADMIN ═══════
-  Widget _buildStep3MenungguAdmin() {
+  void _showPickerOptions() {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2))),
+          Text('Pilih Sumber Foto', style: AppTextStyles.h3),
+          const SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _buildPickerOption(Icons.camera_alt_rounded, 'Kamera',
+                AppColors.primaryGreen, () {
+              Navigator.pop(ctx);
+              _pickBukti(ImageSource.camera);
+            }),
+            _buildPickerOption(Icons.photo_library_rounded, 'Galeri',
+                AppColors.info, () {
+              Navigator.pop(ctx);
+              _pickBukti(ImageSource.gallery);
+            }),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildPickerOption(IconData icon, String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(children: [
+        Container(
+          width: 56, height: 56,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(16)),
+          child: Icon(icon, color: color, size: 26),
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: AppTextStyles.bodySmall),
+      ]),
+    );
+  }
+
+  // ═══════ STEP 4: MENUNGGU KONFIRMASI ADMIN ═══════
+  Widget _buildStep4MenungguAdmin() {
     return Center(child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -367,19 +511,15 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
           width: 100, height: 100,
           decoration: BoxDecoration(
             color: AppColors.warning.withOpacity(0.12), shape: BoxShape.circle),
-          child: const Icon(Icons.schedule_rounded,
-              color: AppColors.warning, size: 56),
+          child: const Icon(Icons.schedule_rounded, color: AppColors.warning, size: 56),
         ),
         const SizedBox(height: 24),
         Text('Menunggu Konfirmasi Admin', style: AppTextStyles.h2),
         const SizedBox(height: 8),
-        Text(
-          'Pembayaran Anda sedang diverifikasi oleh admin.',
+        Text('Bukti pembayaran Anda sedang diverifikasi oleh admin.',
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
+          textAlign: TextAlign.center),
         const SizedBox(height: 20),
-        // Nominal badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: BoxDecoration(
@@ -390,34 +530,10 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
               style: AppTextStyles.h1.copyWith(color: AppColors.primaryGreen)),
         ),
         const SizedBox(height: 20),
-        // Info card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.info.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.info.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                const Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18),
-                const SizedBox(width: 8),
-                Text('Informasi', style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w700, color: AppColors.info)),
-              ]),
-              const SizedBox(height: 10),
-              Text(
-                '• Saldo akan otomatis bertambah setelah admin mengkonfirmasi pembayaran.\n'
-                '• Proses verifikasi biasanya membutuhkan waktu beberapa menit.\n'
-                '• Anda dapat memantau status di halaman Dompet Digital.',
-                style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary, height: 1.5),
-              ),
-            ],
-          ),
+        _buildInfoBanner(
+          '• Saldo akan otomatis bertambah setelah admin mengkonfirmasi pembayaran.\n'
+          '• Proses verifikasi biasanya membutuhkan waktu beberapa menit.\n'
+          '• Anda dapat memantau status di halaman Dompet Digital.',
         ),
         const SizedBox(height: 32),
         SizedBox(
@@ -426,8 +542,8 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)), elevation: 0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 0),
             child: Text('Kembali ke Dompet', style: AppTextStyles.buttonPrimary),
           ),
         ),
@@ -437,11 +553,10 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
 
   // ═══════ SHARED WIDGETS ═══════
   Widget _buildStepIndicator(int step) {
-    return Row(children: List.generate(3, (i) {
+    return Row(children: List.generate(4, (i) {
       final active = i <= step;
       return Expanded(child: Container(
-        margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
-        height: 4,
+        margin: EdgeInsets.only(right: i < 3 ? 8 : 0), height: 4,
         decoration: BoxDecoration(
           color: active ? AppColors.primaryGreen : AppColors.divider,
           borderRadius: BorderRadius.circular(2)),
@@ -449,8 +564,24 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
     }));
   }
 
-  Widget _buildBottomButton(String text, VoidCallback? onPressed,
-      {bool isLoading = false}) {
+  Widget _buildInfoBanner(String text) {
+    return Container(
+      width: double.infinity, padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.info.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.info.withOpacity(0.2))),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Padding(padding: EdgeInsets.only(top: 2),
+          child: Icon(Icons.info_outline_rounded, color: AppColors.info, size: 18)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.info, height: 1.5))),
+      ]),
+    );
+  }
+
+  Widget _buildBottomButton(String text, VoidCallback? onPressed, {bool isLoading = false}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(color: AppColors.white, boxShadow: [
@@ -464,8 +595,8 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryGreen,
             disabledBackgroundColor: AppColors.primaryGreen.withOpacity(0.5),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)), elevation: 0),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0),
           child: isLoading
               ? const SizedBox(width: 22, height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.white))
@@ -484,17 +615,14 @@ class _FakeQrisPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = const Color(0xFF1A1A1A);
     final cellSize = size.width / 25;
-
     _drawFinderPattern(canvas, paint, 0, 0, cellSize);
     _drawFinderPattern(canvas, paint, size.width - 7 * cellSize, 0, cellSize);
     _drawFinderPattern(canvas, paint, 0, size.height - 7 * cellSize, cellSize);
-
     for (int row = 0; row < 25; row++) {
       for (int col = 0; col < 25; col++) {
         if ((row < 8 && col < 8) || (row < 8 && col > 16) || (row > 16 && col < 8)) continue;
         if (_rng.nextBool()) {
-          canvas.drawRect(
-            Rect.fromLTWH(col * cellSize, row * cellSize, cellSize, cellSize), paint);
+          canvas.drawRect(Rect.fromLTWH(col * cellSize, row * cellSize, cellSize, cellSize), paint);
         }
       }
     }
