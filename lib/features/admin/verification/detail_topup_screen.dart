@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
@@ -227,7 +228,7 @@ class _DetailVerifikasiTopupScreenState
                 ),
                 const SizedBox(height: 24),
 
-                // ─── BUKTI TRANSFER ──────────────────────────────────
+                // ─── BUKTI TRANSFER (VERSI BASE64) ──────────────────
                 Text('BUKTI TRANSFER', style: AppTextStyles.labelUppercase),
                 const SizedBox(height: 12),
                 Container(
@@ -236,15 +237,35 @@ class _DetailVerifikasiTopupScreenState
                   decoration: BoxDecoration(
                     color: const Color(0xFF1F2937),
                     borderRadius: BorderRadius.circular(16),
-                    image: (imageUrl != null && imageUrl.isNotEmpty)
-                        ? DecorationImage(
-                            image: NetworkImage(imageUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                   ),
                   child: Stack(
                     children: [
+                      // 1. Tampilkan gambar JIKA sandinya ada
+                      if (imageUrl != null && imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Builder(
+                            builder: (context) {
+                              try {
+                                return Image.memory(
+                                  base64Decode(imageUrl),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                );
+                              } catch (e) {
+                                return const Center(
+                                  child: Text(
+                                    'Gagal membuka sandi gambar!',
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+
+                      // 2. Tampilkan Ikon JIKA sandinya kosong
                       if (imageUrl == null || imageUrl.isEmpty)
                         const Center(
                           child: Column(
@@ -263,6 +284,8 @@ class _DetailVerifikasiTopupScreenState
                             ],
                           ),
                         ),
+
+                      // 3. Tombol Perbesar Gambar
                       if (imageUrl != null && imageUrl.isNotEmpty)
                         Positioned(
                           bottom: 16,
@@ -275,7 +298,9 @@ class _DetailVerifikasiTopupScreenState
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.black.withOpacity(
+                                  0.6,
+                                ), // Dipergelap agar lebih kontras
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: Colors.white38),
                               ),
@@ -559,7 +584,7 @@ class _DetailVerifikasiTopupScreenState
     );
   }
 
-  // ── Full image viewer ─────────────────────────────────────────
+  // ── Full image viewer (VERSI BASE64) ──────────────────────────
   void _showFullImage(BuildContext context, String imageUrl) {
     showDialog(
       context: context,
@@ -569,7 +594,12 @@ class _DetailVerifikasiTopupScreenState
         child: Stack(
           children: [
             InteractiveViewer(
-              child: Image.network(imageUrl, fit: BoxFit.contain),
+              child: Image.memory(
+                base64Decode(imageUrl),
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
             ),
             Positioned(
               top: 12,
