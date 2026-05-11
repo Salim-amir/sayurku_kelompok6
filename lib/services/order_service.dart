@@ -97,8 +97,7 @@ class OrderService {
         'status': statusBaru,
         'tanggalUpdate': FieldValue.serverTimestamp(),
       });
-      // --- MULAILAH MENARIK PELATUK FCM ---
-      // 1. Ambil data pesanan untuk mengetahui siapa pembelinya
+      // --- MULAILAH MENARIK PELATUK FCM & DATABASE ---
       final orderDoc = await _db
           .collection(AppConstants.colOrders)
           .doc(orderId)
@@ -106,19 +105,32 @@ class OrderService {
       final userId = orderDoc.data()?['userId'];
 
       if (userId != null) {
-        // 2. Ambil FCM Token milik pembeli dari database user
         final userDoc = await _db
             .collection(AppConstants.colUsers)
             .doc(userId)
             .get();
         final fcmToken = userDoc.data()?['fcmToken'];
 
-        // 3. Tembak Notifikasinya!
+        final title = 'Pesanan SayurKu Diperbarui 🥦';
+        final message =
+            'Status pesanan kamu sekarang: $statusBaru. Cek aplikasi ya!';
+
+        // 1. Simpan Riwayat ke Database (Agar muncul di NotifikasiScreen)
+        await _db.collection(AppConstants.colNotifications).add({
+          'userId': userId,
+          'title': title,
+          'message': message,
+          'type': 'order',
+          'isRead': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // 2. Tembak Notifikasi FCM ke Layar HP
         if (fcmToken != null) {
           await NotificationService.sendPushNotification(
             fcmToken,
-            'Pesanan SayurKu Diperbarui 🥦',
-            'Status pesanan kamu sekarang: $statusBaru. Cek aplikasi ya!',
+            title,
+            message,
           );
         }
       }

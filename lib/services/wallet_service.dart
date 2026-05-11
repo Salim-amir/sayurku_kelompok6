@@ -195,11 +195,27 @@ class WalletService {
             .doc(userId)
             .get();
         final fcmToken = userDocForNotif.data()?['fcmToken'];
+
+        final title = 'Top Up Berhasil! 🎉';
+        final message =
+            'Saldo sebesar Rp ${_formatNominal(amount.toInt())} telah masuk ke dompetmu.';
+
+        // 1. Simpan Riwayat ke Database
+        await _db.collection(AppConstants.colNotifications).add({
+          'userId': userId,
+          'title': title,
+          'message': message,
+          'type': 'topup',
+          'isRead': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // 2. Tembak Notifikasi FCM
         if (fcmToken != null) {
           await NotificationService.sendPushNotification(
             fcmToken,
-            'Top Up Berhasil! 🎉',
-            'Saldo sebesar Rp ${_formatNominal(amount.toInt())} telah masuk ke dompetmu.',
+            title,
+            message,
           );
         }
       } catch (e) {
@@ -236,11 +252,27 @@ class WalletService {
             .doc(userId)
             .get();
         final fcmToken = userDocForNotif.data()?['fcmToken'];
+
+        final title = 'Top Up Ditolak ❌';
+        final message =
+            'Maaf, pengajuan top up kamu ditolak. Pastikan bukti transfer sudah benar.';
+
+        // 1. Simpan Riwayat ke Database
+        await _db.collection(AppConstants.colNotifications).add({
+          'userId': userId,
+          'title': title,
+          'message': message,
+          'type': 'topup',
+          'isRead': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // 2. Tembak Notifikasi FCM
         if (fcmToken != null) {
           await NotificationService.sendPushNotification(
             fcmToken,
-            'Top Up Ditolak ❌',
-            'Maaf, pengajuan top up kamu ditolak. Pastikan bukti transfer sudah benar.',
+            title,
+            message,
           );
         }
       } catch (e) {
