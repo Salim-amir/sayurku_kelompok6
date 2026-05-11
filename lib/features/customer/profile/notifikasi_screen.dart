@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
+import 'riwayat_pesanan_screen.dart';
+import 'dompet_digital_screen.dart';
 
 class NotifikasiScreen extends StatefulWidget {
   final bool showBackButton;
@@ -23,17 +25,51 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .handleError((error) => null)
-        .map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => {'id': doc.id, ...doc.data()})
+              .toList(),
+        );
   }
 
   Future<void> _tandaiDibaca(String notifId) async {
-    await _db
-        .collection(AppConstants.colNotifications)
-        .doc(notifId)
-        .update({'isRead': true});
+    await _db.collection(AppConstants.colNotifications).doc(notifId).update({
+      'isRead': true,
+    });
+  }
+
+  // ─── Tandai semua notifikasi menjadi "Sudah Dibaca" sekaligus ───
+  Future<void> _tandaiSemuaDibaca() async {
+    if (user == null) return;
+    try {
+      final unreadDocs = await _db
+          .collection(AppConstants.colNotifications)
+          .where('userId', isEqualTo: user!.uid)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      if (unreadDocs.docs.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Semua notifikasi sudah dibaca')),
+          );
+        }
+        return;
+      }
+
+      // Gunakan Batch agar lebih cepat dan hemat kuota database
+      final batch = _db.batch();
+      for (var doc in unreadDocs.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      print("Gagal menandai semua dibaca: $e");
+    }
+  }
+
+  Future<void> _hapusNotifikasi(String notifId) async {
+    await _db.collection(AppConstants.colNotifications).doc(notifId).delete();
   }
 
   @override
@@ -55,15 +91,35 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     return Padding(
       padding: EdgeInsets.fromLTRB(widget.showBackButton ? 8 : 20, 16, 20, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (widget.showBackButton)
-            IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.primaryGreen),
-              onPressed: () => Navigator.pop(context),
+          Row(
+            children: [
+              if (widget.showBackButton)
+                IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              Text(
+                'Notifikasi',
+                style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen),
+              ),
+            ],
+          ),
+          // 👇 TOMBOL TANDAI SEMUA DIBACA 👇
+          TextButton(
+            onPressed: _tandaiSemuaDibaca,
+            child: Text(
+              'Tandai Dibaca',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.primaryGreen,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          Text('Notifikasi',
-              style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),
+          ),
         ],
       ),
     );
@@ -79,20 +135,28 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGreen));
+            child: CircularProgressIndicator(color: AppColors.primaryGreen),
+          );
         }
 
         if (snapshot.hasError) {
+          print("🚨 BACA ERROR INI KOMANDAN: ${snapshot.error}");
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded,
-                    color: AppColors.textHint, size: 48),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.textHint,
+                  size: 48,
+                ),
                 const SizedBox(height: 12),
-                Text('Gagal memuat notifikasi',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textSecondary)),
+                Text(
+                  'Gagal memuat notifikasi',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           );
@@ -119,16 +183,21 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_off_rounded,
-              color: AppColors.textHint.withOpacity(0.4), size: 72),
+          Icon(
+            Icons.notifications_off_rounded,
+            color: AppColors.textHint.withOpacity(0.4),
+            size: 72,
+          ),
           const SizedBox(height: 16),
-          Text('Belum Ada Notifikasi',
-              style:
-                  AppTextStyles.h3.copyWith(color: AppColors.textSecondary)),
+          Text(
+            'Belum Ada Notifikasi',
+            style: AppTextStyles.h3.copyWith(color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 8),
-          Text('Notifikasi Anda akan muncul di sini',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textHint)),
+          Text(
+            'Notifikasi Anda akan muncul di sini',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+          ),
         ],
       ),
     );
@@ -140,6 +209,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     final isRead = notif['isRead'] ?? false;
     final timestamp = notif['timestamp']?.toDate();
     final type = notif['type'] ?? 'info';
+    final notifId = notif['id'];
 
     IconData icon;
     Color iconColor;
@@ -161,77 +231,125 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
         iconColor = AppColors.primaryGreen;
     }
 
-    return GestureDetector(
-      onTap: () {
-        if (!isRead) _tandaiDibaca(notif['id']);
+    return Dismissible(
+      key: Key(notifId),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        _hapusNotifikasi(notifId);
       },
-      child: Container(
+      background: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: isRead ? AppColors.white : AppColors.primaryGreen.withOpacity(0.04),
+          color: AppColors.error,
           borderRadius: BorderRadius.circular(14),
-          border: isRead
-              ? null
-              : Border.all(color: AppColors.primaryGreen.withOpacity(0.15)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
+        alignment: Alignment.centerRight,
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+      // 👇 TIDAK ADA LAGI KATA "RETURN" DI SINI 👇
+      child: GestureDetector(
+        onTap: () {
+          // 1. Ubah status jadi sudah dibaca (Titik hijau hilang)
+          if (!isRead) _tandaiDibaca(notifId);
+
+          // 2. Navigasi Cerdas
+          if (type == 'order') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RiwayatPesananScreen()),
+            );
+          } else if (type == 'topup') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DompetDigitalScreen()),
+            );
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isRead
+                ? AppColors.white
+                : AppColors.primaryGreen.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(14),
+            border: isRead
+                ? null
+                : Border.all(color: AppColors.primaryGreen.withOpacity(0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(judul,
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            judul,
                             style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight:
-                                    isRead ? FontWeight.w400 : FontWeight.w700)),
-                      ),
-                      if (!isRead)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryGreen,
-                            shape: BoxShape.circle,
+                              fontWeight: isRead
+                                  ? FontWeight.w400
+                                  : FontWeight.w700,
+                            ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(pesan,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary),
+                        if (!isRead)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      pesan,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                  if (timestamp != null) ...[
-                    const SizedBox(height: 6),
-                    Text(_formatWaktu(timestamp), style: AppTextStyles.caption),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (timestamp != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatWaktu(timestamp),
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -247,8 +365,19 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     if (diff.inDays < 7) return '${diff.inDays} hari lalu';
 
     final bulan = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agt',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${date.day} ${bulan[date.month]} ${date.year}';
   }

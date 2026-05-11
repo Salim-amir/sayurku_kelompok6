@@ -69,31 +69,6 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
     }
   }
 
-  // ─── FULL IMAGE VIEWER ───
-  void _showFullImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: EdgeInsets.zero,
-        child: Stack(
-          children: [
-            InteractiveViewer(
-              child: Image.network(imageUrl, fit: BoxFit.contain),
-            ),
-            Positioned(
-              top: 12,
-              right: 12,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, color: Colors.white, size: 28),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,80 +182,6 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // ─── BUKTI TRANSFER ───
-                    Text('BUKTI TRANSFER', style: AppTextStyles.labelUppercase),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      height: 280,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1F2937),
-                        borderRadius: BorderRadius.circular(16),
-                        image: (imageUrl != null && imageUrl.isNotEmpty)
-                            ? DecorationImage(
-                                image: NetworkImage(imageUrl),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: Stack(
-                        children: [
-                          if (imageUrl == null || imageUrl.isEmpty)
-                            const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.receipt_long,
-                                    color: Colors.white54,
-                                    size: 48,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Belum ada foto bukti transfer',
-                                    style: TextStyle(color: Colors.white54),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (imageUrl != null && imageUrl.isNotEmpty)
-                            Positioned(
-                              bottom: 16,
-                              left: 16,
-                              child: GestureDetector(
-                                onTap: () => _showFullImage(context, imageUrl),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.white38),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.zoom_in,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Perbesar Gambar',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
