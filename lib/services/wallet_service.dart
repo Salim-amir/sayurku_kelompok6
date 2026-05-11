@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/constants.dart';
+import 'notification_service.dart';
 
 class WalletService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -20,7 +21,7 @@ class WalletService {
   Future<String?> topUpSaldo({
     required String userId,
     required double amount,
-    String? buktiTransferBase64, // Diubah menjadi penerima Base64
+    String? buktiTransferBase64,
   }) async {
     try {
       if (amount <= 0) return 'Nominal harus lebih dari 0';
@@ -35,12 +36,32 @@ class WalletService {
             'type': AppConstants.txTopUp,
             'amount': amount,
             'status': AppConstants.txStatusPending,
-            'buktiTransfer':
-                buktiTransferBase64 ?? '', // Menyimpan sandi teks ke database
+            'buktiTransfer': buktiTransferBase64 ?? '',
             'keterangan':
                 'Permintaan isi saldo Rp ${_formatNominal(amount.toInt())}',
             'timestamp': FieldValue.serverTimestamp(),
           });
+
+      // --- PELATUK NOTIFIKASI KE ADMIN ---
+      try {
+        final adminQuery = await _db
+            .collection(AppConstants.colUsers)
+            .where('role', isEqualTo: 'admin')
+            .get();
+        for (var doc in adminQuery.docs) {
+          final adminToken = doc.data()['fcmToken'];
+          if (adminToken != null) {
+            await NotificationService.sendPushNotification(
+              adminToken,
+              'Top Up Saldo Baru! 💰',
+              'Pelanggan mengajukan isi saldo sebesar Rp ${_formatNominal(amount.toInt())}. Segera verifikasi!',
+            );
+          }
+        }
+      } catch (e) {
+        print("Gagal mengirim notif ke admin: $e");
+      }
+      // -----------------------------------
 
       return null;
     } catch (e) {
@@ -154,22 +175,37 @@ class WalletService {
         if (!userDoc.exists) throw Exception('User tidak ditemukan');
 
         final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
-
         final txRef = _db
             .collection(AppConstants.colWallets)
             .doc(userId)
             .collection(AppConstants.subColTransactions)
             .doc(transactionId);
 
-        // Update status transaksi
         transaction.update(txRef, {
           'status': AppConstants.txStatusApproved,
           'approvedAt': FieldValue.serverTimestamp(),
         });
-
-        // Tambah saldo user secara atomic
         transaction.update(userRef, {'saldo': currentSaldo + amount});
       });
+
+      // --- PELATUK NOTIFIKASI KE CUSTOMER ---
+      try {
+        final userDocForNotif = await _db
+            .collection(AppConstants.colUsers)
+            .doc(userId)
+            .get();
+        final fcmToken = userDocForNotif.data()?['fcmToken'];
+        if (fcmToken != null) {
+          await NotificationService.sendPushNotification(
+            fcmToken,
+            'Top Up Berhasil! 🎉',
+            'Saldo sebesar Rp ${_formatNominal(amount.toInt())} telah masuk ke dompetmu.',
+          );
+        }
+      } catch (e) {
+        print("Gagal kirim notif: $e");
+      }
+      // --------------------------------------
 
       return null;
     } catch (e) {
@@ -192,6 +228,25 @@ class WalletService {
             'status': AppConstants.txStatusRejected,
             'rejectedAt': FieldValue.serverTimestamp(),
           });
+
+      // --- PELATUK NOTIFIKASI KE CUSTOMER ---
+      try {
+        final userDocForNotif = await _db
+            .collection(AppConstants.colUsers)
+            .doc(userId)
+            .get();
+        final fcmToken = userDocForNotif.data()?['fcmToken'];
+        if (fcmToken != null) {
+          await NotificationService.sendPushNotification(
+            fcmToken,
+            'Top Up Ditolak ❌',
+            'Maaf, pengajuan top up kamu ditolak. Pastikan bukti transfer sudah benar.',
+          );
+        }
+      } catch (e) {
+        print("Gagal kirim notif: $e");
+      }
+      // --------------------------------------
 
       return null;
     } catch (e) {
