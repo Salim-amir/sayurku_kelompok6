@@ -4,6 +4,7 @@ import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../services/order_service.dart';
+import '../../../../services/wallet_service.dart';
 import '../../../../core/cart_manager.dart';
 import '../../../../models/address_model.dart';
 import '../../../../services/address_service.dart';
@@ -22,6 +23,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _metodePembayaran = 'COD';
   final int _ongkosKirim = 0;
   final OrderService _orderService = OrderService();
+  final WalletService _walletService = WalletService();
   final _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
 final AddressService _addressService = AddressService();
@@ -507,6 +509,26 @@ onPressed: _isLoading
         // ── PROSES PESANAN ────────────────────────
         setState(() => _isLoading = true);
         try {
+          // Jika bayar pakai Dompet Digital, potong saldo dulu
+          if (_metodePembayaran == AppConstants.metodeDompet) {
+            final potongError = await _walletService.potongSaldo(
+              userId: _user?.uid ?? '',
+              amount: _totalPembayaran.toDouble(),
+            );
+            if (potongError != null) {
+              setState(() => _isLoading = false);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(potongError),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+              return;
+            }
+          }
+
           await _orderService.buatPesananBaru(
             userId: _user?.uid ?? '',
             items: CartManager.instance.items,
