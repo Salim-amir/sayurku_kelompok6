@@ -25,6 +25,28 @@ class OrderService {
         'status': AppConstants.statusMenunggu,
         'tanggalPesan': FieldValue.serverTimestamp(),
       });
+
+      // --- PELATUK NOTIFIKASI KE ADMIN ---
+      try {
+        final adminQuery = await _db
+            .collection(AppConstants.colUsers)
+            .where('role', isEqualTo: 'admin')
+            .get();
+        for (var doc in adminQuery.docs) {
+          final adminToken = doc.data()['fcmToken'];
+          if (adminToken != null) {
+            await NotificationService.sendPushNotification(
+              adminToken,
+              'Pesanan Baru Masuk! 🛒',
+              'Ada pelanggan yang baru membuat pesanan. Segera cek dashboard!',
+            );
+          }
+        }
+      } catch (e) {
+        print("Gagal mengirim notif ke admin: $e");
+      }
+      // -----------------------------------
+
       return null;
     } catch (e) {
       return 'Gagal membuat pesanan: ${e.toString()}';
