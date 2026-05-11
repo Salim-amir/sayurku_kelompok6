@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../services/wallet_service.dart';
@@ -306,9 +307,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   builder: (_) => const GantiPasswordScreen()),
             ),
           ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.headset_mic_rounded,
+            label: 'Customer Service',
+            subtitle: 'Hubungi kami via WhatsApp',
+            color: const Color(0xFF25D366),
+            onTap: () => _openWhatsApp(),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _openWhatsApp() async {
+    final uri = Uri.parse('https://wa.me/6281217838842?text=Halo%20SayurKu%2C%20saya%20butuh%20bantuan');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka WhatsApp',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildMenuItem({
