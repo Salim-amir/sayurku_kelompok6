@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "215020353331-a43p12c4srrs4v9otcfpa69dc8gnvf21.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sayurku_kelompok6",
+            "certificate_hash": "6c61a58708f7f832ff2d8425db7054402e973079"
+          }
+        },
+        {
           "client_id": "215020353331-bvsn61m4gsjmj44cjea9pve8815lsl6u.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
