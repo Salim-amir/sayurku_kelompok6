@@ -28,7 +28,7 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStatusCard(status),
+                    _buildStatusCard(status, metodePembayaran),
                     const SizedBox(height: 16),
                     _buildDetailPembayaran(
                         totalHarga, ongkosKirim, totalBayar),
@@ -66,16 +66,23 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
   }
 
   // ── STATUS CARD ─────────────────────────────────────
-  Widget _buildStatusCard(String status) {
+  Widget _buildStatusCard(String status, String metode) {
     IconData icon;
     Color color;
     String message;
+    final isDompet = metode == AppConstants.metodeDompet;
 
     switch (status) {
       case AppConstants.statusMenunggu:
-        icon = Icons.hourglass_top_rounded;
-        color = AppColors.warning;
-        message = 'Menunggu konfirmasi pembayaran dari admin';
+        if (isDompet) {
+          icon = Icons.check_circle_rounded;
+          color = AppColors.success;
+          message = 'Saldo dompet telah dipotong. Pesanan menunggu diproses oleh admin.';
+        } else {
+          icon = Icons.hourglass_top_rounded;
+          color = AppColors.warning;
+          message = 'Menunggu konfirmasi pembayaran dari admin';
+        }
         break;
       case AppConstants.statusDiproses:
         icon = Icons.check_circle_rounded;
@@ -227,31 +234,47 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
 
   // ── INSTRUKSI ──────────────────────────────────────
   Widget _buildInstruksi(String metode) {
+    final isDompet = metode == AppConstants.metodeDompet;
     final isTransfer = metode == AppConstants.metodeTransfer;
+    final accentColor = isDompet ? AppColors.primaryGreen : AppColors.info;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.08),
+        color: accentColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.info.withOpacity(0.2)),
+        border: Border.all(color: accentColor.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.info_outline_rounded,
-                  color: AppColors.info, size: 18),
+              Icon(
+                isDompet
+                    ? Icons.account_balance_wallet_rounded
+                    : Icons.info_outline_rounded,
+                color: accentColor,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text('Instruksi',
                   style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w700, color: AppColors.info)),
+                      fontWeight: FontWeight.w700, color: accentColor)),
             ],
           ),
           const SizedBox(height: 10),
-          if (isTransfer) ...[
+          if (isDompet) ...[
+            _buildStep('1',
+                'Saldo dompet digital Anda telah dipotong secara otomatis',
+                color: accentColor),
+            _buildStep('2',
+                'Admin akan memverifikasi dan memproses pesanan Anda',
+                color: accentColor),
+            _buildStep('3', 'Pesanan akan segera diantar ke alamat Anda',
+                color: accentColor),
+          ] else if (isTransfer) ...[
             _buildStep('1', 'Transfer sesuai total pembayaran'),
             _buildStep('2', 'Admin akan memeriksa pembayaran Anda'),
             _buildStep(
@@ -265,7 +288,7 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStep(String no, String text) {
+  Widget _buildStep(String no, String text, {Color color = AppColors.info}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -275,15 +298,15 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.15),
+              color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(no,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.info)),
+                      color: color)),
             ),
           ),
           const SizedBox(width: 8),
