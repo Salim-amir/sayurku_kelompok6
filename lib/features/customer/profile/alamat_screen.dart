@@ -293,7 +293,9 @@ class _AlamatScreenState extends State<AlamatScreen> {
     );
   }
 
-  // ── FORM TAMBAH / EDIT ALAMAT (Bottom Sheet) ───────
+  // ══════════════════════════════════════════════════════
+  // ── FORM TAMBAH / EDIT ALAMAT (Bottom Sheet) ─────────
+  // ══════════════════════════════════════════════════════
   void _showFormAlamat(BuildContext context, {AddressModel? alamat}) {
     final isEdit = alamat != null;
     final labelCtrl = TextEditingController(text: alamat?.label ?? '');
@@ -309,175 +311,312 @@ class _AlamatScreenState extends State<AlamatScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        height: MediaQuery.of(ctx).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (ctx) {
+        // viewInsets.bottom = tinggi keyboard agar konten naik
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.92,
             ),
-            // Title
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(isEdit ? 'Edit Alamat' : 'Tambah Alamat',
-                      style: AppTextStyles.h2),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(ctx),
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Handle bar ──
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                ],
-              ),
-            ),
-            // Form
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Column(
-                  children: [
-                    _buildFormField('Label Alamat', 'Contoh: Rumah, Kantor',
-                        labelCtrl, Icons.label_rounded),
-                    _buildFormField('Nama Penerima', 'Nama lengkap penerima',
-                        namaCtrl, Icons.person_rounded),
-                    _buildFormField('Nomor HP', '08xx xxxx xxxx', hpCtrl,
-                        Icons.phone_rounded,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(13),
-                        ]),
-                    _buildFormField('Alamat Lengkap',
-                        'Jl, RT/RW, No. Rumah, Kelurahan', alamatCtrl,
-                        Icons.location_on_rounded,
-                        maxLines: 2),
-                    _buildFormField(
-                        'Kecamatan', 'Kecamatan', kecCtrl, Icons.map_rounded),
-                    _buildFormField(
-                        'Kota', 'Kota / Kabupaten', kotaCtrl,
-                        Icons.location_city_rounded),
-                    _buildFormField('Kode Pos', '12345', posCtrl,
-                        Icons.markunread_mailbox_rounded,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(5),
-                        ]),
-                    const SizedBox(height: 16),
-                    // Tombol Simpan
-                    SizedBox(
-                      width: double.infinity,
-                      height: AppConstants.buttonHeight,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // ── Validasi field wajib ──
-                          if (labelCtrl.text.trim().isEmpty ||
-                              namaCtrl.text.trim().isEmpty ||
-                              hpCtrl.text.trim().isEmpty ||
-                              alamatCtrl.text.trim().isEmpty ||
-                              kecCtrl.text.trim().isEmpty ||
-                              kotaCtrl.text.trim().isEmpty) {
-                            _showValidationError(ctx, 'Lengkapi semua field yang wajib diisi (Label, Nama, HP, Alamat, Kecamatan, Kota)');
-                            return;
-                          }
-
-                          // ── Validasi nomor HP ──
-                          final hp = hpCtrl.text.trim();
-                          if (hp.length < 10 || hp.length > 13) {
-                            _showValidationError(ctx, 'Nomor HP harus 10-13 digit');
-                            return;
-                          }
-                          if (!hp.startsWith('08')) {
-                            _showValidationError(ctx, 'Nomor HP harus diawali dengan 08');
-                            return;
-                          }
-
-                          // ── Validasi alamat lengkap ──
-                          if (alamatCtrl.text.trim().length < 10) {
-                            _showValidationError(ctx, 'Alamat lengkap minimal 10 karakter');
-                            return;
-                          }
-
-                          // ── Validasi kecamatan & kota ──
-                          if (kecCtrl.text.trim().length < 3) {
-                            _showValidationError(ctx, 'Nama kecamatan minimal 3 karakter');
-                            return;
-                          }
-                          if (kotaCtrl.text.trim().length < 3) {
-                            _showValidationError(ctx, 'Nama kota minimal 3 karakter');
-                            return;
-                          }
-
-                          // ── Validasi kode pos (opsional tapi kalau diisi harus 5 digit) ──
-                          if (posCtrl.text.trim().isNotEmpty && posCtrl.text.trim().length != 5) {
-                            _showValidationError(ctx, 'Kode pos harus 5 digit');
-                            return;
-                          }
-
-                          final newAlamat = AddressModel(
-                            id: alamat?.id ?? '',
-                            label: labelCtrl.text.trim(),
-                            namaPenerima: namaCtrl.text.trim(),
-                            nomorHp: hpCtrl.text.trim(),
-                            alamatLengkap: alamatCtrl.text.trim(),
-                            kecamatan: kecCtrl.text.trim(),
-                            kota: kotaCtrl.text.trim(),
-                            kodePos: posCtrl.text.trim(),
-                            isPrimary: alamat?.isPrimary ?? false,
-                          );
-
-                          String? error;
-                          if (isEdit) {
-                            error = await _addressService.updateAlamat(
-                              userId: user!.uid,
-                              addressId: alamat.id,
-                              alamat: newAlamat,
-                            );
-                          } else {
-                            error = await _addressService.tambahAlamat(
-                              userId: user!.uid,
-                              alamat: newAlamat,
-                            );
-                          }
-
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                            if (error != null) {
-                              _showError(error);
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(isEdit ? 'Simpan Perubahan' : 'Simpan Alamat',
-                            style: AppTextStyles.buttonPrimary),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
                 ),
-              ),
+
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.location_on_rounded,
+                            color: AppColors.primaryGreen, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isEdit ? 'Edit Alamat' : 'Tambah Alamat Baru',
+                              style: AppTextStyles.h3,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isEdit
+                                  ? 'Perbarui informasi alamat'
+                                  : 'Isi detail alamat pengiriman',
+                              style: AppTextStyles.bodySmall
+                                  .copyWith(color: AppColors.textHint),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: AppColors.textHint),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                const Divider(color: AppColors.divider, height: 1),
+
+                // ── Scrollable form ──
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Section: Label ──
+                        _buildSectionHeader(
+                            'Label Alamat', Icons.label_rounded),
+                        const SizedBox(height: 10),
+                        _buildFormField('Label Alamat',
+                            'Contoh: Rumah, Kantor, Kos', labelCtrl,
+                            Icons.label_rounded),
+
+                        const SizedBox(height: 16),
+
+                        // ── Section: Penerima ──
+                        _buildSectionHeader(
+                            'Informasi Penerima', Icons.person_rounded),
+                        const SizedBox(height: 10),
+                        _buildFormField('Nama Penerima',
+                            'Nama lengkap penerima', namaCtrl,
+                            Icons.person_rounded),
+                        _buildFormField(
+                            'Nomor HP', '08xx xxxx xxxx', hpCtrl,
+                            Icons.phone_rounded,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(13),
+                            ]),
+
+                        const SizedBox(height: 16),
+
+                        // ── Section: Detail Alamat ──
+                        _buildSectionHeader(
+                            'Detail Alamat', Icons.location_on_rounded),
+                        const SizedBox(height: 10),
+                        _buildFormField(
+                            'Alamat Lengkap',
+                            'Jl, RT/RW, No. Rumah, Kelurahan',
+                            alamatCtrl, Icons.home_rounded,
+                            maxLines: 2),
+
+                        // Kecamatan & Kota sejajar
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildFormField('Kecamatan',
+                                  'Kecamatan', kecCtrl,
+                                  Icons.map_rounded),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildFormField('Kota',
+                                  'Kota / Kabupaten', kotaCtrl,
+                                  Icons.location_city_rounded),
+                            ),
+                          ],
+                        ),
+
+                        _buildFormField('Kode Pos', '12345', posCtrl,
+                            Icons.markunread_mailbox_rounded,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(5),
+                            ]),
+
+                        const SizedBox(height: 20),
+
+                        // ── Tombol Simpan ──
+                        SizedBox(
+                          width: double.infinity,
+                          height: AppConstants.buttonHeight,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _submitAlamat(
+                              ctx: ctx,
+                              isEdit: isEdit,
+                              alamat: alamat,
+                              labelCtrl: labelCtrl,
+                              namaCtrl: namaCtrl,
+                              hpCtrl: hpCtrl,
+                              alamatCtrl: alamatCtrl,
+                              kecCtrl: kecCtrl,
+                              kotaCtrl: kotaCtrl,
+                              posCtrl: posCtrl,
+                            ),
+                            icon: Icon(
+                              isEdit
+                                  ? Icons.save_rounded
+                                  : Icons.add_location_alt_rounded,
+                              color: AppColors.white,
+                              size: 20,
+                            ),
+                            label: Text(
+                              isEdit ? 'Simpan Perubahan' : 'Simpan Alamat',
+                              style: AppTextStyles.buttonPrimary,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Submit handler ──
+  Future<void> _submitAlamat({
+    required BuildContext ctx,
+    required bool isEdit,
+    AddressModel? alamat,
+    required TextEditingController labelCtrl,
+    required TextEditingController namaCtrl,
+    required TextEditingController hpCtrl,
+    required TextEditingController alamatCtrl,
+    required TextEditingController kecCtrl,
+    required TextEditingController kotaCtrl,
+    required TextEditingController posCtrl,
+  }) async {
+    // Validasi field wajib
+    if (labelCtrl.text.trim().isEmpty ||
+        namaCtrl.text.trim().isEmpty ||
+        hpCtrl.text.trim().isEmpty ||
+        alamatCtrl.text.trim().isEmpty ||
+        kecCtrl.text.trim().isEmpty ||
+        kotaCtrl.text.trim().isEmpty) {
+      _showValidationError(ctx,
+          'Lengkapi semua field yang wajib diisi (Label, Nama, HP, Alamat, Kecamatan, Kota)');
+      return;
+    }
+
+    // Validasi nomor HP
+    final hp = hpCtrl.text.trim();
+    if (hp.length < 10 || hp.length > 13) {
+      _showValidationError(ctx, 'Nomor HP harus 10-13 digit');
+      return;
+    }
+    if (!hp.startsWith('08')) {
+      _showValidationError(ctx, 'Nomor HP harus diawali dengan 08');
+      return;
+    }
+
+    // Validasi alamat lengkap
+    if (alamatCtrl.text.trim().length < 10) {
+      _showValidationError(ctx, 'Alamat lengkap minimal 10 karakter');
+      return;
+    }
+
+    // Validasi kecamatan & kota
+    if (kecCtrl.text.trim().length < 3) {
+      _showValidationError(ctx, 'Nama kecamatan minimal 3 karakter');
+      return;
+    }
+    if (kotaCtrl.text.trim().length < 3) {
+      _showValidationError(ctx, 'Nama kota minimal 3 karakter');
+      return;
+    }
+
+    // Validasi kode pos (opsional)
+    if (posCtrl.text.trim().isNotEmpty && posCtrl.text.trim().length != 5) {
+      _showValidationError(ctx, 'Kode pos harus 5 digit');
+      return;
+    }
+
+    final newAlamat = AddressModel(
+      id: alamat?.id ?? '',
+      label: labelCtrl.text.trim(),
+      namaPenerima: namaCtrl.text.trim(),
+      nomorHp: hpCtrl.text.trim(),
+      alamatLengkap: alamatCtrl.text.trim(),
+      kecamatan: kecCtrl.text.trim(),
+      kota: kotaCtrl.text.trim(),
+      kodePos: posCtrl.text.trim(),
+      isPrimary: alamat?.isPrimary ?? false,
+    );
+
+    String? error;
+    if (isEdit) {
+      error = await _addressService.updateAlamat(
+        userId: user!.uid,
+        addressId: alamat!.id,
+        alamat: newAlamat,
+      );
+    } else {
+      error = await _addressService.tambahAlamat(
+        userId: user!.uid,
+        alamat: newAlamat,
+      );
+    }
+
+    if (ctx.mounted) {
+      Navigator.pop(ctx);
+      if (error != null) {
+        _showError(error);
+      }
+    }
+  }
+
+  // ── Section header ──
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primaryGreen, size: 16),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.primaryGreen,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
         ),
-      ),
+      ],
     );
   }
 
