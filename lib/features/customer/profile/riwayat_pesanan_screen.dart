@@ -26,6 +26,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
     'Diproses',
     'Dikirim',
     'Selesai',
+    'Dibatalkan',
   ];
 
   final Map<String, String> _tabToStatus = {
@@ -33,6 +34,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
     'Diproses': AppConstants.statusDiproses,
     'Dikirim': AppConstants.statusDikirim,
     'Selesai': AppConstants.statusSelesai,
+    'Dibatalkan': AppConstants.statusDibatalkan,
   };
 
   @override
