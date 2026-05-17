@@ -554,7 +554,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             if (isOrderLoading || isTopUpLoading) {
               return Scaffold(
                 backgroundColor: const Color(0xFFF8FAF7),
-                drawer: _buildAdminDrawer(),
                 appBar: AppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,
@@ -682,7 +681,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
             return Scaffold(
               backgroundColor: const Color(0xFFF8FAF7),
-              drawer: _buildAdminDrawer(),
               appBar: AppBar(
                 backgroundColor: Colors.transparent,
                 elevation: 0,

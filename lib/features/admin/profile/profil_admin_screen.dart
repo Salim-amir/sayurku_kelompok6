@@ -32,7 +32,6 @@ class ProfilAdminScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF7),
-      drawer: drawer,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
