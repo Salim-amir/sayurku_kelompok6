@@ -195,7 +195,6 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF7),
-      drawer: _buildAdminDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
