@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "215020353331-j3bing9lsmdb533i598stbo9b0ikrtot.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sayurku_kelompok6",
+            "certificate_hash": "dc07eb845ed6caa0aac2858da6d8c65f12708e61"
+          }
+        },
+        {
           "client_id": "215020353331-qm4difk3nr4bod9ofaj985ra9n15na0n.apps.googleusercontent.com",
           "client_type": 3
         }
