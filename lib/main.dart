@@ -27,6 +27,13 @@ void main() async {
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   await messaging.requestPermission();
+
+  await messaging.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   runApp(const MyApp());
 }
