@@ -21,47 +21,47 @@ class KatalogProdukScreen extends StatefulWidget {
 }
 
 class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
-late String _selectedKategori;
+  late String _selectedKategori;
 
-final ProductService _productService = ProductService();
-  final TextEditingController _searchController = TextEditingController(); // ← tambah ini
+  final ProductService _productService = ProductService();
+  final TextEditingController _searchController = TextEditingController();
   String _searchKeyword = '';
 
- Stream<List<ProductModel>>? _stream;
+  Stream<List<ProductModel>>? _stream;
   String _lastKategori = '';
   String _lastKeyword = '';
 
-Stream<List<ProductModel>> _getStream() {
-  if (_searchKeyword != _lastKeyword || _selectedKategori != _lastKategori) {
-    _lastKeyword = _searchKeyword;
-    _lastKategori = _selectedKategori;
-    _stream = _searchKeyword.isEmpty
-        ? _productService.getProdukByKategori(_selectedKategori)
-        : _productService.cariProduk(_searchKeyword);
+  Stream<List<ProductModel>> _getStream() {
+    if (_searchKeyword != _lastKeyword || _selectedKategori != _lastKategori) {
+      _lastKeyword = _searchKeyword;
+      _lastKategori = _selectedKategori;
+      _stream = _searchKeyword.isEmpty
+          ? _productService.getProdukByKategori(_selectedKategori)
+          : _productService.cariProduk(_searchKeyword);
+    }
+    return _stream!;
   }
-  return _stream!;
-}
-
 
   @override
-void dispose() {
-  _searchController.dispose();
-  super.dispose();
-}
-@override
-void initState() {
-  super.initState();
-  _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
-  if (widget.searchKeyword != null) {
-    _searchKeyword = widget.searchKeyword!;
-    _searchController.text = widget.searchKeyword!;
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    setState(() {
-      _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+    if (widget.searchKeyword != null) {
+      _searchKeyword = widget.searchKeyword!;
+      _searchController.text = widget.searchKeyword!;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+      });
     });
-  });
-}
+  }
 
   final List<String> _kategoriList = [
     'sayur_hijau', 'buah', 'bumbu', 'umbi_umbian'
@@ -102,302 +102,345 @@ void initState() {
   }
 
   // ── APP BAR ─────────────────────────────────────────
-Widget _buildAppBar(BuildContext context) {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(8, 16, 20, 16),
-    decoration: BoxDecoration(
-      color: AppColors.white,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.04),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.primaryGreen),
-              onPressed: () => Navigator.pop(context),
-            ),
-            Expanded(
-              child: Center(
-                child: Text('Katalog Produk',
-                    style: AppTextStyles.h2
-                        .copyWith(color: AppColors.primaryGreen)),
-              ),
-            ),
-            const SizedBox(width: 48),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
+  Widget _buildAppBar(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Icon(Icons.location_on_rounded,
-                  color: AppColors.primaryGreen, size: 16),
-              const SizedBox(width: 4),
-              Text('Malang, Jawa Timur',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.local_offer_rounded,
-                        color: AppColors.primaryGreen, size: 12),
-                    const SizedBox(width: 4),
-                    Text('Harga Terjangkau',
-                        style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primaryGreen,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 10)),
-                  ],
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.primaryGreen),
+                onPressed: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text('Katalog Produk',
+                      style: AppTextStyles.h2
+                          .copyWith(color: AppColors.primaryGreen)),
                 ),
               ),
+              const SizedBox(width: 48),
             ],
           ),
-        ),
-      ],
-    ),
-  );
-}
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on_rounded,
+                    color: AppColors.primaryGreen, size: 16),
+                const SizedBox(width: 4),
+                Text('Malang, Jawa Timur',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.local_offer_rounded,
+                          color: AppColors.primaryGreen, size: 12),
+                      const SizedBox(width: 4),
+                      Text('Harga Terjangkau',
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── SEARCH BAR ──────────────────────────────────────
-Widget _buildSearchBar() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    decoration: BoxDecoration(
-      color: AppColors.inputBackground,
-      borderRadius: BorderRadius.circular(30),
-    ),
-    child: TextField(
-      controller: _searchController,
-      autofocus: true, // ← tambah ini
-      onChanged: (value) => setState(() => _searchKeyword = value),
-      decoration: InputDecoration(
-        border: InputBorder.none,
-        hintText: 'Cari sayur segar hari ini...',
-        hintStyle: AppTextStyles.inputHint,
-        prefixIcon: const Icon(Icons.search_rounded,
-            color: AppColors.textHint, size: 20),
-        suffixIcon: _searchKeyword.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: AppColors.textHint, size: 20),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _searchKeyword = '');
-                },
-              )
-            : null,
-      ),
-    ),
-  );
-}
-// ── FILTER KATEGORI ─────────────────────────────────
-Widget _buildKategoriFilter() {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Row(
-      children: _kategoriList.asMap().entries.map((entry) {
-        final kategori = entry.value;
-        final isSelected = kategori == _selectedKategori;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _selectedKategori = kategori;
-              });
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryGreen : AppColors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : AppColors.inputBorder,
-                ),
-              ),
-              child: Text(
-                _getLabelKategori(kategori),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    ),
-  );
-}
-
-  // ── PRODUK GRID ─────────────────────────────────────
-Widget _buildProdukGrid() {
-  return StreamBuilder<List<ProductModel>>(
-   stream: _searchKeyword.isEmpty
-    ? _productService.getProdukByKategori(_selectedKategori)
-    : _productService.cariProdukByKategori(_searchKeyword, _selectedKategori),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryGreen),
-        );
-      }
-      if (snapshot.hasError) {
-        return Center(
-          child: Text('Gagal memuat produk', style: AppTextStyles.bodyMedium),
-        );
-      }
-      final produkList = snapshot.data ?? [];
-      if (produkList.isEmpty) {
-        return Center(
-          child: Text('Belum ada produk di kategori ini',
-              style: AppTextStyles.bodyMedium),
-        );
-      }
-      return GridView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: 0.68,
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _searchKeyword.isNotEmpty
+              ? AppColors.primaryGreen.withOpacity(0.4)
+              : Colors.transparent,
+          width: 1.5,
         ),
-        itemCount: produkList.length,
-        itemBuilder: (context, index) {
-          final produk = produkList[index];
-          return ProductCard(
-            imagePath: produk.imageUrl,
-            name: produk.nama,
-            price: produk.harga,
-            unit: produk.satuan,
-            isAvailable: produk.tersedia,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => DetailProdukScreen(
-                  produk: {
-                    'id': produk.id,
-                    'nama': produk.nama,
-                    'harga': produk.harga,
-                    'satuan': produk.satuan,
-                    'imageUrl': produk.imageUrl,
-                    'tersedia': produk.tersedia,
-                  },
-                ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.search_rounded,
+            color: _searchKeyword.isNotEmpty
+                ? AppColors.primaryGreen
+                : AppColors.textHint,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (value) => setState(() => _searchKeyword = value),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                hintText: 'Cari sayur segar hari ini...',
+                hintStyle: AppTextStyles.inputHint,
               ),
             ),
-            onAddToCart: () {
-  CartManager.instance.tambahProduk({
-    'nama': produk.nama,
-    'harga': produk.harga.toInt(),
-    'satuan': produk.satuan,
-    'imageUrl': produk.imageUrl,
-  }, 1);
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('${produk.nama} ditambahkan ke keranjang!'),
-      backgroundColor: AppColors.primaryGreen,
-      duration: const Duration(seconds: 2),
-    ),
-  );
-},
-          );
-        },
-      );
-    },
-  );
-}
-
-Widget _buildProductCard(Map<String, dynamic> produk) {
-  return ProductCard(
-    imagePath: produk['imageUrl'],
-    name: produk['nama'],
-    price: produk['harga'],
-    unit: produk['satuan'],
-    isAvailable: true,
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DetailProdukScreen(produk: produk),
-      ),
-    ),
-    onAddToCart: () {},
-  );
-}
-String _getLabelKategori(String kategori) {
-  switch (kategori) {
-    case 'sayur_hijau': return 'Sayur Hijau';
-    case 'buah': return 'Buah';
-    case 'bumbu': return 'Bumbu';
-    case 'umbi_umbian': return 'Umbi-umbian';
-    default: return kategori;
-  }
-}
-  
-  // ── CART FAB ────────────────────────────────────────
-Widget _buildCartFAB() {
-  return ValueListenableBuilder<int>(
-    valueListenable: CartManager.instance.jumlahNotifier,
-    builder: (context, jumlah, _) {
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-          FloatingActionButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
-            ),
-            backgroundColor: AppColors.primaryGreen,
-            child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
           ),
-          if (jumlah > 0)
-            Positioned(
-              right: -2,
-              top: -2,
+          if (_searchKeyword.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                setState(() => _searchKeyword = '');
+              },
               child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: AppColors.textHint.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Center(
-                  child: Text(
-                    '$jumlah',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold),
-                  ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textHint,
+                  size: 14,
                 ),
               ),
             ),
         ],
-      );
-    },
-  );
-}
+      ),
+    );
+  }
+
+  // ── FILTER KATEGORI ─────────────────────────────────
+  Widget _buildKategoriFilter() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: _kategoriList.asMap().entries.map((entry) {
+          final kategori = entry.value;
+          final isSelected = kategori == _selectedKategori;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedKategori = kategori;
+                });
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryGreen : AppColors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primaryGreen
+                        : AppColors.inputBorder,
+                  ),
+                ),
+                child: Text(
+                  _getLabelKategori(kategori),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isSelected ? AppColors.white : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ── PRODUK GRID ─────────────────────────────────────
+  Widget _buildProdukGrid() {
+    return StreamBuilder<List<ProductModel>>(
+      stream: _searchKeyword.isEmpty
+          ? _productService.getProdukByKategori(_selectedKategori)
+          : _productService.cariProdukByKategori(_searchKeyword, _selectedKategori),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryGreen),
+          );
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Gagal memuat produk', style: AppTextStyles.bodyMedium),
+          );
+        }
+        final produkList = snapshot.data ?? [];
+        if (produkList.isEmpty) {
+          return Center(
+            child: Text('Belum ada produk di kategori ini',
+                style: AppTextStyles.bodyMedium),
+          );
+        }
+        return GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            childAspectRatio: 0.68,
+          ),
+          itemCount: produkList.length,
+          itemBuilder: (context, index) {
+            final produk = produkList[index];
+            return ProductCard(
+              imagePath: produk.imageUrl,
+              name: produk.nama,
+              price: produk.harga,
+              unit: produk.satuan,
+              isAvailable: produk.tersedia,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DetailProdukScreen(
+                    produk: {
+                      'id': produk.id,
+                      'nama': produk.nama,
+                      'harga': produk.harga,
+                      'satuan': produk.satuan,
+                      'imageUrl': produk.imageUrl,
+                      'tersedia': produk.tersedia,
+                    },
+                  ),
+                ),
+              ),
+              onAddToCart: () {
+                CartManager.instance.tambahProduk({
+                  'nama': produk.nama,
+                  'harga': produk.harga.toInt(),
+                  'satuan': produk.satuan,
+                  'imageUrl': produk.imageUrl,
+                }, 1);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${produk.nama} ditambahkan ke keranjang!'),
+                    backgroundColor: AppColors.primaryGreen,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> produk) {
+    return ProductCard(
+      imagePath: produk['imageUrl'],
+      name: produk['nama'],
+      price: produk['harga'],
+      unit: produk['satuan'],
+      isAvailable: true,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailProdukScreen(produk: produk),
+        ),
+      ),
+      onAddToCart: () {},
+    );
+  }
+
+  String _getLabelKategori(String kategori) {
+    switch (kategori) {
+      case 'sayur_hijau': return 'Sayur Hijau';
+      case 'buah': return 'Buah';
+      case 'bumbu': return 'Bumbu';
+      case 'umbi_umbian': return 'Umbi-umbian';
+      default: return kategori;
+    }
+  }
+
+  // ── CART FAB ────────────────────────────────────────
+  Widget _buildCartFAB() {
+    return ValueListenableBuilder<int>(
+      valueListenable: CartManager.instance.jumlahNotifier,
+      builder: (context, jumlah, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
+              ),
+              backgroundColor: AppColors.primaryGreen,
+              child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
+            ),
+            if (jumlah > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$jumlah',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   String _formatHarga(int harga) {
     return harga.toString().replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
