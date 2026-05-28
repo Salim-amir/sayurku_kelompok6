@@ -4,6 +4,7 @@ import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
 import '../../../services/order_service.dart';
+import 'detail_pesanan_customer_screen.dart';
 
 class RiwayatPesananScreen extends StatefulWidget {
   final bool showBackButton;
@@ -202,10 +203,21 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
     final totalHarga = (pesanan['totalHarga'] ?? 0).toDouble();
     final tanggal = pesanan['tanggalPesan']?.toDate();
     final jumlahItem = items.length;
+    final namaKurir = pesanan['namaKurir'];
+    final noTelpKurir = pesanan['noTelpKurir'];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailPesananCustomerScreen(pesanan: pesanan),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
@@ -246,8 +258,16 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
                         color: AppColors.inputBackground,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.eco_rounded,
-                          color: AppColors.primaryGreen, size: 18),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
+                            ? Image.network(
+                                item['imageUrl'],
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stack) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+                              )
+                            : const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -273,6 +293,39 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
 
           const Divider(height: 20, color: AppColors.divider),
 
+          if (namaKurir != null && namaKurir.toString().isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.delivery_dining, color: AppColors.primaryGreen, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Kurir Pengantar', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                        Text(namaKurir, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                        Text(noTelpKurir ?? '', style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.phone, color: AppColors.primaryGreen),
+                    onPressed: () {
+                      // Optional: add launcher for phone dialer
+                    },
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Footer: jumlah item + total
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,7 +342,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
           ),
         ],
       ),
-    );
+    ));
   }
 
   // ── STATUS BADGE ────────────────────────────────────

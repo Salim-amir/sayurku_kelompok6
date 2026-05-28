@@ -10,6 +10,8 @@ class OrderModel {
   final String alamatPengiriman;
   final String status;
   final DateTime? tanggalPesan;
+  final String? namaKurir;
+  final String? noTelpKurir;
 
   OrderModel({
     required this.id,
@@ -21,6 +23,8 @@ class OrderModel {
     required this.alamatPengiriman,
     required this.status,
     this.tanggalPesan,
+    this.namaKurir,
+    this.noTelpKurir,
   });
 
   factory OrderModel.fromMap(Map<String, dynamic> map, String id) {
@@ -34,6 +38,8 @@ class OrderModel {
       alamatPengiriman: map['alamatPengiriman'] ?? '',
       status: map['status'] ?? AppConstants.statusMenunggu,
       tanggalPesan: map['tanggalPesan']?.toDate(),
+      namaKurir: map['namaKurir'],
+      noTelpKurir: map['noTelpKurir'],
     );
   }
 
@@ -47,6 +53,8 @@ class OrderModel {
       'alamatPengiriman': alamatPengiriman,
       'status': status,
       'tanggalPesan': tanggalPesan,
+      'namaKurir': namaKurir,
+      'noTelpKurir': noTelpKurir,
     };
   }
 }

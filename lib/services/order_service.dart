@@ -91,12 +91,23 @@ class OrderService {
   Future<String?> updateStatusPesanan({
     required String orderId,
     required String statusBaru,
+    String? namaKurir,
+    String? noTelpKurir,
   }) async {
     try {
-      await _db.collection(AppConstants.colOrders).doc(orderId).update({
+      final Map<String, dynamic> updateData = {
         'status': statusBaru,
         'tanggalUpdate': FieldValue.serverTimestamp(),
-      });
+      };
+      
+      if (namaKurir != null && namaKurir.isNotEmpty) {
+        updateData['namaKurir'] = namaKurir;
+      }
+      if (noTelpKurir != null && noTelpKurir.isNotEmpty) {
+        updateData['noTelpKurir'] = noTelpKurir;
+      }
+
+      await _db.collection(AppConstants.colOrders).doc(orderId).update(updateData);
       // --- MULAILAH MENARIK PELATUK FCM & DATABASE ---
       final orderDoc = await _db
           .collection(AppConstants.colOrders)
