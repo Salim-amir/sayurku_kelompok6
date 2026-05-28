@@ -19,6 +19,9 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
   final OrderService _orderService = OrderService();
   String? _selectedStatus;
   bool _isLoading = false;
+  final TextEditingController _namaKurirController = TextEditingController();
+  final TextEditingController _noTelpKurirController = TextEditingController();
+  bool _isInitialized = false;
 
   Future<Map<String, dynamic>?>? _detailPesananFuture;
 
@@ -34,6 +37,13 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
   void initState() {
     super.initState();
     _detailPesananFuture = _orderService.getDetailPesanan(widget.orderId);
+  }
+
+  @override
+  void dispose() {
+    _namaKurirController.dispose();
+    _noTelpKurirController.dispose();
+    super.dispose();
   }
 
   // ─── HELPER WARNA STATUS ───
@@ -116,6 +126,13 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
             (option) => option.toLowerCase() == rawStatus.toLowerCase(),
             orElse: () => _statusOptions[0],
           );
+          
+          if (!_isInitialized) {
+            _selectedStatus = statusSaatIni;
+            _namaKurirController.text = orderData['namaKurir'] ?? '';
+            _noTelpKurirController.text = orderData['noTelpKurir'] ?? '';
+            _isInitialized = true;
+          }
 
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance
@@ -348,144 +365,175 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // ─── FORM UPDATE STATUS PESANAN (Dipindah dari bottomNavigationBar agar scrollable) ───
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Update Status Pesanan',
+                            style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputBackground,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.inputBorder),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedStatus,
+                                isExpanded: true,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryGreen),
+                                items: _statusOptions.map((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text('Status: $value', style: AppTextStyles.inputText),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  if (newValue != null) {
+                                    setState(() => _selectedStatus = newValue);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          if (_selectedStatus == 'Dikirim') ...[
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _namaKurirController,
+                              decoration: InputDecoration(
+                                labelText: 'Nama Kurir',
+                                hintText: 'Masukkan nama kurir',
+                                labelStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGreen),
+                                filled: true,
+                                fillColor: AppColors.inputBackground,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.inputBorder),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.inputBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _noTelpKurirController,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                labelText: 'No. Telepon Kurir',
+                                hintText: '08123456789',
+                                labelStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGreen),
+                                filled: true,
+                                fillColor: AppColors.inputBackground,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.inputBorder),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.inputBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () async {
+                                      if (_selectedStatus == 'Dikirim' &&
+                                          (_namaKurirController.text.trim().isEmpty ||
+                                           _noTelpKurirController.text.trim().isEmpty)) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Nama dan No. Telepon kurir wajib diisi!'),
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      setState(() => _isLoading = true);
+                                      final error = await _orderService.updateStatusPesanan(
+                                        orderId: widget.orderId,
+                                        statusBaru: _selectedStatus!,
+                                        namaKurir: _selectedStatus == 'Dikirim' ? _namaKurirController.text.trim() : null,
+                                        noTelpKurir: _selectedStatus == 'Dikirim' ? _noTelpKurirController.text.trim() : null,
+                                      );
+
+                                      if (!mounted) return;
+                                      setState(() => _isLoading = false);
+
+                                      if (error == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Status berhasil diupdate!'),
+                                            backgroundColor: AppColors.success,
+                                          ),
+                                        );
+                                        Navigator.pop(context);
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(error),
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.verified, color: AppColors.white),
+                              label: Text(
+                                _isLoading ? 'Memproses...' : 'Simpan Perubahan',
+                                style: AppTextStyles.buttonPrimary,
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               );
             },
-          );
-        },
-      ),
-
-      // ─── BOTTOM ACTION NAVIGATION BAR (MENEMPEL DI BAWAH & SINKRON) ───
-      bottomNavigationBar: FutureBuilder<Map<String, dynamic>?>(
-        future: _detailPesananFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data == null) {
-            return const SizedBox.shrink(); // Jangan tampilkan sebelum data ada
-          }
-
-          final orderData = snapshot.data!;
-          final rawStatus = (orderData['status'] ?? 'Menunggu Konfirmasi')
-              .toString();
-
-          // Cari status yang sama persis
-          final statusSaatIni = _statusOptions.firstWhere(
-            (option) => option.toLowerCase() == rawStatus.toLowerCase(),
-            orElse: () => _statusOptions[0],
-          );
-
-          // Pasang status default HANYA saat pertama kali data berhasil dimuat
-          _selectedStatus ??= statusSaatIni;
-
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.inputBorder),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      isExpanded: true,
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppColors.primaryGreen,
-                      ),
-                      items: _statusOptions.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            'Update Status: $value',
-                            style: AppTextStyles.inputText,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          setState(() => _selectedStatus = newValue);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading
-                        ? null
-                        : () async {
-                            setState(() => _isLoading = true);
-                            final error = await _orderService
-                                .updateStatusPesanan(
-                                  orderId: widget.orderId,
-                                  statusBaru: _selectedStatus!,
-                                );
-
-                            if (!mounted) return;
-                            setState(() => _isLoading = false);
-
-                            if (error == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Status berhasil diupdate!'),
-                                  backgroundColor: AppColors.success,
-                                ),
-                              );
-                              Navigator.pop(context);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(error),
-                                  backgroundColor: AppColors.error,
-                                ),
-                              );
-                            }
-                          },
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: AppColors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.verified, color: AppColors.white),
-                    label: Text(
-                      _isLoading ? 'Memproses...' : 'Simpan Perubahan',
-                      style: AppTextStyles.buttonPrimary,
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           );
         },
       ),
