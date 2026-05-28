@@ -82,7 +82,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
             // ─── DASHBOARD CARD — REAKTIF dari filtered.length ───────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildDashboardCard(filtered.length),
               ),
             ),
@@ -101,16 +101,23 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                     prefixIcon: const Icon(Icons.search,
                         color: AppColors.textHint, size: 18),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
+                        horizontal: 20, vertical: 14),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(30),
                       borderSide:
                           const BorderSide(color: AppColors.inputBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(30),
                       borderSide:
                           const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 1.5,
+                      ),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -308,50 +315,78 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
   Widget _buildDashboardCard(int total) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF1B5E20).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            'DASHBOARD ADMIN',
-            style: AppTextStyles.labelUppercase.copyWith(
-              color: AppColors.white.withOpacity(0.8),
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.account_balance_wallet_rounded,
+              size: 140,
+              color: Colors.white.withOpacity(0.08),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Total Permintaan: $total Top-Up',
-            style: AppTextStyles.h2.copyWith(
-              color: AppColors.white,
-              fontSize: 22,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.account_balance_wallet,
-                  color: AppColors.white, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Verifikasi bukti transfer customer dengan teliti!',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.white.withOpacity(0.9),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'DASHBOARD ADMIN',
+                    style: AppTextStyles.labelUppercase.copyWith(
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  '$total Top-Up',
+                  style: AppTextStyles.h2.copyWith(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Verifikasi bukti transfer customer dengan teliti!',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -370,120 +405,98 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
     final userId = tx['userId'] ?? '';
     final docPath = tx['docPath'] ?? '';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailVerifikasiTopupScreen(
+            txId: txId,
+            userId: userId,
+            docPath: docPath,
           ),
-        ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ─ Header: avatar, nama, waktu, badge status ──────────────────
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.inputBackground,
-                child: Icon(Icons.person,
-                    color: AppColors.textHint, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.account_balance_wallet, color: AppColors.primaryGreen, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(namaUser, style: AppTextStyles.h3),
+                      const SizedBox(height: 4),
+                      Text(
+                        '#${txId.length > 8 ? txId.substring(0, 8) : txId} • ${_getTimeAgo(timestamp)}',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _colorStatus(status).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _labelStatus(status).toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: _colorStatus(status),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1, color: AppColors.divider),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(namaUser, style: AppTextStyles.h3),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '#${txId.length > 8 ? txId.substring(0, 8) : txId}',
-                            style: AppTextStyles.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('• ${_getTimeAgo(timestamp)}',
-                            style: AppTextStyles.bodySmall),
-                      ],
+                    Text('Nominal Top-Up', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatRupiah(amount),
+                      style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen, fontSize: 16),
                     ),
                   ],
                 ),
-              ),
-              // Badge status dengan warna dinamis
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _colorStatus(status).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _labelStatus(status).toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: _colorStatus(status),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 9,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ─ Nominal ───────────────────────────────────────────────────
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('NOMINAL TOP-UP', style: AppTextStyles.labelUppercase),
-              const SizedBox(height: 4),
-              Text(
-                _formatRupiah(amount),
-                style:
-                    AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ─ Tombol Detail ─────────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetailVerifikasiTopupScreen(
-                    txId: txId,
-                    userId: userId,
-                    docPath: docPath,
-                  ),
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Detail',
-                style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13),
-              ),
+                const Icon(Icons.chevron_right, color: AppColors.textHint),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

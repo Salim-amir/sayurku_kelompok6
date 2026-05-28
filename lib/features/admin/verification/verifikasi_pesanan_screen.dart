@@ -263,19 +263,26 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                           size: 18,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
+                          horizontal: 20,
+                          vertical: 14,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(30),
                           borderSide: const BorderSide(
                             color: AppColors.inputBorder,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(30),
                           borderSide: const BorderSide(
                             color: AppColors.inputBorder,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryGreen,
+                            width: 1.5,
                           ),
                         ),
                         filled: true,
@@ -552,49 +559,78 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
   Widget _buildDashboardCard(int total) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
-        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF1B5E20).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            'DASHBOARD ADMIN',
-            style: AppTextStyles.labelUppercase.copyWith(
-              color: AppColors.white.withOpacity(0.8),
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.shopping_basket_rounded,
+              size: 140,
+              color: Colors.white.withOpacity(0.08),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Total Pesanan: $total Pesanan',
-            style: AppTextStyles.h2.copyWith(
-              color: AppColors.white,
-              fontSize: 22,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.white, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Semua sayuran siap dikemas!',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.white.withOpacity(0.9),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'DASHBOARD ADMIN',
+                    style: AppTextStyles.labelUppercase.copyWith(
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  '$total Pesanan',
+                  style: AppTextStyles.h2.copyWith(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Semua pesanan sayuran segar siap dikemas!',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -608,106 +644,94 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
     required String timeAgo,
     required int totalHarga,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailPesananScreen(orderId: orderId),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.inputBackground,
-                child: Icon(Icons.person, color: AppColors.textHint, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.receipt_long, color: AppColors.primaryGreen, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(namaUser, style: AppTextStyles.h3),
+                      const SizedBox(height: 4),
+                      Text(
+                        '#${orderId.length > 8 ? orderId.substring(0, 8) : orderId} • $timeAgo',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _colorStatus(status).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status.toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: _colorStatus(status),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1, color: AppColors.divider),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(namaUser, style: AppTextStyles.h3),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '#${orderId.length > 8 ? orderId.substring(0, 8) : orderId}',
-                            style: AppTextStyles.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('• $timeAgo', style: AppTextStyles.bodySmall),
-                      ],
+                    Text('Total Pesanan', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                      style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen, fontSize: 16),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _colorStatus(status).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  status.toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: _colorStatus(status),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 9,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL PESANAN', style: AppTextStyles.labelUppercase),
-              const SizedBox(height: 4),
-              Text(
-                'Rp ${totalHarga.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DetailPesananScreen(orderId: orderId),
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Detail',
-                style: AppTextStyles.buttonPrimary.copyWith(fontSize: 13),
-              ),
+                const Icon(Icons.chevron_right, color: AppColors.textHint),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
