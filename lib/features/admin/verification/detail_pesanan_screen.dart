@@ -259,9 +259,15 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                                       color: AppColors.inputBackground,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(
-                                      Icons.eco,
-                                      color: AppColors.primaryGreen,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
+                                          ? Image.network(
+                                              item['imageUrl'],
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stack) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+                                            )
+                                          : const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
