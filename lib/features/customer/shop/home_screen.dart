@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert'; // ✅ TAMBAHAN untuk base64Decode
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -616,17 +617,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(18),
                   ),
+                  // ✅ FIX: Ganti Image.network dengan _buildProductImage
                   child: SizedBox(
                     width: 134,
                     height: 94,
-                    child: p.imageUrl.isNotEmpty
-                        ? Image.network(
-                            p.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _imgPlaceholder(134, 94),
-                          )
-                        : _imgPlaceholder(134, 94),
+                    child: _buildProductImage(p.imageUrl, width: 134, height: 94),
                   ),
                 ),
                 Positioned(
@@ -758,17 +753,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(18),
                   ),
+                  // ✅ FIX: Ganti Image.network dengan _buildProductImage
                   child: SizedBox(
                     width: double.infinity,
                     height: 105,
-                    child: p.imageUrl.isNotEmpty
-                        ? Image.network(
-                            p.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _imgPlaceholder(null, 105),
-                          )
-                        : _imgPlaceholder(null, 105),
+                    child: _buildProductImage(p.imageUrl, height: 105),
                   ),
                 ),
                 if (!p.tersedia)
@@ -848,6 +837,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── HELPERS ────────────────────────────────────────
+
+  /// ✅ Helper baru: Otomatis deteksi URL (http/https) atau Base64
+  Widget _buildProductImage(String imageUrl, {double? width, required double height}) {
+    // Jika imageUrl kosong, tampilkan placeholder
+    if (imageUrl.isEmpty) {
+      return _imgPlaceholder(width, height);
+    }
+
+    // Jika imageUrl adalah URL network (http/https)
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    }
+
+    // Selain itu, anggap sebagai Base64
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    } catch (_) {
+      return _imgPlaceholder(width, height);
+    }
+  }
+
   Widget _sectionHeader({
     required String iconEmoji,
     required Color iconBg,
