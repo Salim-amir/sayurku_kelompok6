@@ -1,3 +1,4 @@
+import 'dart:convert'; // ✅ TAMBAHAN untuk base64Decode seperti di home_screen
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
@@ -112,15 +113,8 @@ Widget _buildAppBar(BuildContext context) {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
-                  )
-                : _buildImagePlaceholder(),
+            // ✅ MODIFIKASI: Menggunakan logika deteksi URL / Base64 seperti di home_screen
+            child: _buildProductImage(imageUrl, height: 260),
           ),
           Positioned(
             top: 16,
@@ -146,10 +140,40 @@ Widget _buildAppBar(BuildContext context) {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  // ✅ HELPER BARU: Diadaptasi langsung dari logika home_screen.dart
+  Widget _buildProductImage(String imageUrl, {double? width, required double height}) {
+    if (imageUrl.isEmpty) {
+      return _buildImagePlaceholder(width, height);
+    }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildImagePlaceholder(width, height),
+      );
+    }
+
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildImagePlaceholder(width, height),
+      );
+    } catch (_) {
+      return _buildImagePlaceholder(width, height);
+    }
+  }
+
+  // ✅ MODIFIKASI: Menambahkan parameter width & height agar sesuai dengan _buildProductImage
+  Widget _buildImagePlaceholder([double? width, double? height]) {
     return Container(
-      width: double.infinity,
-      height: double.infinity,
+      width: width ?? double.infinity,
+      height: height ?? double.infinity,
       color: AppColors.inputBackground,
       child: const Icon(Icons.eco_rounded,
           color: AppColors.primaryGreen, size: 80),
