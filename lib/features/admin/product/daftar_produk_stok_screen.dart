@@ -267,7 +267,6 @@ class _ProductStockPageState extends State<ProductStockPage> {
                     topRight: Radius.circular(12),
                   ),
                 ),
-                // ✅ LOGIKA FIX: Mendeteksi otomatis gambar lama (URL) & gambar baru (Base64)
                 child: product.imageUrl.isNotEmpty
                     ? ClipRRect(
                         borderRadius: const BorderRadius.only(
@@ -275,18 +274,21 @@ class _ProductStockPageState extends State<ProductStockPage> {
                           topRight: Radius.circular(12),
                         ),
                         child: () {
-                          if (product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://')) {
+                          if (product.imageUrl.startsWith('http://') ||
+                              product.imageUrl.startsWith('https://')) {
                             return Image.network(
                               product.imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => _buildPlaceholderIcon(),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildPlaceholderIcon(),
                             );
                           } else {
                             try {
                               return Image.memory(
                                 base64Decode(product.imageUrl),
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderIcon(),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildPlaceholderIcon(),
                               );
                             } catch (e) {
                               return _buildPlaceholderIcon();
@@ -474,6 +476,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
     final formKey = GlobalKey<FormState>();
 
     String selectedKategori = "sayur_hijau";
+    // ✅ selectedSatuan digunakan bersama untuk harga & stok awal
     String selectedSatuan = "kg";
 
     File? selectedImage;
@@ -494,6 +497,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                     children: [
                       const SizedBox(height: 12),
 
+                      // ── Gambar Produk ──
                       if (selectedImage == null)
                         Container(
                           width: double.infinity,
@@ -501,7 +505,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                           decoration: BoxDecoration(
                             color: AppColors.inputBackground,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.inputBorder),
+                            border:
+                                Border.all(color: AppColors.inputBorder),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -540,9 +545,10 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 final ImagePicker picker = ImagePicker();
-                                final XFile? image = await picker.pickImage(
+                                final XFile? image =
+                                    await picker.pickImage(
                                   source: ImageSource.gallery,
-                                  maxWidth: 400, 
+                                  maxWidth: 400,
                                   maxHeight: 400,
                                   imageQuality: 50,
                                 );
@@ -555,15 +561,17 @@ class _ProductStockPageState extends State<ProductStockPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryGreen,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius:
+                                      BorderRadius.circular(8),
                                 ),
                                 elevation: 0,
                               ),
                               child: Text(
-                                selectedImage == null ? 'Galeri' : 'Ubah',
-                                style: AppTextStyles.buttonPrimary.copyWith(
-                                  fontSize: 12,
-                                ),
+                                selectedImage == null
+                                    ? 'Galeri'
+                                    : 'Ubah',
+                                style: AppTextStyles.buttonPrimary
+                                    .copyWith(fontSize: 12),
                               ),
                             ),
                           ),
@@ -572,7 +580,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 final ImagePicker picker = ImagePicker();
-                                final XFile? image = await picker.pickImage(
+                                final XFile? image =
+                                    await picker.pickImage(
                                   source: ImageSource.camera,
                                   maxWidth: 400,
                                   maxHeight: 400,
@@ -587,15 +596,15 @@ class _ProductStockPageState extends State<ProductStockPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.accentGreen,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius:
+                                      BorderRadius.circular(8),
                                 ),
                                 elevation: 0,
                               ),
                               child: Text(
                                 'Kamera',
-                                style: AppTextStyles.buttonPrimary.copyWith(
-                                  fontSize: 12,
-                                ),
+                                style: AppTextStyles.buttonPrimary
+                                    .copyWith(fontSize: 12),
                               ),
                             ),
                           ),
@@ -604,6 +613,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       const SizedBox(height: 16),
 
+                      // ── Nama Sayuran ──
                       TextFormField(
                         controller: nameController,
                         decoration: InputDecoration(
@@ -625,13 +635,20 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       const SizedBox(height: 16),
 
+                      // ── Harga – suffix otomatis mengikuti selectedSatuan ──
                       TextFormField(
                         controller: priceController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Harga per kg',
+                          labelText: 'Harga per $selectedSatuan',
                           labelStyle: AppTextStyles.bodySmall,
                           prefixText: 'Rp ',
+                          // ✅ suffix harga mengikuti satuan yang dipilih
+                          suffixText: '/ $selectedSatuan',
+                          suffixStyle: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.w600,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -647,36 +664,123 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       const SizedBox(height: 16),
 
-                      TextFormField(
-                        controller: stockController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Stok Awal',
-                          labelStyle: AppTextStyles.bodySmall,
-                          suffixText: 'kg',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      // ── Stok Awal + Dropdown Satuan dalam satu baris ──
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Field angka stok (flex: 3)
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              controller: stockController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'Stok Awal',
+                                labelStyle: AppTextStyles.bodySmall,
+                                border: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                  ),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.inputBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                  ),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primaryGreen,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              style: AppTextStyles.inputText,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Stok tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                        ),
-                        style: AppTextStyles.inputText,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Stok tidak boleh kosong';
-                          }
-                          return null;
-                        },
+
+                          // Dropdown satuan (flex: 2) – satu sumber kebenaran
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              value: selectedSatuan,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                labelText: 'Satuan',
+                                labelStyle: AppTextStyles.bodySmall,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.inputBorder),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.inputBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primaryGreen,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              items: AppConstants.satuanProduk
+                                  .map((satuan) => DropdownMenuItem(
+                                        value: satuan,
+                                        child: Text(satuan,
+                                            style:
+                                                AppTextStyles.inputText),
+                                      ))
+                                  .toList(),
+                              // ✅ Satu onChange memperbarui selectedSatuan
+                              // sehingga label harga & suffix stok ikut rebuild
+                              onChanged: (value) {
+                                setStateDialog(() {
+                                  selectedSatuan = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 16),
 
+                      // ── Kategori ──
                       DropdownButtonFormField<String>(
                         value: selectedKategori,
-                        items: AppConstants.kategoriProduk.map((kategori) {
-                          return DropdownMenuItem(
-                            value: kategori,
-                            child: Text(kategori),
-                          );
-                        }).toList(),
+                        items: AppConstants.kategoriProduk
+                            .map((kategori) => DropdownMenuItem(
+                                  value: kategori,
+                                  child: Text(kategori),
+                                ))
+                            .toList(),
                         onChanged: (value) {
                           setStateDialog(() {
                             selectedKategori = value!;
@@ -692,29 +796,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       const SizedBox(height: 16),
 
-                      DropdownButtonFormField<String>(
-                        value: selectedSatuan,
-                        items: AppConstants.satuanProduk.map((satuan) {
-                          return DropdownMenuItem(
-                            value: satuan,
-                            child: Text(satuan),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setStateDialog(() {
-                            selectedSatuan = value!;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          labelText: 'Satuan',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
+                      // ── Deskripsi ──
                       TextFormField(
                         controller: deskripsiController,
                         maxLines: 4,
@@ -743,7 +825,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                         String base64ImageString = "";
 
                         if (selectedImage != null) {
-                          base64ImageString = await _productService.uploadImage(selectedImage!);
+                          base64ImageString = await _productService
+                              .uploadImage(selectedImage!);
                         }
 
                         await _productService.addProduct(
@@ -760,7 +843,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Produk berhasil ditambahkan!'),
+                            content:
+                                const Text('Produk berhasil ditambahkan!'),
                             backgroundColor: AppColors.success,
                           ),
                         );
@@ -781,7 +865,10 @@ class _ProductStockPageState extends State<ProductStockPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text('Simpan Produk', style: AppTextStyles.buttonPrimary),
+                  child: Text(
+                    'Simpan Produk',
+                    style: AppTextStyles.buttonPrimary,
+                  ),
                 ),
               ],
             );
@@ -793,9 +880,12 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
   // ─── DIALOG UPDATE PRODUK ──────────────────────────────
   void _showUpdateProductDialog(ProductModel product) {
-    final namaController = TextEditingController(text: product.nama);
-    final hargaController = TextEditingController(text: product.harga.toString());
-    final deskripsiController = TextEditingController(text: product.deskripsi);
+    final namaController =
+        TextEditingController(text: product.nama);
+    final hargaController =
+        TextEditingController(text: product.harga.toString());
+    final deskripsiController =
+        TextEditingController(text: product.deskripsi);
     final formKey = GlobalKey<FormState>();
 
     String selectedKategori = product.kategori;
@@ -808,7 +898,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
         builder: (context, setModalState) {
           return AlertDialog(
             backgroundColor: AppColors.white,
-            title: Text('Edit Produk - ${product.nama}', style: AppTextStyles.h3),
+            title: Text('Edit Produk - ${product.nama}',
+                style: AppTextStyles.h3),
             content: Form(
               key: formKey,
               child: SingleChildScrollView(
@@ -824,9 +915,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                         decoration: BoxDecoration(
                           color: AppColors.inputBackground,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.inputBorder),
+                          border:
+                              Border.all(color: AppColors.inputBorder),
                         ),
-                        child: Icon(Icons.image_outlined, size: 40, color: AppColors.textHint),
+                        child: Icon(Icons.image_outlined,
+                            size: 40, color: AppColors.textHint),
                       )
                     else if (updatedImage != null)
                       Container(
@@ -850,12 +943,20 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             topRight: Radius.circular(8),
                           ),
                         ),
-                        // ✅ LOGIKA FIX: Cegah crash preview di dialog update jika gambar lama berupa URL
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: product.imageUrl.startsWith('http')
-                              ? Image.network(product.imageUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderIcon())
-                              : Image.memory(base64Decode(product.imageUrl), fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderIcon()),
+                              ? Image.network(product.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error,
+                                          stackTrace) =>
+                                      _buildPlaceholderIcon())
+                              : Image.memory(
+                                  base64Decode(product.imageUrl),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error,
+                                          stackTrace) =>
+                                      _buildPlaceholderIcon()),
                         ),
                       ),
 
@@ -878,10 +979,12 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                         elevation: 0,
                       ),
-                      child: Text('Ubah Gambar', style: AppTextStyles.buttonPrimary),
+                      child: Text('Ubah Gambar',
+                          style: AppTextStyles.buttonPrimary),
                     ),
 
                     const SizedBox(height: 16),
@@ -890,28 +993,38 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       controller: namaController,
                       decoration: InputDecoration(
                         labelText: 'Nama Sayuran',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       style: AppTextStyles.inputText,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Nama tidak boleh kosong';
+                        if (value == null || value.isEmpty)
+                          return 'Nama tidak boleh kosong';
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 12),
 
+                    // ✅ Harga suffix juga mengikuti satuan yang dipilih di edit
                     TextFormField(
                       controller: hargaController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Harga',
+                        labelText: 'Harga per $selectedSatuan',
                         prefixText: 'Rp ',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        suffixText: '/ $selectedSatuan',
+                        suffixStyle: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primaryGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       style: AppTextStyles.inputText,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Harga tidak boleh kosong';
+                        if (value == null || value.isEmpty)
+                          return 'Harga tidak boleh kosong';
                         return null;
                       },
                     ),
@@ -920,30 +1033,39 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                     DropdownButtonFormField<String>(
                       value: selectedKategori,
-                      items: AppConstants.kategoriProduk.map((kategori) {
-                        return DropdownMenuItem(value: kategori, child: Text(kategori));
-                      }).toList(),
+                      items: AppConstants.kategoriProduk
+                          .map((kategori) => DropdownMenuItem(
+                              value: kategori, child: Text(kategori)))
+                          .toList(),
                       onChanged: (value) {
                         setModalState(() {
                           selectedKategori = value!;
                         });
                       },
-                      decoration: InputDecoration(labelText: 'Kategori', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                      decoration: InputDecoration(
+                          labelText: 'Kategori',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8))),
                     ),
 
                     const SizedBox(height: 12),
 
+                    // ✅ Dropdown satuan di edit juga memperbarui label harga
                     DropdownButtonFormField<String>(
                       value: selectedSatuan,
-                      items: AppConstants.satuanProduk.map((satuan) {
-                        return DropdownMenuItem(value: satuan, child: Text(satuan));
-                      }).toList(),
+                      items: AppConstants.satuanProduk
+                          .map((satuan) => DropdownMenuItem(
+                              value: satuan, child: Text(satuan)))
+                          .toList(),
                       onChanged: (value) {
                         setModalState(() {
                           selectedSatuan = value!;
                         });
                       },
-                      decoration: InputDecoration(labelText: 'Satuan', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                      decoration: InputDecoration(
+                          labelText: 'Satuan',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8))),
                     ),
 
                     const SizedBox(height: 12),
@@ -953,7 +1075,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       maxLines: 4,
                       decoration: InputDecoration(
                         labelText: 'Deskripsi Sayuran',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       style: AppTextStyles.inputText,
                     ),
@@ -973,7 +1096,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       String base64ImageString = product.imageUrl;
 
                       if (updatedImage != null) {
-                        base64ImageString = await _productService.uploadImage(updatedImage!);
+                        base64ImageString = await _productService
+                            .uploadImage(updatedImage!);
                       }
 
                       await _productService.updateProduct(
@@ -991,7 +1115,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Produk berhasil diupdate!'),
+                          content:
+                              const Text('Produk berhasil diupdate!'),
                           backgroundColor: AppColors.success,
                         ),
                       );
@@ -1007,10 +1132,12 @@ class _ProductStockPageState extends State<ProductStockPage> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
-                child: Text('Simpan Perubahan', style: AppTextStyles.buttonPrimary),
+                child: Text('Simpan Perubahan',
+                    style: AppTextStyles.buttonPrimary),
               ),
             ],
           );
@@ -1021,24 +1148,74 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
   // ─── DIALOG UPDATE STOK ────────────────────────────────
   void _showUpdateStockDialog(ProductModel product) {
-    final stokController = TextEditingController(text: product.stok.toString());
+    final stokController =
+        TextEditingController(text: product.stok.toString());
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.white,
-        title: Text('Update Stok - ${product.nama}', style: AppTextStyles.h3),
+        title: Text(
+          'Update Stok - ${product.nama}',
+          style: AppTextStyles.h3,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
+
+            // ✅ Info satuan produk ditampilkan sebagai konteks
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: AppColors.primaryGreen.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 16, color: AppColors.primaryGreen),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Satuan produk: ${product.satuan}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ✅ suffixText otomatis menggunakan satuan dari produk
             TextField(
               controller: stokController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 hintText: 'Masukkan jumlah stok',
+                labelText: 'Jumlah Stok',
+                labelStyle: AppTextStyles.bodySmall,
+                // suffix menampilkan satuan asli produk (gram, ikat, kg, dll)
                 suffixText: product.satuan,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                suffixStyle: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w600,
+                ),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryGreen,
+                    width: 2,
+                  ),
+                ),
               ),
               style: AppTextStyles.inputText,
             ),
@@ -1051,7 +1228,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final newStock = int.tryParse(stokController.text) ?? 0;
+              final newStock =
+                  int.tryParse(stokController.text) ?? 0;
 
               await _productService.updateProduct(
                 id: product.id,
@@ -1066,7 +1244,14 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
               Navigator.pop(context);
             },
-            child: const Text('Simpan'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
+            child: Text('Simpan',
+                style: AppTextStyles.buttonPrimary),
           ),
         ],
       ),
