@@ -1,3 +1,4 @@
+import 'dart:convert'; // ✅ TAMBAHAN untuk base64Decode
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
@@ -16,6 +17,47 @@ class ProdukTerlarisScreen extends StatefulWidget {
 
 class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
   final ProductService _productService = ProductService();
+
+  // ✅ Helper: Otomatis deteksi URL (http/https) atau Base64
+  Widget _buildProductImage(String imageUrl, {double? width, required double height}) {
+    if (imageUrl.isEmpty) {
+      return _imgPlaceholder(width, height);
+    }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        width: width ?? double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    }
+
+    // Base64
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width ?? double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    } catch (_) {
+      return _imgPlaceholder(width, height);
+    }
+  }
+
+  Widget _imgPlaceholder(double? width, double height) {
+    return Container(
+      width: width ?? double.infinity,
+      height: height,
+      color: AppColors.inputBackground,
+      child: const Center(
+        child: Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 40),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,33 +140,11 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                   ClipRRect(
                                     borderRadius: const BorderRadius.vertical(
                                         top: Radius.circular(20)),
-                                    child: produk.imageUrl.isNotEmpty
-                                        ? Image.network(
-                                            produk.imageUrl,
-                                            width: double.infinity,
-                                            height: 120,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Container(
-                                              height: 120,
-                                              color: AppColors.inputBackground,
-                                              child: const Center(
-                                                child: Icon(Icons.eco_rounded,
-                                                    color:
-                                                        AppColors.primaryGreen,
-                                                    size: 40),
-                                              ),
-                                            ),
-                                          )
-                                        : Container(
-                                            height: 120,
-                                            color: AppColors.inputBackground,
-                                            child: const Center(
-                                              child: Icon(Icons.eco_rounded,
-                                                  color: AppColors.primaryGreen,
-                                                  size: 40),
-                                            ),
-                                          ),
+                                    // ✅ FIX: Ganti Image.network dengan _buildProductImage
+                                    child: _buildProductImage(
+                                      produk.imageUrl,
+                                      height: 120,
+                                    ),
                                   ),
                                   // Badge ranking
                                   Positioned(
@@ -205,7 +225,7 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                                     'satuan': produk.satuan,
                                                     'imageUrl': produk.imageUrl,
                                                   }, 1);
-                                 
+
                                                   ScaffoldMessenger.of(context)
                                                       .showSnackBar(
                                                     SnackBar(
@@ -294,49 +314,49 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
       ),
     );
   }
-  
-    Widget _buildCartFAB() {
-      return ValueListenableBuilder<int>(
-        valueListenable: CartManager.instance.jumlahNotifier,
-        builder: (context, jumlah, _) {
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              FloatingActionButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
-                ),
-                backgroundColor: AppColors.primaryGreen,
-                child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
+
+  Widget _buildCartFAB() {
+    return ValueListenableBuilder<int>(
+      valueListenable: CartManager.instance.jumlahNotifier,
+      builder: (context, jumlah, _) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KeranjangBelanjaScreen()),
               ),
-              if (jumlah > 0)
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$jumlah',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold),
-                      ),
+              backgroundColor: AppColors.primaryGreen,
+              child: const Icon(Icons.shopping_basket_rounded, color: AppColors.white),
+            ),
+            if (jumlah > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$jumlah',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-            ],
-          );
-        },
-      );
-    }
+              ),
+          ],
+        );
+      },
+    );
+  }
 
   String _formatHarga(int harga) {
     return harga.toString().replaceAllMapped(

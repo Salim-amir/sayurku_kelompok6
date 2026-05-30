@@ -1,3 +1,4 @@
+import 'dart:convert'; // ✅ TAMBAHAN untuk base64Decode
 import 'keranjang_belanja_screen.dart';
 import 'detail_produk_screen.dart';
 import 'package:flutter/material.dart';
@@ -73,6 +74,47 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
     {'nama': 'Cabai Rawit', 'kategori': 'BUMBU', 'satuan': '100g', 'harga': 18000},
     {'nama': 'Wortel Lokal', 'kategori': 'UMBI-UMBIAN', 'satuan': '500g', 'harga': 10500},
   ];
+
+  // ✅ Helper: Otomatis deteksi URL (http/https) atau Base64
+  Widget _buildProductImage(String imageUrl, {double? width, required double height}) {
+    if (imageUrl.isEmpty) {
+      return _imgPlaceholder(width, height);
+    }
+
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        width: width ?? double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    }
+
+    // Base64
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width ?? double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
+      );
+    } catch (_) {
+      return _imgPlaceholder(width, height);
+    }
+  }
+
+  Widget _imgPlaceholder(double? width, double height) {
+    return Container(
+      width: width ?? double.infinity,
+      height: height,
+      color: AppColors.inputBackground,
+      child: const Center(
+        child: Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 40),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -324,14 +366,10 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
             childAspectRatio: 0.68,
           ),
           itemCount: produkList.length,
+          // ✅ FIX: Ganti ProductCard dengan card custom yang pakai _buildProductImage
           itemBuilder: (context, index) {
             final produk = produkList[index];
-            return ProductCard(
-              imagePath: produk.imageUrl,
-              name: produk.nama,
-              price: produk.harga,
-              unit: produk.satuan,
-              isAvailable: produk.tersedia,
+            return GestureDetector(
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -347,22 +385,123 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                   ),
                 ),
               ),
-              onAddToCart: () {
-                CartManager.instance.tambahProduk({
-                  'nama': produk.nama,
-                  'harga': produk.harga.toInt(),
-                  'satuan': produk.satuan,
-                  'imageUrl': produk.imageUrl,
-                }, 1);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${produk.nama} ditambahkan ke keranjang!'),
-                    backgroundColor: AppColors.primaryGreen,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20)),
+                          // ✅ Pakai helper auto-detect URL/Base64
+                          child: _buildProductImage(produk.imageUrl, height: 120),
+                        ),
+                        if (!produk.tersedia)
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                              child: Container(
+                                color: Colors.black.withOpacity(0.45),
+                                child: const Center(
+                                  child: Text(
+                                    'Habis',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            produk.nama,
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text('/ ${produk.satuan}',
+                              style: AppTextStyles.caption),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Rp ${_formatHarga(produk.harga)}',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: produk.tersedia
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textHint,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: produk.tersedia
+                                    ? () {
+                                        CartManager.instance.tambahProduk({
+                                          'nama': produk.nama,
+                                          'harga': produk.harga.toInt(),
+                                          'satuan': produk.satuan,
+                                          'imageUrl': produk.imageUrl,
+                                        }, 1);
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                '${produk.nama} ditambahkan ke keranjang!'),
+                                            backgroundColor:
+                                                AppColors.primaryGreen,
+                                            duration:
+                                                const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    : null,
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color: produk.tersedia
+                                        ? AppColors.primaryGreen
+                                        : AppColors.divider,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.add_rounded,
+                                      color: AppColors.white, size: 18),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         );
