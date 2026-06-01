@@ -96,6 +96,7 @@ class ProductService {
       'satuan': satuan,
       'deskripsi': deskripsi,
       'tersedia': true,
+      'terjual': 0,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -119,6 +120,14 @@ class ProductService {
       'imageUrl': imageUrl,
       'satuan': satuan,
       'deskripsi': deskripsi,
+    });
+  }
+
+  // ── UPDATE STOK CEPAT ──
+  Future<void> updateStok(String id, int stokBaru) async {
+    await _db.collection(AppConstants.colProducts).doc(id).update({
+      'stok': stokBaru,
+      'tersedia': stokBaru > 0, // Otomatis perbarui ketersediaan
     });
   }
 

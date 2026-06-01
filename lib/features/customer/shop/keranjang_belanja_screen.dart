@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../../core/colors.dart';
 import '../../../../core/text_styles.dart';
@@ -139,15 +140,7 @@ Widget _buildItemKeranjang(int index) {
         // Foto produk
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: imageUrl.isNotEmpty && imageUrl.startsWith('http')
-              ? Image.network(
-                  imageUrl,
-                  width: 85,
-                  height: 85,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
-                )
-              : _buildFotoPlaceholder(),
+          child: _buildProductImage(imageUrl, 85, 85),
         ),
         const SizedBox(width: 14),
         // Info produk
@@ -246,6 +239,30 @@ Widget _buildFotoPlaceholder() {
     child: const Icon(Icons.eco_rounded,
         color: AppColors.primaryGreen, size: 36),
   );
+}
+
+Widget _buildProductImage(String imageUrl, double width, double height) {
+  if (imageUrl.isEmpty) return _buildFotoPlaceholder();
+  if (imageUrl.startsWith('http')) {
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
+    );
+  }
+  try {
+    return Image.memory(
+      base64Decode(imageUrl),
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
+    );
+  } catch (_) {
+    return _buildFotoPlaceholder();
+  }
 }
   Widget _buildQtyButton(
     {required IconData icon, required VoidCallback onTap}) {

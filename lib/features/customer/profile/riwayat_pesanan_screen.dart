@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
@@ -260,13 +262,11 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
-                            ? Image.network(
-                                item['imageUrl'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stack) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
-                              )
-                            : const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+                        child: _buildProductImage(
+                            item['imageUrl']?.toString() ?? '',
+                            40,
+                            40,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -317,7 +317,9 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
                   IconButton(
                     icon: const Icon(Icons.phone, color: AppColors.primaryGreen),
                     onPressed: () {
-                      // Optional: add launcher for phone dialer
+                      if (noTelpKurir != null && noTelpKurir.toString().isNotEmpty) {
+                        _launchWhatsApp(noTelpKurir.toString());
+                      }
                     },
                   )
                 ],
@@ -407,5 +409,50 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
   String _formatHarga(int harga) {
     return harga.toString().replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+  }
+
+  Widget _buildProductImage(String imageUrl, double width, double height) {
+    if (imageUrl.isEmpty) return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18);
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+      );
+    }
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18),
+      );
+    } catch (_) {
+      return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 18);
+    }
+  }
+
+  Future<void> _launchWhatsApp(String phone) async {
+    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62${cleanPhone.substring(1)}';
+    }
+    
+    final url = Uri.parse('https://wa.me/$cleanPhone');
+    bool launched = false;
+    try {
+      launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error launch WA: $e');
+    }
+    
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan WhatsApp terinstal.')),
+      );
+    }
   }
 }

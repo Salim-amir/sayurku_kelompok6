@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
@@ -21,6 +23,51 @@ class DetailPesananCustomerScreen extends StatelessWidget {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
     return '${date.day} ${bulan[date.month]} ${date.year}, $hour:$minute';
+  }
+
+  Widget _buildProductImage(String imageUrl, double width, double height) {
+    if (imageUrl.isEmpty) return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28);
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
+      );
+    }
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
+      );
+    } catch (_) {
+      return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28);
+    }
+  }
+
+  Future<void> _launchWhatsApp(BuildContext context, String phone) async {
+    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62${cleanPhone.substring(1)}';
+    }
+    
+    final url = Uri.parse('https://wa.me/$cleanPhone');
+    bool launched = false;
+    try {
+      launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Error launch WA: $e');
+    }
+    
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan WhatsApp terinstal.')),
+      );
+    }
   }
 
   Color _colorStatus(String status) {
@@ -185,13 +232,11 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
-                                ? Image.network(
-                                    item['imageUrl'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stack) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
-                                  )
-                                : const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
+                            child: _buildProductImage(
+                                item['imageUrl']?.toString() ?? '',
+                                60,
+                                60,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -256,21 +301,41 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                   if (namaKurir != null && namaKurir.toString().isNotEmpty) ...[
                     const Divider(height: 24, color: AppColors.divider),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Icon(Icons.delivery_dining, color: AppColors.primaryGreen, size: 20),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.delivery_dining, color: AppColors.primaryGreen, size: 24),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Kurir Pengantar', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(namaKurir, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                               Text(noTelpKurir ?? '', style: AppTextStyles.bodySmall),
                             ],
                           ),
                         ),
+                        if (noTelpKurir != null && noTelpKurir.toString().isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: () => _launchWhatsApp(context, noTelpKurir.toString()),
+                            icon: const Icon(Icons.chat_bubble_outline, size: 16, color: Colors.white),
+                            label: const Text('Chat WA', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366), // WA Color
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              minimumSize: Size.zero,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
                       ],
                     ),
                   ]

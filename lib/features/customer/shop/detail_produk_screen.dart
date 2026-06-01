@@ -111,10 +111,11 @@ Widget _buildAppBar(BuildContext context) {
       ),
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            // ✅ MODIFIKASI: Menggunakan logika deteksi URL / Base64 seperti di home_screen
-            child: _buildProductImage(imageUrl, height: 260),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: _buildProductImage(imageUrl, width: double.infinity, height: 260),
+            ),
           ),
           Positioned(
             top: 16,
