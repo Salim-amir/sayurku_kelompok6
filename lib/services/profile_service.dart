@@ -1,7 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../core/constants.dart';
 import '../models/user_model.dart';
 
@@ -10,7 +10,6 @@ import '../models/user_model.dart';
 class ProfileService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // ── Referensi ke document user ──
   DocumentReference _userDoc(String uid) {
@@ -74,25 +73,21 @@ class ProfileService {
     }
   }
 
-  // ── Upload foto profil ke Firebase Storage ──
-  /// Menyimpan foto ke Storage dan update URL di Firestore
+  // ── Upload foto profil (Base64 ke Firestore) ──
+  /// Mengkonversi gambar ke Base64 dan menyimpan langsung di Firestore
   Future<String?> uploadFotoProfil({
     required String uid,
     required File imageFile,
   }) async {
     try {
-      // 1. Upload ke Firebase Storage
-      final ref = _storage.ref().child('profile_photos/$uid.jpg');
-      final uploadTask = await ref.putFile(
-        imageFile,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
+      // 1. Baca file gambar sebagai bytes
+      final bytes = await imageFile.readAsBytes();
 
-      // 2. Dapatkan URL download
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      // 2. Konversi ke Base64 string
+      final base64Image = base64Encode(bytes);
 
-      // 3. Update fotoUrl di Firestore
-      await _userDoc(uid).update({'fotoUrl': downloadUrl});
+      // 3. Simpan langsung ke Firestore
+      await _userDoc(uid).update({'fotoUrl': base64Image});
 
       return null; // Sukses
     } catch (e) {
@@ -103,16 +98,8 @@ class ProfileService {
   // ── Hapus foto profil ──
   Future<String?> hapusFotoProfil({required String uid}) async {
     try {
-      // 1. Hapus dari Storage
-      try {
-        await _storage.ref().child('profile_photos/$uid.jpg').delete();
-      } catch (_) {
-        // File mungkin tidak ada, lanjutkan
-      }
-
-      // 2. Kosongkan fotoUrl di Firestore
+      // Kosongkan fotoUrl di Firestore
       await _userDoc(uid).update({'fotoUrl': ''});
-
       return null;
     } catch (e) {
       return 'Gagal menghapus foto: ${e.toString()}';
