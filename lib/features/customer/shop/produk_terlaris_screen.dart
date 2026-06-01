@@ -78,7 +78,10 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                           color: AppColors.primaryGreen),
                     );
                   }
-                  final produkList = snapshot.data ?? [];
+                  final rawProdukList = snapshot.data ?? [];
+                  final produkList = List<ProductModel>.from(rawProdukList)
+                    ..sort((a, b) => b.terjual.compareTo(a.terjual));
+                  
                   if (produkList.isEmpty) {
                     return Center(
                       child: Text('Belum ada produk',
@@ -92,7 +95,7 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
-                      childAspectRatio: 0.78,
+                      childAspectRatio: 0.70,
                     ),
                     itemCount: produkList.length,
                     itemBuilder: (context, index) {
@@ -203,6 +206,15 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                     ),
                                     Text('/ ${produk.satuan}',
                                         style: AppTextStyles.caption),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${produk.terjual} Terjual',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     Row(
                                       mainAxisAlignment:

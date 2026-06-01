@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
@@ -261,13 +262,11 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: (item['imageUrl'] != null && item['imageUrl'].toString().isNotEmpty)
-                                          ? Image.network(
-                                              item['imageUrl'],
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stack) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
-                                            )
-                                          : const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+                                      child: _buildProductImage(
+                                          item['imageUrl']?.toString() ?? '',
+                                          50,
+                                          50,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -544,5 +543,28 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
         },
       ),
     );
+  }
+  Widget _buildProductImage(String imageUrl, double width, double height) {
+    if (imageUrl.isEmpty) return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen);
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+      );
+    }
+    try {
+      return Image.memory(
+        base64Decode(imageUrl),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+      );
+    } catch (_) {
+      return const Icon(Icons.eco_rounded, color: AppColors.primaryGreen);
+    }
   }
 }

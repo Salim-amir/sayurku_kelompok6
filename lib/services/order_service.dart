@@ -26,6 +26,46 @@ class OrderService {
         'tanggalPesan': FieldValue.serverTimestamp(),
       });
 
+      // --- PENGURANGAN STOK PRODUK ---
+      for (var item in items) {
+        try {
+          String? productId = item['id'];
+          String? productName = item['nama'];
+          int qty = item['jumlah'] ?? 0;
+
+          if (qty > 0) {
+            if (productId != null && productId.isNotEmpty) {
+              // Jika punya ID, langsung update
+              final docRef = _db.collection(AppConstants.colProducts).doc(productId);
+              final docSnap = await docRef.get();
+              if (docSnap.exists) {
+                int stokSekarang = docSnap.data()?['stok'] ?? 0;
+                int terjualSekarang = docSnap.data()?['terjual'] ?? 0;
+                await docRef.update({
+                  'stok': (stokSekarang - qty < 0) ? 0 : stokSekarang - qty,
+                  'terjual': terjualSekarang + qty
+                });
+              }
+            } else if (productName != null && productName.isNotEmpty) {
+              // Fallback: cari berdasarkan nama jika keranjang lama belum ada ID
+              final query = await _db.collection(AppConstants.colProducts).where('nama', isEqualTo: productName).limit(1).get();
+              if (query.docs.isNotEmpty) {
+                final doc = query.docs.first;
+                int stokSekarang = doc.data()['stok'] ?? 0;
+                int terjualSekarang = doc.data()['terjual'] ?? 0;
+                await doc.reference.update({
+                  'stok': (stokSekarang - qty < 0) ? 0 : stokSekarang - qty,
+                  'terjual': terjualSekarang + qty
+                });
+              }
+            }
+          }
+        } catch (e) {
+          print("Gagal mengurangi stok produk: $e");
+        }
+      }
+      // -------------------------------
+
       // --- PELATUK NOTIFIKASI KE ADMIN ---
       try {
         final adminQuery = await _db
@@ -120,6 +160,49 @@ class OrderService {
           .doc(orderId)
           .get();
       final userId = orderDoc.data()?['userId'];
+
+      // --- PENGEMBALIAN STOK JIKA DIBATALKAN ---
+      if (statusBaru.toLowerCase() == 'dibatalkan') {
+        final items = orderDoc.data()?['items'] as List<dynamic>?;
+        if (items != null) {
+          for (var item in items) {
+            try {
+              String? productId = item['id'];
+              String? productName = item['nama'];
+              int qty = item['jumlah'] ?? 0;
+
+              if (qty > 0) {
+                if (productId != null && productId.isNotEmpty) {
+                  final docRef = _db.collection(AppConstants.colProducts).doc(productId);
+                  final docSnap = await docRef.get();
+                  if (docSnap.exists) {
+                    int stokSekarang = docSnap.data()?['stok'] ?? 0;
+                    int terjualSekarang = docSnap.data()?['terjual'] ?? 0;
+                    await docRef.update({
+                      'stok': stokSekarang + qty,
+                      'terjual': (terjualSekarang - qty < 0) ? 0 : terjualSekarang - qty
+                    });
+                  }
+                } else if (productName != null && productName.isNotEmpty) {
+                  final query = await _db.collection(AppConstants.colProducts).where('nama', isEqualTo: productName).limit(1).get();
+                  if (query.docs.isNotEmpty) {
+                    final doc = query.docs.first;
+                    int stokSekarang = doc.data()['stok'] ?? 0;
+                    int terjualSekarang = doc.data()['terjual'] ?? 0;
+                    await doc.reference.update({
+                      'stok': stokSekarang + qty,
+                      'terjual': (terjualSekarang - qty < 0) ? 0 : terjualSekarang - qty
+                    });
+                  }
+                }
+              }
+            } catch (e) {
+              print("Gagal mengembalikan stok produk: $e");
+            }
+          }
+        }
+      }
+      // -----------------------------------------
 
       if (userId != null) {
         final userDoc = await _db

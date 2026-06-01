@@ -88,6 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _namaUser = 'Pengguna';
   List<ProductModel> _produkList = [];
   bool _produkLoading = true;
+  
+  StreamSubscription<QuerySnapshot>? _notifSub;
+  int _unreadNotifCount = 0;
 
   final _pageController = PageController();
   int _heroIndex = 0;
@@ -99,10 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadNamaUser();
     _loadProduk();
     _startAutoSlide();
+    _loadUnreadNotifs();
   }
 
   @override
   void dispose() {
+    _notifSub?.cancel();
     _produkSub?.cancel();
     _slideTimer?.cancel();
     _pageController.dispose();
@@ -140,6 +145,24 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (_) {}
+  }
+
+  void _loadUnreadNotifs() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _notifSub = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _unreadNotifCount = snapshot.docs.length;
+        });
+      }
+    });
   }
 
   void _loadProduk() {
@@ -316,10 +339,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: const Color(0xFFF5F7F5),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.notifications_outlined,
-                    size: 20,
-                    color: Color(0xFF555555),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(
+                        Icons.notifications_outlined,
+                        size: 20,
+                        color: Color(0xFF555555),
+                      ),
+                      if (_unreadNotifCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -551,7 +593,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── TERLARIS ───────────────────────────────────────
   Widget _sectionTerlaris() {
-    final terlaris = _produkList.take(5).toList();
+    final sortedList = List<ProductModel>.from(_produkList)
+      ..sort((a, b) => b.terjual.compareTo(a.terjual));
+    final terlaris = sortedList.take(5).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -567,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         if (_produkLoading)
           const SizedBox(
-            height: 188,
+            height: 204,
             child: Center(
               child: CircularProgressIndicator(
                 color: AppColors.primaryGreen,
@@ -576,10 +620,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else if (terlaris.isEmpty)
-          const SizedBox(height: 188)
+          const SizedBox(height: 204)
         else
           SizedBox(
-            height: 188,
+            height: 204,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.zero,
@@ -662,6 +706,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${p.terjual} Terjual',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Row(

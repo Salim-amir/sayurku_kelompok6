@@ -103,13 +103,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Konfirmasi Logout'),
         content: const Text('Apakah Anda yakin ingin keluar dari akun Admin?'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text(
               'Batal',
               style: TextStyle(color: AppColors.textSecondary),
@@ -117,7 +117,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await AuthService().logoutUser();
               if (!mounted) return;
               Navigator.pushNamedAndRemoveUntil(
