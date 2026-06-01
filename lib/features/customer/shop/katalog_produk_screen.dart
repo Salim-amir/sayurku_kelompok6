@@ -11,6 +11,7 @@ import '../../../../core/constants.dart';
 import '../../../../models/product_model.dart';
 import '../../../../services/product_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'search_screen.dart';
 
 class KatalogProdukScreen extends StatefulWidget {
   final String? kategoriAwal;
@@ -52,20 +53,20 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+    _selectedKategori = widget.kategoriAwal ?? 'semua';
     if (widget.searchKeyword != null) {
       _searchKeyword = widget.searchKeyword!;
       _searchController.text = widget.searchKeyword!;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        _selectedKategori = widget.kategoriAwal ?? 'sayur_hijau';
+        _selectedKategori = widget.kategoriAwal ?? 'semua';
       });
     });
   }
 
   final List<String> _kategoriList = [
-    'sayur_hijau', 'buah', 'bumbu', 'umbi_umbian'
+    'semua', 'sayur_hijau', 'buah', 'bumbu', 'umbi_umbian'
   ];
 
   final List<Map<String, dynamic>> _produk = [
@@ -187,19 +188,19 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.inputBackground,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _searchKeyword.isNotEmpty
               ? AppColors.primaryGreen.withOpacity(0.4)
-              : Colors.transparent,
-          width: 1.5,
+              : AppColors.inputBorder,
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -216,7 +217,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
           Expanded(
             child: TextField(
               controller: _searchController,
-              autofocus: true,
+              autofocus: false,
               onChanged: (value) => setState(() => _searchKeyword = value),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textPrimary,
@@ -238,7 +239,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                 setState(() => _searchKeyword = '');
               },
               child: Container(
-                padding: const EdgeInsets.all(2),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: AppColors.textHint.withOpacity(0.15),
                   shape: BoxShape.circle,
@@ -303,8 +304,12 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
   Widget _buildProdukGrid() {
     return StreamBuilder<List<ProductModel>>(
       stream: _searchKeyword.isEmpty
-          ? _productService.getProdukByKategori(_selectedKategori)
-          : _productService.cariProdukByKategori(_searchKeyword, _selectedKategori),
+          ? (_selectedKategori == 'semua'
+              ? _productService.getSemuaProduk()
+              : _productService.getProdukByKategori(_selectedKategori))
+          : (_selectedKategori == 'semua'
+              ? _productService.cariProduk(_searchKeyword)
+              : _productService.cariProdukByKategori(_searchKeyword, _selectedKategori)),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -357,8 +362,8 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 12,
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -494,6 +499,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
 
   String _getLabelKategori(String kategori) {
     switch (kategori) {
+      case 'semua': return 'Semua Produk';
       case 'sayur_hijau': return 'Sayur Hijau';
       case 'buah': return 'Buah';
       case 'bumbu': return 'Bumbu';

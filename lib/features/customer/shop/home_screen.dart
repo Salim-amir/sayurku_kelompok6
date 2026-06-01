@@ -15,6 +15,7 @@ import '../profile/dompet_digital_screen.dart';
 import '../profile/profile_screen.dart';
 import '../profile/notifikasi_screen.dart';
 import '../../../core/cart_manager.dart';
+import 'search_screen.dart';
 import 'produk_terlaris_screen.dart';
 
 class _HeroSlide {
@@ -328,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
           GestureDetector(
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const KatalogProdukScreen()),
+              MaterialPageRoute(builder: (_) => const SearchScreen()),
             ),
             child: Container(
               width: double.infinity,
