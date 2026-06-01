@@ -56,7 +56,7 @@ class KonfirmasiPembayaranScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.arrow_back_rounded,
                 color: AppColors.primaryGreen),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
           ),
           Text('Konfirmasi Pembayaran',
               style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen)),

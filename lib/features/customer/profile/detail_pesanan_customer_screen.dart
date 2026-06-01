@@ -117,7 +117,7 @@ class DetailPesananCustomerScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── 1. STATUS & TANGGAL ───
+            // ─── 1. STATUS & TIMELINE ───
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -157,44 +157,45 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                     ],
                   ),
                   const Divider(height: 24, color: AppColors.divider),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Waktu Checkout', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-                      Text(
-                        tanggal != null
-                            ? _formatTanggal(tanggal)
-                            : '-',
-                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+
+                  // ── Timeline entries ──
+                  _buildTimelineEntry(
+                    icon: Icons.shopping_cart_checkout_rounded,
+                    label: 'Pesanan Dibuat',
+                    time: tanggal,
+                    color: AppColors.textSecondary,
+                    isFirst: true,
                   ),
-                  if (pesanan['tanggalDikirim'] != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Waktu Dikirim', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-                        Text(
-                          _formatTanggal(pesanan['tanggalDikirim'].toDate()),
-                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                  if (pesanan['tanggalDiproses'] != null)
+                    _buildTimelineEntry(
+                      icon: Icons.hourglass_top_rounded,
+                      label: 'Diproses Admin',
+                      time: pesanan['tanggalDiproses'].toDate(),
+                      color: AppColors.info,
                     ),
-                  ],
-                  if (pesanan['tanggalSelesai'] != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Waktu Selesai', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
-                        Text(
-                          _formatTanggal(pesanan['tanggalSelesai'].toDate()),
-                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                  if (pesanan['tanggalDikirim'] != null)
+                    _buildTimelineEntry(
+                      icon: Icons.local_shipping_rounded,
+                      label: 'Dikirim',
+                      time: pesanan['tanggalDikirim'].toDate(),
+                      color: AppColors.primaryGreen,
                     ),
-                  ],
+                  if (pesanan['tanggalSelesai'] != null)
+                    _buildTimelineEntry(
+                      icon: Icons.check_circle_rounded,
+                      label: 'Selesai',
+                      time: pesanan['tanggalSelesai'].toDate(),
+                      color: AppColors.success,
+                      isLast: true,
+                    ),
+                  if (pesanan['tanggalDibatalkan'] != null)
+                    _buildTimelineEntry(
+                      icon: Icons.cancel_rounded,
+                      label: 'Dibatalkan',
+                      time: pesanan['tanggalDibatalkan'].toDate(),
+                      color: AppColors.error,
+                      isLast: true,
+                    ),
                 ],
               ),
             ),
@@ -398,6 +399,74 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTimelineEntry({
+    required IconData icon,
+    required String label,
+    required DateTime? time,
+    required Color color,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: isFirst ? 0 : 4,
+        bottom: isLast ? 0 : 4,
+      ),
+      child: Row(
+        children: [
+          // Timeline dot + line
+          SizedBox(
+            width: 32,
+            child: Column(
+              children: [
+                if (!isFirst)
+                  Container(
+                    width: 2,
+                    height: 8,
+                    color: color.withOpacity(0.3),
+                  ),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 14),
+                ),
+                if (!isLast)
+                  Container(
+                    width: 2,
+                    height: 8,
+                    color: color.withOpacity(0.3),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Label + time
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label, style: AppTextStyles.bodySmall.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                )),
+                Text(
+                  time != null ? _formatTanggal(time) : '-',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

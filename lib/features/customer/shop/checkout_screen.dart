@@ -10,7 +10,7 @@ import '../../../../models/address_model.dart';
 import '../../../../services/address_service.dart';
 import '../profile/alamat_screen.dart';
 import 'detail_produk_screen.dart';
-import '../profile/konfirmasi_pembayaran_screen.dart';
+import 'pesanan_berhasil_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -540,22 +540,15 @@ onPressed: _isLoading
           setState(() => _isLoading = false);
 
           if (mounted) {
-            final dataPesanan = {
-              'totalHarga': _subtotal.toDouble(),
-              'ongkosKirim': _ongkosKirim.toDouble(),
-              'metodePembayaran': _metodePembayaran,
-              'status': 'Menunggu Konfirmasi',
-            };
             CartManager.instance.kosongkanKeranjang();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Pesanan berhasil dibuat!'),
-                backgroundColor: AppColors.primaryGreen,
-              ),
-            );
-            Navigator.pushNamedAndRemoveUntil(
+            Navigator.pushAndRemoveUntil(
               context,
-              '/home',
+              MaterialPageRoute(
+                builder: (_) => PesananBerhasilScreen(
+                  metodePembayaran: _metodePembayaran,
+                  totalBayar: _totalPembayaran.toDouble(),
+                ),
+              ),
               (route) => false,
             );
           }

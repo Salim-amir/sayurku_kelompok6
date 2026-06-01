@@ -140,10 +140,14 @@ class OrderService {
         'tanggalUpdate': FieldValue.serverTimestamp(),
       };
 
-      if (statusBaru == AppConstants.statusDikirim) {
+      if (statusBaru == AppConstants.statusDiproses) {
+        updateData['tanggalDiproses'] = FieldValue.serverTimestamp();
+      } else if (statusBaru == AppConstants.statusDikirim) {
         updateData['tanggalDikirim'] = FieldValue.serverTimestamp();
       } else if (statusBaru == AppConstants.statusSelesai) {
         updateData['tanggalSelesai'] = FieldValue.serverTimestamp();
+      } else if (statusBaru == AppConstants.statusDibatalkan) {
+        updateData['tanggalDibatalkan'] = FieldValue.serverTimestamp();
       }
       
       if (namaKurir != null && namaKurir.isNotEmpty) {
