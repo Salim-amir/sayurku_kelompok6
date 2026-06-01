@@ -113,7 +113,7 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Tanggal Pemesanan', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                      Text('Waktu Checkout', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
                       Text(
                         tanggal != null
                             ? _formatTanggal(tanggal)
@@ -122,6 +122,32 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (pesanan['tanggalDikirim'] != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Waktu Dikirim', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          _formatTanggal(pesanan['tanggalDikirim'].toDate()),
+                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (pesanan['tanggalSelesai'] != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Waktu Selesai', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          _formatTanggal(pesanan['tanggalSelesai'].toDate()),
+                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
