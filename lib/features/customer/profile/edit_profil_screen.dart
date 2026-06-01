@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -298,7 +299,7 @@ class _EditProfilScreenState extends State<EditProfilScreen> {
                 backgroundImage: _selectedImage != null
                     ? FileImage(_selectedImage!)
                     : (_currentFotoUrl.isNotEmpty
-                        ? NetworkImage(_currentFotoUrl) as ImageProvider
+                        ? MemoryImage(base64Decode(_currentFotoUrl))
                         : null),
                 child: (_selectedImage == null && _currentFotoUrl.isEmpty)
                     ? Text(

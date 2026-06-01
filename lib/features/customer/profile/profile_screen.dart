@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -109,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             radius: 40,
             backgroundColor: AppColors.accentGreen.withOpacity(0.15),
             backgroundImage: (userData?.fotoUrl ?? '').isNotEmpty
-                ? NetworkImage(userData!.fotoUrl)
+                ? MemoryImage(base64Decode(userData!.fotoUrl))
                 : null,
             child: (userData?.fotoUrl ?? '').isEmpty
                 ? Text(
