@@ -99,6 +99,12 @@ class OrderService {
         'status': statusBaru,
         'tanggalUpdate': FieldValue.serverTimestamp(),
       };
+
+      if (statusBaru == AppConstants.statusDikirim) {
+        updateData['tanggalDikirim'] = FieldValue.serverTimestamp();
+      } else if (statusBaru == AppConstants.statusSelesai) {
+        updateData['tanggalSelesai'] = FieldValue.serverTimestamp();
+      }
       
       if (namaKurir != null && namaKurir.isNotEmpty) {
         updateData['namaKurir'] = namaKurir;

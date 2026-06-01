@@ -333,10 +333,16 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
               Text('$jumlahItem produk',
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textSecondary)),
-              Text(
-                'Rp ${_formatHarga(totalHarga.toInt())}',
-                style: AppTextStyles.h3
-                    .copyWith(color: AppColors.primaryGreen, fontSize: 15),
+              Row(
+                children: [
+                  Text(
+                    'Rp ${_formatHarga(totalHarga.toInt())}',
+                    style: AppTextStyles.h3
+                        .copyWith(color: AppColors.primaryGreen, fontSize: 15),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.primaryGreen, size: 20),
+                ],
               ),
             ],
           ),

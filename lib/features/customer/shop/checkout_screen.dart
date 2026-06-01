@@ -547,12 +547,16 @@ onPressed: _isLoading
               'status': 'Menunggu Konfirmasi',
             };
             CartManager.instance.kosongkanKeranjang();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    KonfirmasiPembayaranScreen(pesanan: dataPesanan),
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Pesanan berhasil dibuat!'),
+                backgroundColor: AppColors.primaryGreen,
               ),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
             );
           }
         } catch (e) {

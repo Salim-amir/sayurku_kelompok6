@@ -177,40 +177,6 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
               const SizedBox(width: 48),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                const Icon(Icons.location_on_rounded,
-                    color: AppColors.primaryGreen, size: 16),
-                const SizedBox(width: 4),
-                Text('Malang, Jawa Timur',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.local_offer_rounded,
-                          color: AppColors.primaryGreen, size: 12),
-                      const SizedBox(width: 4),
-                      Text('Harga Terjangkau',
-                          style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.primaryGreen,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 10)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

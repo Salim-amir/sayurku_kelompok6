@@ -10,6 +10,8 @@ class OrderModel {
   final String alamatPengiriman;
   final String status;
   final DateTime? tanggalPesan;
+  final DateTime? tanggalDikirim;
+  final DateTime? tanggalSelesai;
   final String? namaKurir;
   final String? noTelpKurir;
 
@@ -23,6 +25,8 @@ class OrderModel {
     required this.alamatPengiriman,
     required this.status,
     this.tanggalPesan,
+    this.tanggalDikirim,
+    this.tanggalSelesai,
     this.namaKurir,
     this.noTelpKurir,
   });
@@ -38,6 +42,8 @@ class OrderModel {
       alamatPengiriman: map['alamatPengiriman'] ?? '',
       status: map['status'] ?? AppConstants.statusMenunggu,
       tanggalPesan: map['tanggalPesan']?.toDate(),
+      tanggalDikirim: map['tanggalDikirim']?.toDate(),
+      tanggalSelesai: map['tanggalSelesai']?.toDate(),
       namaKurir: map['namaKurir'],
       noTelpKurir: map['noTelpKurir'],
     );
@@ -53,6 +59,8 @@ class OrderModel {
       'alamatPengiriman': alamatPengiriman,
       'status': status,
       'tanggalPesan': tanggalPesan,
+      'tanggalDikirim': tanggalDikirim,
+      'tanggalSelesai': tanggalSelesai,
       'namaKurir': namaKurir,
       'noTelpKurir': noTelpKurir,
     };
