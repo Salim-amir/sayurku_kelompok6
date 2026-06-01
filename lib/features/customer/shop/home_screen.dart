@@ -166,6 +166,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Selamat Malam 🌙';
   }
 
+  Stream<int> _getUnreadNotifCount() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return Stream.value(0);
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
   String _fmt(int harga) => harga.toString().replaceAllMapped(
     RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
     (m) => '${m[1]}.',
@@ -309,18 +320,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               GestureDetector(
                 onTap: () => setState(() => _currentIndex = 3),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7F5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.notifications_outlined,
-                    size: 20,
-                    color: Color(0xFF555555),
-                  ),
+                child: StreamBuilder<int>(
+                  stream: _getUnreadNotifCount(),
+                  builder: (context, snapshot) {
+                    final unreadCount = snapshot.data ?? 0;
+                    return Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7F5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(
+                            Icons.notifications_outlined,
+                            size: 20,
+                            color: Color(0xFF555555),
+                          ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              top: 8,
+                              right: 9,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }
                 ),
               ),
             ],
