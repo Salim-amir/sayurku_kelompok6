@@ -22,7 +22,7 @@ class AppConstants {
   static const double paddingXXL     = 48.0;
 
   // ─── Border Radius ────────────────────────────────────────────
-  static const double radiusXS = 4.0;
+  static const double radiusXS       = 4.0;
   static const double radiusSM       = 8.0;
   static const double radiusMD       = 12.0;
   static const double radiusLG       = 16.0;
@@ -43,7 +43,7 @@ class AppConstants {
   static const double inputHeight    = 52.0;
 
   // ─── Product Card ─────────────────────────────────────────────
-  static const double cardWidth      = 160.0;
+  static const double cardWidth       = 160.0;
   static const double cardImageHeight = 110.0;
 
   // ─── Splash ───────────────────────────────────────────────────
@@ -53,85 +53,84 @@ class AppConstants {
   static const List<String> satuanProduk = [
     'kg',
     'gram',
+    'ons',   // ✅ diganti dari 'liter'
     'ikat',
     'buah',
     'pack',
-    'liter',
   ];
 
-  // ─── Kategori Produk ───────────────────────────────────────────
-static const String kategoriSayurHijau = 'sayur_hijau';
-static const String kategoriBuah       = 'buah';
-static const String kategoriBumbu      = 'bumbu';
-static const String kategoriUmbi       = 'umbi_umbian';
+  // ─── Kategori Produk ──────────────────────────────────────────
+  static const String kategoriSayurHijau = 'sayur_hijau';
+  static const String kategoriBuah       = 'buah';
+  static const String kategoriBumbu      = 'bumbu';
+  static const String kategoriUmbi       = 'umbi_umbian';
 
-static const List<String> kategoriProduk = [
-  kategoriSayurHijau,
-  kategoriBuah,
-  kategoriBumbu,
-  kategoriUmbi,
-];
+  static const List<String> kategoriProduk = [
+    kategoriSayurHijau,
+    kategoriBuah,
+    kategoriBumbu,
+    kategoriUmbi,
+  ];
 
   // ─── Status Pesanan ───────────────────────────────────────────
-  static const String statusMenunggu        = 'Menunggu Konfirmasi';
-  static const String statusDiproses        = 'Diproses';
-  static const String statusDikirim         = 'Dikirim';
-  static const String statusSelesai         = 'Selesai';
-  static const String statusDibatalkan      = 'Dibatalkan';
+  static const String statusMenunggu   = 'Menunggu Konfirmasi';
+  static const String statusDiproses   = 'Diproses';
+  static const String statusDikirim    = 'Dikirim';
+  static const String statusSelesai    = 'Selesai';
+  static const String statusDibatalkan = 'Dibatalkan';
 
   // ─── Metode Pembayaran ────────────────────────────────────────
-  static const String metodeCOD             = 'COD';
-  static const String metodeTransfer        = 'Transfer Bank';
-  static const String metodeDompet          = 'Dompet Digital';
+  static const String metodeCOD        = 'COD';
+  static const String metodeTransfer   = 'Transfer Bank';
+  static const String metodeDompet     = 'Dompet Digital';
 
   // ─── Firebase Collection Names ────────────────────────────────
-  static const String colUsers              = 'users';
-  static const String colProducts           = 'products';
-  static const String colOrders             = 'orders';
-  static const String colWallets            = 'wallets';
-  static const String colNotifications      = 'notifications';
-  static const String colAddresses          = 'addresses';
+  static const String colUsers         = 'users';
+  static const String colProducts      = 'products';
+  static const String colOrders        = 'orders';
+  static const String colWallets       = 'wallets';
+  static const String colNotifications = 'notifications';
+  static const String colAddresses     = 'addresses';
 
-  // ─── Firebase Subcollection Names ──────────────────────────────
-  static const String subColTransactions    = 'transactions';
-  static const String subColAddresses       = 'addresses';
+  // ─── Firebase Subcollection Names ─────────────────────────────
+  static const String subColTransactions = 'transactions';
+  static const String subColAddresses    = 'addresses';
 
   // ─── Shared Preferences Keys ──────────────────────────────────
-  static const String prefIsLoggedIn        = 'is_logged_in';
-  static const String prefUserId            = 'user_id';
-  static const String prefUserRole          = 'user_role';
+  static const String prefIsLoggedIn   = 'is_logged_in';
+  static const String prefUserId       = 'user_id';
+  static const String prefUserRole     = 'user_role';
 
   // ─── User Role ────────────────────────────────────────────────
-  static const String roleCustomer          = 'customer';
-  static const String roleAdmin             = 'admin';
+  static const String roleCustomer     = 'customer';
+  static const String roleAdmin        = 'admin';
 
   // ─── Snackbar / Toast Messages ────────────────────────────────
-  static const String msgLoginSuccess       = 'Berhasil masuk!';
-  static const String msgLoginFailed        = 'Email atau kata sandi salah.';
-  static const String msgRegisterSuccess    = 'Akun berhasil dibuat!';
-  static const String msgLogoutSuccess      = 'Berhasil keluar.';
-  static const String msgCartAdded          = 'Produk ditambahkan ke keranjang.';
-  static const String msgOrderSuccess       = 'Pesanan berhasil dibuat!';
-  static const String msgTopUpSuccess       = 'Saldo berhasil ditambahkan.';
-  static const String msgNetworkError       = 'Gagal terhubung. Cek koneksi internet.';
-  static const String msgUnknownError       = 'Terjadi kesalahan. Coba lagi.';
+  static const String msgLoginSuccess    = 'Berhasil masuk!';
+  static const String msgLoginFailed     = 'Email atau kata sandi salah.';
+  static const String msgRegisterSuccess = 'Akun berhasil dibuat!';
+  static const String msgLogoutSuccess   = 'Berhasil keluar.';
+  static const String msgCartAdded       = 'Produk ditambahkan ke keranjang.';
+  static const String msgOrderSuccess    = 'Pesanan berhasil dibuat!';
+  static const String msgTopUpSuccess    = 'Saldo berhasil ditambahkan.';
+  static const String msgNetworkError    = 'Gagal terhubung. Cek koneksi internet.';
+  static const String msgUnknownError    = 'Terjadi kesalahan. Coba lagi.';
 
-  // ─── Wallet Transaction Types ──────────────────────────────────
-  static const String txTopUp               = 'topup';
-  static const String txPayment             = 'payment';
+  // ─── Wallet Transaction Types ─────────────────────────────────
+  static const String txTopUp            = 'topup';
+  static const String txPayment          = 'payment';
 
-  // ─── Wallet Transaction Status ─────────────────────────────────
-  static const String txStatusPending       = 'pending';
-  static const String txStatusApproved      = 'approved';
-  static const String txStatusRejected      = 'rejected';
-  static const String txStatusSuccess       = 'success';
+  // ─── Wallet Transaction Status ────────────────────────────────
+  static const String txStatusPending    = 'pending';
+  static const String txStatusApproved   = 'approved';
+  static const String txStatusRejected   = 'rejected';
+  static const String txStatusSuccess    = 'success';
 
-  // ─── Nominal Top-Up Options ────────────────────────────────────
+  // ─── Nominal Top-Up Options ───────────────────────────────────
   static const List<int> topUpNominals = [
     50000,
     100000,
     200000,
     500000,
   ];
-
 }
