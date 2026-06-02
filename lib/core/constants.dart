@@ -133,4 +133,5 @@ static const List<String> kategoriProduk = [
     200000,
     500000,
   ];
+
 }
