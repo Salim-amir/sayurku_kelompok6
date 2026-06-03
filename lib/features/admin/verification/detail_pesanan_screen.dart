@@ -143,12 +143,14 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
             builder: (context, userSnapshot) {
               String namaCustomer = 'Memuat...';
               String emailCustomer = '-';
+              String fotoCustomer = '';
 
               if (userSnapshot.hasData && userSnapshot.data!.exists) {
                 final userData =
                     userSnapshot.data!.data() as Map<String, dynamic>;
                 namaCustomer = userData['namaLengkap'] ?? 'Customer';
                 emailCustomer = userData['email'] ?? '-';
+                fotoCustomer = userData['fotoUrl'] ?? userData['photoUrl'] ?? '';
               }
 
               return SingleChildScrollView(
@@ -175,11 +177,18 @@ class _DetailPesananScreenState extends State<DetailPesananScreen> {
                           CircleAvatar(
                             radius: 26,
                             backgroundColor: AppColors.inputBackground,
-                            child: const Icon(
-                              Icons.person,
-                              color: AppColors.textHint,
-                              size: 30,
-                            ),
+                            backgroundImage: fotoCustomer.isNotEmpty
+                                ? (fotoCustomer.startsWith('http')
+                                    ? NetworkImage(fotoCustomer) as ImageProvider
+                                    : MemoryImage(base64Decode(fotoCustomer)))
+                                : null,
+                            child: fotoCustomer.isEmpty
+                                ? const Icon(
+                                    Icons.person,
+                                    color: AppColors.textHint,
+                                    size: 30,
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 16),
                           Expanded(

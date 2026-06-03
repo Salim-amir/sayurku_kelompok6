@@ -58,6 +58,7 @@ class _DetailVerifikasiTopupScreenState
         'namaUser': userData['namaLengkap'] ?? 'Customer',
         'emailUser': userData['email'] ?? '-',
         'nomorHp': userData['nomorHp'] ?? '-',
+        'fotoUrl': userData['fotoUrl'] ?? userData['photoUrl'] ?? '',
       };
     } catch (e) {
       return null;
@@ -169,6 +170,7 @@ class _DetailVerifikasiTopupScreenState
           final namaUser = data['namaUser'] ?? 'Customer';
           final emailUser = data['emailUser'] ?? '-';
           final nomorHp = data['nomorHp'] ?? '-';
+          final fotoUrl = data['fotoUrl'] ?? '';
           final amount = (data['amount'] ?? 0).toDouble();
           final status = (data['status'] ?? AppConstants.txStatusPending)
               .toString();
@@ -201,11 +203,18 @@ class _DetailVerifikasiTopupScreenState
                       CircleAvatar(
                         radius: 26,
                         backgroundColor: AppColors.inputBackground,
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.textHint,
-                          size: 30,
-                        ),
+                        backgroundImage: fotoUrl.isNotEmpty
+                            ? (fotoUrl.startsWith('http')
+                                ? NetworkImage(fotoUrl) as ImageProvider
+                                : MemoryImage(base64Decode(fotoUrl)))
+                            : null,
+                        child: fotoUrl.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                color: AppColors.textHint,
+                                size: 30,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(

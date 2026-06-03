@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sayurku_kelompok6/core/colors.dart';
@@ -276,12 +277,14 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                                 .get(),
                             builder: (context, userSnap) {
                               String namaUser = 'Memuat...';
+                              String fotoUrl = '';
                               if (userSnap.hasData &&
                                   userSnap.data!.exists) {
                                 final ud = userSnap.data!.data()
                                     as Map<String, dynamic>;
                                 namaUser =
                                     ud['namaLengkap'] ?? 'Customer';
+                                fotoUrl = ud['fotoUrl'] ?? ud['photoUrl'] ?? '';
                               }
 
                               if (_searchQuery.isNotEmpty &&
@@ -294,7 +297,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: _buildTopUpCard(
-                                    tx: tx, namaUser: namaUser),
+                                    tx: tx, namaUser: namaUser, fotoUrl: fotoUrl),
                               );
                             },
                           );
@@ -397,6 +400,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
   Widget _buildTopUpCard({
     required Map<String, dynamic> tx,
     required String namaUser,
+    required String fotoUrl,
   }) {
     final amount = (tx['amount'] ?? 0).toDouble();
     final timestamp = tx['timestamp'] as Timestamp?;
@@ -434,13 +438,20 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.account_balance_wallet, color: AppColors.primaryGreen, size: 24),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
+                  backgroundImage: fotoUrl.isNotEmpty
+                      ? (fotoUrl.startsWith('http')
+                          ? NetworkImage(fotoUrl) as ImageProvider
+                          : MemoryImage(base64Decode(fotoUrl)))
+                      : null,
+                  child: fotoUrl.isEmpty
+                      ? Text(
+                          namaUser.isNotEmpty ? namaUser[0].toUpperCase() : '?',
+                          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

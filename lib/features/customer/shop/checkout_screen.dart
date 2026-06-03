@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:sayurku_kelompok6/core/constants.dart';
 import '../../../../core/colors.dart';
@@ -205,27 +206,7 @@ Widget _buildItemPesanan(Map<String, dynamic> item) {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: item['imageUrl'] != null && item['imageUrl'].toString().startsWith('http')
-                ? Image.network(
-                    item['imageUrl'],
-                    width: 64,
-                    height: 64,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 64,
-                      height: 64,
-                      color: AppColors.inputBackground,
-                      child: const Icon(Icons.eco_rounded,
-                          color: AppColors.primaryGreen, size: 28),
-                    ),
-                  )
-                : Container(
-                    width: 64,
-                    height: 64,
-                    color: AppColors.inputBackground,
-                    child: const Icon(Icons.eco_rounded,
-                        color: AppColors.primaryGreen, size: 28),
-                  ),
+            child: _buildProductImage(item['imageUrl']?.toString() ?? '', 64, 64),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -251,6 +232,43 @@ Widget _buildItemPesanan(Map<String, dynamic> item) {
       ),
     ),
   );
+}
+
+Widget _buildFotoPlaceholder() {
+  return Container(
+    width: 64,
+    height: 64,
+    decoration: BoxDecoration(
+      color: AppColors.inputBackground,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Icon(Icons.eco_rounded,
+        color: AppColors.primaryGreen, size: 28),
+  );
+}
+
+Widget _buildProductImage(String imageUrl, double width, double height) {
+  if (imageUrl.isEmpty) return _buildFotoPlaceholder();
+  if (imageUrl.startsWith('http')) {
+    return Image.network(
+      imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
+    );
+  }
+  try {
+    return Image.memory(
+      base64Decode(imageUrl),
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildFotoPlaceholder(),
+    );
+  } catch (_) {
+    return _buildFotoPlaceholder();
+  }
 }
 
   Widget _buildBiayaRow(String label, int harga) {
@@ -537,6 +555,7 @@ onPressed: _isLoading
             metodePembayaran: _metodePembayaran,
             alamatPengiriman: _alamatUtama!.fullAddress,
           );
+          final double finalTotalBayar = _totalPembayaran.toDouble();
           setState(() => _isLoading = false);
 
           if (mounted) {
@@ -546,7 +565,7 @@ onPressed: _isLoading
               MaterialPageRoute(
                 builder: (_) => PesananBerhasilScreen(
                   metodePembayaran: _metodePembayaran,
-                  totalBayar: _totalPembayaran.toDouble(),
+                  totalBayar: finalTotalBayar,
                 ),
               ),
               (route) => false,
