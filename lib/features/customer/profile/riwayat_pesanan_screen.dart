@@ -6,6 +6,8 @@ import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
 import '../../../services/order_service.dart';
+import '../../../core/cart_manager.dart';
+import '../shop/keranjang_belanja_screen.dart';
 import 'detail_pesanan_customer_screen.dart';
 
 class RiwayatPesananScreen extends StatefulWidget {
@@ -207,6 +209,8 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
     final jumlahItem = items.length;
     final namaKurir = pesanan['namaKurir'];
     final noTelpKurir = pesanan['noTelpKurir'];
+    final tanggalSelesai = pesanan['tanggalSelesai']?.toDate() ?? pesanan['tanggalUpdate']?.toDate() ?? tanggal;
+    final tanggalDibatalkan = pesanan['tanggalDibatalkan']?.toDate() ?? pesanan['tanggalUpdate']?.toDate() ?? tanggal;
 
     return GestureDetector(
       onTap: () {
@@ -328,7 +332,6 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
             const SizedBox(height: 12),
           ],
 
-          // Footer: jumlah item + total
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -348,6 +351,58 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen>
               ),
             ],
           ),
+          if (status.toLowerCase() == 'selesai' || status.toLowerCase() == 'dibatalkan') ...[
+            const Divider(height: 24, color: AppColors.divider),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    status.toLowerCase() == 'selesai'
+                        ? 'Selesai pada ${tanggalSelesai != null ? _formatTanggal(tanggalSelesai) : '-'}'
+                        : 'Dibatalkan pada ${tanggalDibatalkan != null ? _formatTanggal(tanggalDibatalkan) : '-'}',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                  ),
+                ),
+              OutlinedButton(
+                onPressed: () {
+                  for (var item in items) {
+                    CartManager.instance.tambahProduk({
+                      'id': item['id'] ?? '',
+                      'nama': item['nama'] ?? 'Produk',
+                      'harga': item['harga'] ?? 0,
+                      'satuan': item['satuan'] ?? 'pcs',
+                      'imageUrl': item['imageUrl'] ?? '',
+                      'kategori': item['kategori'] ?? '',
+                    }, item['jumlah'] ?? 1);
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const KeranjangBelanjaScreen(),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primaryGreen),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Beli Lagi',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ],
         ],
       ),
     ));

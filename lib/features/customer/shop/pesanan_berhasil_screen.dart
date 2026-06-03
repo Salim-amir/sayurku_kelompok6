@@ -102,7 +102,7 @@ class _PesananBerhasilScreenState extends State<PesananBerhasilScreen>
                   child: Column(
                     children: [
                       Text(
-                        'Pesanan Berhasil! 🎉',
+                        'Pesanan Berhasil!',
                         style: AppTextStyles.h2.copyWith(
                           color: AppColors.textPrimary,
                         ),
