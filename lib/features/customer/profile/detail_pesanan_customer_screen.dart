@@ -442,18 +442,9 @@ class DetailPesananCustomerScreen extends StatelessWidget {
 
             if (status.toLowerCase() == 'selesai' || status.toLowerCase() == 'dibatalkan') ...[
               const Divider(height: 24, color: AppColors.divider),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      status.toLowerCase() == 'selesai'
-                          ? 'Selesai pada ${tanggalSelesai != null ? _formatTanggal(tanggalSelesai) : '-'}'
-                          : 'Dibatalkan pada ${tanggalDibatalkan != null ? _formatTanggal(tanggalDibatalkan) : '-'}',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                    ),
-                  ),
-                OutlinedButton(
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
                   onPressed: () {
                     for (var item in items) {
                       CartManager.instance.tambahProduk({
@@ -475,22 +466,19 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.primaryGreen),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
                     'Beli Lagi',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
             ],
             const SizedBox(height: 32),
           ],
