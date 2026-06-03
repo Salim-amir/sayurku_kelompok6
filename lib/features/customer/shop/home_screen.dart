@@ -86,6 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _currentIndex = 0;
   String _namaUser = 'Pengguna';
+  String? _fotoProfil;
   List<ProductModel> _produkList = [];
   bool _produkLoading = true;
   
@@ -144,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
               doc.data()?['username'] ??
               doc.data()?['nama'] ??
               'Pengguna';
+          _fotoProfil = doc.data()?['fotoUrl'];
         });
       }
     }, onError: (_) {});
@@ -296,17 +298,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFE8F5E9),
                     borderRadius: BorderRadius.circular(13),
+                    image: _fotoProfil != null && _fotoProfil!.isNotEmpty
+                        ? DecorationImage(
+                            image: MemoryImage(base64Decode(_fotoProfil!)),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
-                      style: const TextStyle(
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+                  child: _fotoProfil != null && _fotoProfil!.isNotEmpty
+                      ? null
+                      : Center(
+                          child: Text(
+                            _namaUser.isNotEmpty ? _namaUser[0].toUpperCase() : 'P',
+                            style: const TextStyle(
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
