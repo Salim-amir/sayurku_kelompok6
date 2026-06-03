@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
 
       // Tema Global Aplikasi
       theme: ThemeData(
-        fontFamily: 'Manrope', // Pastikan sudah di-setup di pubspec.yaml
+        fontFamily: 'Nunito',
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
         useMaterial3: true,

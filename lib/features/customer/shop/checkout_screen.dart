@@ -61,6 +61,8 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
                   children: [
                     _buildAlamatPengiriman(),
                     const SizedBox(height: 16),
+                    _buildEstimasiPengiriman(),
+                    const SizedBox(height: 16),
                     _buildRingkasanPesanan(),
                     const SizedBox(height: 16),
                     _buildMetodePembayaran(),
@@ -154,6 +156,113 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
     ),
   );
 }
+
+  // ── LOGIKA ESTIMASI ─────────────────────────────────
+  Map<String, String> _getEstimasi() {
+    final now = DateTime.now();
+    if (now.hour < 12) {
+      // Jika checkout sebelum jam 12 siang (Pengiriman Instan 1 Jam)
+      final estimasi = now.add(const Duration(hours: 1));
+      final jamStr = estimasi.hour.toString().padLeft(2, '0');
+      final menitStr = estimasi.minute.toString().padLeft(2, '0');
+      
+      return {
+        'waktu': 'Hari ini ($jamStr:$menitStr WIB)',
+        'deskripsi': 'Pesanan langsung diproses & tiba dalam 1 jam.',
+      };
+    } else {
+      // Jika checkout setelah jam 12 siang (siang/malam)
+      return {
+        'waktu': 'Besok Pagi (07:00 - 11:00 WIB)',
+        'deskripsi': 'Sayuran dipanen & dikirim segar esok hari.',
+      };
+    }
+  }
+
+  // ── ESTIMASI PENGIRIMAN ─────────────────────────────
+  Widget _buildEstimasiPengiriman() {
+    final estimasi = _getEstimasi();
+    final isHariIni = estimasi['waktu']!.contains('Hari ini');
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isHariIni ? const Color(0xFFFFF3E0) : const Color(0xFFE8F5E9),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isHariIni ? Icons.bolt_rounded : Icons.local_shipping_rounded, 
+              color: isHariIni ? const Color(0xFFF57C00) : AppColors.primaryGreen, 
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Estimasi Tiba', style: AppTextStyles.h3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isHariIni ? const Color(0xFFFFF3E0) : const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isHariIni ? '⚡ Instan' : '📅 Terjadwal',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: isHariIni ? const Color(0xFFF57C00) : AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  estimasi['waktu']!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textPrimary, 
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  estimasi['deskripsi']!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   // ── RINGKASAN PESANAN ───────────────────────────────
   Widget _buildRingkasanPesanan() {
 final items = CartManager.instance.items;

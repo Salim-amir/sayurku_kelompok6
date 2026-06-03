@@ -37,7 +37,7 @@ const _heroSlides = [
   _HeroSlide(
     tag: '🌿 Tentang SayurKu',
     title: 'Sayur Segar,\nLangsung ke Pintu',
-    subtitle: 'Dipesan hari ini, dikirim besok pagi\n— segar dari kebun lokal',
+    subtitle: 'Pesan pagi dikirim hari ini, pesan malam\ndikirim besok pagi — selalu segar!',
     emoji: '🥦',
     gradientColors: [Color(0xFF2E7D32), Color(0xFF43A047)],
   ),
@@ -90,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _produkLoading = true;
   
   StreamSubscription<QuerySnapshot>? _notifSub;
+  StreamSubscription<DocumentSnapshot>? _userSub;
   int _unreadNotifCount = 0;
 
   final _pageController = PageController();
@@ -108,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _notifSub?.cancel();
+    _userSub?.cancel();
     _produkSub?.cancel();
     _slideTimer?.cancel();
     _pageController.dispose();
@@ -127,14 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _loadNamaUser() async {
+  void _loadNamaUser() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+    _userSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((doc) {
       if (doc.exists && mounted) {
         setState(() {
           _namaUser =
@@ -144,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Pengguna';
         });
       }
-    } catch (_) {}
+    }, onError: (_) {});
   }
 
   void _loadUnreadNotifs() {
