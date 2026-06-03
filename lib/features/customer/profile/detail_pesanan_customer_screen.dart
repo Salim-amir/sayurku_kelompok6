@@ -373,6 +373,68 @@ class DetailPesananCustomerScreen extends StatelessWidget {
                 ],
               ),
             ),
+
+            // ─── 5. INFO REFUND (jika dibatalkan & Dompet Digital) ───
+            if (status.toLowerCase() == 'dibatalkan' &&
+                metode == 'Dompet Digital') ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: pesanan['refundStatus'] == 'selesai'
+                      ? AppColors.success.withOpacity(0.08)
+                      : AppColors.warning.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: pesanan['refundStatus'] == 'selesai'
+                        ? AppColors.success.withOpacity(0.3)
+                        : AppColors.warning.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      pesanan['refundStatus'] == 'selesai'
+                          ? Icons.check_circle_rounded
+                          : Icons.schedule_rounded,
+                      color: pesanan['refundStatus'] == 'selesai'
+                          ? AppColors.success
+                          : AppColors.warning,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            pesanan['refundStatus'] == 'selesai'
+                                ? 'Refund Berhasil'
+                                : 'Refund Diproses',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: pesanan['refundStatus'] == 'selesai'
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            pesanan['refundStatus'] == 'selesai'
+                                ? 'Rp ${_formatHarga(totalHarga.toInt())} telah dikembalikan ke saldo dompet Anda.'
+                                : 'Dana Rp ${_formatHarga(totalHarga.toInt())} sedang diproses untuk dikembalikan.',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
           ],
         ),

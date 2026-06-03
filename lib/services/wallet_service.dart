@@ -286,6 +286,82 @@ class WalletService {
     }
   }
 
+  // ── Refund saldo saat pesanan dibatalkan (Dompet Digital) ──
+  Future<String?> refundSaldo({
+    required String userId,
+    required double amount,
+    String? orderId,
+  }) async {
+    try {
+      if (amount <= 0) return 'Nominal refund tidak valid';
+
+      await _db.runTransaction((transaction) async {
+        final userRef = _db.collection(AppConstants.colUsers).doc(userId);
+        final userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) throw Exception('User tidak ditemukan');
+
+        final currentSaldo = (userDoc.data()?['saldo'] ?? 0).toDouble();
+
+        // Tambah saldo kembali
+        transaction.update(userRef, {'saldo': currentSaldo + amount});
+
+        // Catat transaksi refund
+        final txRef = _db
+            .collection(AppConstants.colWallets)
+            .doc(userId)
+            .collection(AppConstants.subColTransactions)
+            .doc();
+
+        transaction.set(txRef, {
+          'userId': userId,
+          'type': 'refund',
+          'amount': amount,
+          'status': AppConstants.txStatusSuccess,
+          'orderId': orderId ?? '',
+          'keterangan': 'Refund pesanan dibatalkan',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      });
+
+      // Kirim notifikasi ke customer
+      try {
+        final userDocForNotif = await _db
+            .collection(AppConstants.colUsers)
+            .doc(userId)
+            .get();
+        final fcmToken = userDocForNotif.data()?['fcmToken'];
+
+        final title = 'Refund Berhasil! 💰';
+        final message =
+            'Saldo sebesar Rp ${_formatNominal(amount.toInt())} telah dikembalikan ke dompet Anda.';
+
+        await _db.collection(AppConstants.colNotifications).add({
+          'userId': userId,
+          'title': title,
+          'message': message,
+          'type': 'refund',
+          'isRead': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        if (fcmToken != null) {
+          await NotificationService.sendPushNotification(
+            fcmToken,
+            title,
+            message,
+          );
+        }
+      } catch (e) {
+        print("Gagal kirim notif refund: $e");
+      }
+
+      return null;
+    } catch (e) {
+      return 'Gagal proses refund: ${e.toString()}';
+    }
+  }
+
   // ── Helper format nominal ──
   String _formatNominal(int nominal) {
     return nominal.toString().replaceAllMapped(

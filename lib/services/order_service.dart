@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/constants.dart';
 import 'notification_service.dart';
+import 'wallet_service.dart';
 
 class OrderService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -207,6 +208,48 @@ class OrderService {
         }
       }
       // -----------------------------------------
+
+      // --- REFUND SALDO JIKA BAYAR PAKAI DOMPET DIGITAL ---
+      if (statusBaru == AppConstants.statusDibatalkan) {
+        final metodePembayaran = orderDoc.data()?['metodePembayaran'] ?? '';
+        print("🔍 [REFUND] Status: Dibatalkan, Metode: '$metodePembayaran', UserId: $userId");
+        
+        if (metodePembayaran == AppConstants.metodeDompet && userId != null) {
+          try {
+            final totalHarga = (orderDoc.data()?['totalHarga'] ?? 0).toDouble();
+            print("🔍 [REFUND] Total yang akan di-refund: Rp $totalHarga");
+            
+            if (totalHarga > 0) {
+              final walletService = WalletService();
+              final refundError = await walletService.refundSaldo(
+                userId: userId,
+                amount: totalHarga,
+                orderId: orderId,
+              );
+              
+              if (refundError != null) {
+                print("❌ [REFUND] Gagal: $refundError");
+              } else {
+                print("✅ [REFUND] Berhasil! Saldo Rp $totalHarga dikembalikan ke $userId");
+              }
+              
+              // Tandai pesanan sudah di-refund
+              await _db.collection(AppConstants.colOrders).doc(orderId).update({
+                'refundStatus': 'selesai',
+                'refundMetode': 'saldo',
+                'tanggalRefund': FieldValue.serverTimestamp(),
+              });
+            } else {
+              print("⚠️ [REFUND] totalHarga = 0, skip refund");
+            }
+          } catch (e) {
+            print("❌ [REFUND] Exception: $e");
+          }
+        } else {
+          print("ℹ️ [REFUND] Bukan Dompet Digital atau userId null, skip refund");
+        }
+      }
+      // -------------------------------------------------
 
       if (userId != null) {
         final userDoc = await _db
