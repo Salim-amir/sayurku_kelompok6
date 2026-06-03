@@ -234,11 +234,32 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
   }
 
   Widget _buildTransaksiItem(Map<String, dynamic> tx) {
-    final isTopUp = tx['type'] == AppConstants.txTopUp;
+    final type = tx['type'] ?? '';
+    final isTopUp = type == AppConstants.txTopUp;
+    final isRefund = type == 'refund';
+    final isIncoming = isTopUp || isRefund; // Saldo masuk
     final amount = (tx['amount'] ?? 0).toDouble();
     final status = tx['status'] ?? '';
     final keterangan = tx['keterangan'] ?? '';
     final timestamp = tx['timestamp']?.toDate();
+
+    // Warna dan ikon berdasarkan tipe
+    Color txColor;
+    IconData txIcon;
+    String txLabel;
+    if (isRefund) {
+      txColor = AppColors.info;
+      txIcon = Icons.replay_rounded;
+      txLabel = 'Refund';
+    } else if (isTopUp) {
+      txColor = AppColors.success;
+      txIcon = Icons.arrow_downward_rounded;
+      txLabel = 'Isi Saldo';
+    } else {
+      txColor = AppColors.error;
+      txIcon = Icons.arrow_upward_rounded;
+      txLabel = 'Pembayaran';
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -261,18 +282,10 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: isTopUp
-                  ? AppColors.success.withOpacity(0.12)
-                  : AppColors.error.withOpacity(0.12),
+              color: txColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              isTopUp
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              color: isTopUp ? AppColors.success : AppColors.error,
-              size: 20,
-            ),
+            child: Icon(txIcon, color: txColor, size: 20),
           ),
           const SizedBox(width: 12),
           // Info
@@ -281,7 +294,7 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isTopUp ? 'Isi Saldo' : 'Pembayaran',
+                  txLabel,
                   style: AppTextStyles.bodyMedium
                       .copyWith(fontWeight: FontWeight.w600),
                 ),
@@ -308,9 +321,9 @@ class _DompetDigitalScreenState extends State<DompetDigitalScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isTopUp ? '+' : '-'}Rp ${_formatHarga(amount.toInt())}',
+                '${isIncoming ? '+' : '-'}Rp ${_formatHarga(amount.toInt())}',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isTopUp ? AppColors.success : AppColors.error,
+                  color: isIncoming ? AppColors.success : AppColors.error,
                   fontWeight: FontWeight.w700,
                 ),
               ),
