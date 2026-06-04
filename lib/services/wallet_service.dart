@@ -149,14 +149,10 @@ class WalletService {
         .where('type', isEqualTo: AppConstants.txTopUp)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .handleError((error) {
-          // Fallback jika composite index belum dibuat
-          return null;
-        })
         .map(
           (snapshot) => snapshot.docs.map((doc) {
             // Sertakan docPath agar detail screen bisa langsung akses dokumen
-            return {'id': doc.id, 'docPath': doc.reference.path, ...doc.data()};
+            return {'id': doc.id, 'docPath': doc.reference.path, ...(doc.data() as Map<String, dynamic>)};
           }).toList(),
         );
   }

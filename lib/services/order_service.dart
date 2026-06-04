@@ -102,7 +102,7 @@ class OrderService {
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-              .map((doc) => {'id': doc.id, ...doc.data()})
+              .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
               .toList(),
         );
   }

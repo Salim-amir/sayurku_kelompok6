@@ -385,14 +385,28 @@ class _ProductStockPageState extends State<ProductStockPage> {
                             }
                           },
                         ),
-                        Container(
-                          width: 40,
-                          alignment: Alignment.center,
-                          child: Text(
-                            product.stok.toString(),
-                            style: AppTextStyles.h3.copyWith(fontSize: 16),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () => _showEditStockDialog(product),
+                          child: Container(
+                            width: 46,
+                            height: 28,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.inputBackground,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              product.stok.toString(),
+                              style: AppTextStyles.h3.copyWith(
+                                fontSize: 14, 
+                                color: AppColors.primaryGreen
+                              ),
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 12),
                         _buildQuickStockButton(
                           icon: Icons.add,
                           color: AppColors.primaryGreen,
@@ -423,6 +437,53 @@ class _ProductStockPageState extends State<ProductStockPage> {
         ),
         child: Icon(icon, size: 18, color: color),
       ),
+    );
+  }
+
+  void _showEditStockDialog(ProductModel product) {
+    final TextEditingController stockController =
+        TextEditingController(text: product.stok.toString());
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Ubah Stok Manual', style: AppTextStyles.h3),
+          content: TextField(
+            controller: stockController,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Sisa Stok',
+              hintText: 'Masukkan angka',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.inputBackground,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                int? newStock = int.tryParse(stockController.text);
+                if (newStock != null && newStock >= 0) {
+                  _productService.updateStok(product.id, newStock);
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1235,45 +1296,93 @@ class _ProductStockPageState extends State<ProductStockPage> {
   void _showDeleteConfirmation(ProductModel product) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.white,
-        title: Text('Hapus Produk?', style: AppTextStyles.h3),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus "${product.nama}"?',
-          style: AppTextStyles.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Batal', style: AppTextStyles.link),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      barrierDismissible: false,
+      builder: (_) {
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Hapus Produk', style: AppTextStyles.h3),
+                ],
               ),
-              elevation: 0,
-            ),
-            onPressed: () async {
-              await _productService.deleteProduct(product.id);
-
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${product.nama} berhasil dihapus'),
-                  backgroundColor: AppColors.error,
-                  duration: const Duration(seconds: 2),
+              content: Text(
+                'Apakah Anda yakin ingin menghapus "${product.nama}"?\nTindakan ini tidak dapat dibatalkan.',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: Text('Batal', style: AppTextStyles.link.copyWith(color: AppColors.textSecondary)),
                 ),
-              );
-            },
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    disabledBackgroundColor: AppColors.error.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  onPressed: isLoading ? null : () async {
+                    setStateDialog(() => isLoading = true);
+                    try {
+                      await _productService.deleteProduct(product.id);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: AppColors.white),
+                                const SizedBox(width: 12),
+                                Expanded(child: Text('"${product.nama}" berhasil dihapus')),
+                              ],
+                            ),
+                            backgroundColor: AppColors.error,
+                            duration: const Duration(seconds: 2),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        setStateDialog(() => isLoading = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: AppColors.error),
+                        );
+                      }
+                    }
+                  },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                        )
+                      : const Text('Ya, Hapus', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
