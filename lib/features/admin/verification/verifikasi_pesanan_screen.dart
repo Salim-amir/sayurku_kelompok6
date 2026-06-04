@@ -25,18 +25,33 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedFilter = 'Menunggu Konfirmasi';
-
+  int _currentPage = 1;
+  final int _itemsPerPage = 10;
+  
+  late ScrollController _scrollController;
   late Stream<List<Map<String, dynamic>>> _ordersStream;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _ordersStream = OrderService().getAllPesananAdmin();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -223,7 +238,23 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                   return s == _selectedFilter.toLowerCase();
                 }).toList();
 
+          final int totalPages = (filtered.length / _itemsPerPage).ceil() == 0 ? 1 : (filtered.length / _itemsPerPage).ceil();
+          
+          if (_currentPage > totalPages) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+               if(mounted) setState(() => _currentPage = totalPages);
+            });
+          }
+
+          final int startIndex = (_currentPage - 1) * _itemsPerPage;
+          final int endIndex = (startIndex + _itemsPerPage > filtered.length)
+              ? filtered.length
+              : startIndex + _itemsPerPage;
+          
+          final List<Map<String, dynamic>> paginated = startIndex < filtered.length ? filtered.sublist(startIndex, endIndex) : [];
+
           return CustomScrollView(
+            controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
@@ -332,8 +363,12 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          onSelected: (v) =>
-                              setState(() => _selectedFilter = v),
+                          onSelected: (v) {
+                            setState(() {
+                              _selectedFilter = v;
+                              _currentPage = 1;
+                            });
+                          },
                           itemBuilder: (_) => [
                             PopupMenuItem(
                               value: 'Menunggu Konfirmasi',
@@ -469,7 +504,7 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                             context,
                             index,
                           ) {
-                            final orderData = filtered[index];
+                            final orderData = paginated[index];
                             final userId = orderData['userId'] ?? '';
                             final orderId = orderData['id'] ?? '';
                             final status =
@@ -516,9 +551,59 @@ class _OrderVerificationPageState extends State<OrderVerificationPage> {
                                 );
                               },
                             );
-                          }, childCount: filtered.length),
+                          }, childCount: paginated.length),
                         ),
                       ),
+                      
+                if (_selectedTabIndex == 0 && filtered.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _currentPage > 1
+                                ? () {
+                                    setState(() => _currentPage--);
+                                    _scrollToTop();
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              disabledBackgroundColor: AppColors.divider,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('< Prev', style: TextStyle(color: Colors.white)),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'Hal $_currentPage dari $totalPages',
+                            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 16),
+                          ElevatedButton(
+                            onPressed: _currentPage < totalPages
+                                ? () {
+                                    setState(() => _currentPage++);
+                                    _scrollToTop();
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              disabledBackgroundColor: AppColors.divider,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Next >', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
 
               if (_selectedTabIndex == 1)

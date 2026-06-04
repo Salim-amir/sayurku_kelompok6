@@ -594,7 +594,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             final now = DateTime.now();
             List<double> chartData = _chartFilter == 'Mingguan'
                 ? List.filled(7, 0.0)
-                : List.filled(6, 0.0);
+                : _chartFilter == 'Bulanan'
+                    ? List.filled(12, 0.0)
+                    : List.filled(6, 0.0);
 
             for (var order in allOrders) {
               final String orderId = order['id'] ?? '';
@@ -632,6 +634,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       revenueTotalFiltered += harga;
                       int dayIndex = date.weekday - 1;
                       chartData[dayIndex] += harga;
+                    }
+                  } else if (_chartFilter == 'Bulanan') {
+                    if (date.year == now.year) {
+                      revenueTotalFiltered += harga;
+                      int monthIndex = date.month - 1;
+                      chartData[monthIndex] += harga;
                     }
                   } else {
                     if (date.year == now.year &&
@@ -925,7 +933,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        children: [_buildToggleItem('Harian'), _buildToggleItem('Mingguan')],
+        children: [_buildToggleItem('Harian'), _buildToggleItem('Mingguan'), _buildToggleItem('Bulanan')],
       ),
     );
   }
@@ -957,9 +965,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     double totalFilteredRevenue,
   ) {
     final isMingguan = _chartFilter == 'Mingguan';
+    final isBulanan = _chartFilter == 'Bulanan';
     final labels = isMingguan
         ? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-        : ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
+        : isBulanan
+            ? ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+            : ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
     final maxHeight = 150.0;
     double maxVal = chartData.reduce((curr, next) => curr > next ? curr : next);
     if (maxVal == 0) maxVal = 1;
@@ -982,7 +993,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Text(
             isMingguan
                 ? 'Total Pendapatan (7 Hari Terakhir)'
-                : 'Total Pendapatan (Hari Ini)',
+                : isBulanan
+                    ? 'Total Pendapatan (Tahun Ini)'
+                    : 'Total Pendapatan (Hari Ini)',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: 4),
@@ -999,18 +1012,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeInOut,
-                      width: isMingguan ? 24 : 32,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOutQuart,
                       height: height == 0 ? 4 : height,
+                      width: isBulanan ? 14 : 24,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primaryGreen,
-                            AppColors.primaryGreen.withOpacity(0.5),
-                          ],
+                        gradient: const LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
+                          colors: [AppColors.primaryGreen, Color(0xFF65D071)],
                         ),
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -1019,8 +1029,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     Text(
                       labels[index],
                       style: AppTextStyles.caption.copyWith(
-                        fontSize: 10,
                         color: AppColors.textHint,
+                        fontSize: isBulanan ? 9 : 10,
                       ),
                     ),
                   ],

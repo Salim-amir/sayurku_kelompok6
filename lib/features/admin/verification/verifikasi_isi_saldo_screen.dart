@@ -23,19 +23,34 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
   // ── Filter: 'semua' = semua status, selain itu filter spesifik ──
   // Default 'pending' agar admin langsung lihat yang perlu diverifikasi
   String _selectedFilter = AppConstants.txStatusPending;
-
+  int _currentPage = 1;
+  final int _itemsPerPage = 10;
+  
+  late ScrollController _scrollController;
   late Stream<List<Map<String, dynamic>>> _topUpStream;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     // collectionGroup — reactive instan saat approve/reject
     _topUpStream = _walletService.getSemuaTopUpAdmin();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -78,7 +93,23 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                 return s == _selectedFilter.toLowerCase();
               }).toList();
 
+        final int totalPages = (filtered.length / _itemsPerPage).ceil() == 0 ? 1 : (filtered.length / _itemsPerPage).ceil();
+        
+        if (_currentPage > totalPages) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+             if(mounted) setState(() => _currentPage = totalPages);
+          });
+        }
+
+        final int startIndex = (_currentPage - 1) * _itemsPerPage;
+        final int endIndex = (startIndex + _itemsPerPage > filtered.length)
+            ? filtered.length
+            : startIndex + _itemsPerPage;
+        
+        final List<Map<String, dynamic>> paginated = startIndex < filtered.length ? filtered.sublist(startIndex, endIndex) : [];
+
         return CustomScrollView(
+          controller: _scrollController,
           slivers: [
             // ─── DASHBOARD CARD — REAKTIF dari filtered.length ───────────
             SliverToBoxAdapter(
@@ -170,8 +201,12 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                       ),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
-                      onSelected: (v) =>
-                          setState(() => _selectedFilter = v),
+                      onSelected: (v) {
+                        setState(() {
+                          _selectedFilter = v;
+                          _currentPage = 1;
+                        });
+                      },
                       itemBuilder: (_) => [
                         // ─ 4 pilihan yang jelas, tanpa duplikat ──────────
                         PopupMenuItem(
@@ -267,7 +302,7 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final tx = filtered[index];
+                          final tx = paginated[index];
                           final userId = tx['userId'] ?? '';
 
                           return FutureBuilder<DocumentSnapshot>(
@@ -302,10 +337,60 @@ class _VerifikasiIsiSaldoPageState extends State<VerifikasiIsiSaldoPage> {
                             },
                           );
                         },
-                        childCount: filtered.length,
+                        childCount: paginated.length,
                       ),
                     ),
                   ),
+
+            if (filtered.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _currentPage > 1
+                            ? () {
+                                setState(() => _currentPage--);
+                                _scrollToTop();
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          disabledBackgroundColor: AppColors.divider,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('< Prev', style: TextStyle(color: Colors.white)),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Hal $_currentPage dari $totalPages',
+                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: _currentPage < totalPages
+                            ? () {
+                                setState(() => _currentPage++);
+                                _scrollToTop();
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          disabledBackgroundColor: AppColors.divider,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Next >', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
           ],
