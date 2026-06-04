@@ -621,15 +621,15 @@ class _AlamatScreenState extends State<AlamatScreen> {
   }
 
   void _showValidationError(BuildContext ctx, String message) {
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(
-        content: Text(message,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
-        backgroundColor: AppColors.warning,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    // Gunakan OverlayEntry agar notifikasi muncul DI ATAS bottom sheet
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => _ValidationBanner(
+        message: message,
+        onDismiss: () => overlayEntry.remove(),
       ),
     );
+    Overlay.of(ctx).insert(overlayEntry);
   }
 
   Widget _buildFormField(String label, String hint,
@@ -675,6 +675,111 @@ class _AlamatScreenState extends State<AlamatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Validation Banner (tampil di atas bottom sheet) ──────────
+class _ValidationBanner extends StatefulWidget {
+  final String message;
+  final VoidCallback onDismiss;
+
+  const _ValidationBanner({
+    required this.message,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_ValidationBanner> createState() => _ValidationBannerState();
+}
+
+class _ValidationBannerState extends State<_ValidationBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnim;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+
+    _controller.forward();
+
+    // Auto dismiss after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        _controller.reverse().then((_) => widget.onDismiss());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 12,
+      left: 16,
+      right: 16,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.error.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.white, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      _controller.reverse().then((_) => widget.onDismiss());
+                    },
+                    child: const Icon(Icons.close_rounded,
+                        color: AppColors.white, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
