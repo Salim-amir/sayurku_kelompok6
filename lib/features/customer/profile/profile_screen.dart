@@ -25,6 +25,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final WalletService _walletService = WalletService();
   final ProfileService _profileService = ProfileService();
 
+  late Stream<UserModel?> _profilStream;
+  late Stream<double> _saldoStream;
+
+  @override
+  void initState() {
+    super.initState();
+    if (user != null) {
+      _profilStream = _profileService.getProfilStream(user!.uid);
+      _saldoStream = _walletService.getSaldo(user!.uid);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
@@ -50,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: StreamBuilder<UserModel?>(
-          stream: _profileService.getProfilStream(user!.uid),
+          stream: _profilStream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -173,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user == null) return const SizedBox();
 
     return StreamBuilder<double>(
-      stream: _walletService.getSaldo(user!.uid),
+      stream: _saldoStream,
       builder: (context, snapshot) {
         final saldo = snapshot.data ?? 0;
         return GestureDetector(
