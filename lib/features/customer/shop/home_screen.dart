@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _unreadNotifCount = 0;
 
   final _pageController = PageController();
-  int _heroIndex = 0;
+  final ValueNotifier<int> _heroIndexNotifier = ValueNotifier(0);
   Timer? _slideTimer;
 
   @override
@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _produkSub?.cancel();
     _slideTimer?.cancel();
     _pageController.dispose();
+    _heroIndexNotifier.dispose();
     super.dispose();
   }
 
@@ -121,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _slideTimer?.cancel();
     _slideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted || !_pageController.hasClients) return;
-      final next = (_heroIndex + 1) % _heroSlides.length;
+      final next = (_heroIndexNotifier.value + 1) % _heroSlides.length;
       _pageController.animateToPage(
         next,
         duration: const Duration(milliseconds: 500),
@@ -422,35 +423,40 @@ class _HomeScreenState extends State<HomeScreen> {
           child: PageView.builder(
             controller: _pageController,
             itemCount: _heroSlides.length,
-            onPageChanged: (i) => setState(() => _heroIndex = i),
+            onPageChanged: (i) => _heroIndexNotifier.value = i,
             itemBuilder: (_, i) => _heroCard(_heroSlides[i]),
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            _heroSlides.length,
-            (i) => GestureDetector(
-              onTap: () => _pageController.animateToPage(
-                i,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: _heroIndex == i ? 20 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: _heroIndex == i
-                      ? AppColors.primaryGreen
-                      : const Color(0xFFC8DFC8),
-                  borderRadius: BorderRadius.circular(3),
+        ValueListenableBuilder<int>(
+          valueListenable: _heroIndexNotifier,
+          builder: (context, index, _) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _heroSlides.length,
+                (i) => GestureDetector(
+                  onTap: () => _pageController.animateToPage(
+                    i,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOut,
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: index == i ? 20 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: index == i
+                          ? AppColors.primaryGreen
+                          : const Color(0xFFC8DFC8),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
@@ -918,6 +924,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: width,
         height: height,
         fit: BoxFit.cover,
+        gaplessPlayback: true,
         errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
       );
     }
@@ -929,6 +936,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: width,
         height: height,
         fit: BoxFit.cover,
+        gaplessPlayback: true,
         errorBuilder: (_, __, ___) => _imgPlaceholder(width, height),
       );
     } catch (_) {

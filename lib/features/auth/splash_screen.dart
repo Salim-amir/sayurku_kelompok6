@@ -29,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
       "title": AppConstants.appName,
       "subtitle": AppConstants.appTagline,
       "bottomLabel": "KUALITAS KEBUN TERBAIK",
-      "icon": Icons.eco_rounded,
+      "image": "assets/images/logo.png",
     },
     {
       "title": "Pengiriman Kilat",
@@ -147,14 +147,22 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     // ── Tampilan Loading saat ngecek sesi ──
     if (_isCheckingSession) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 80),
-              SizedBox(height: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 24),
               CircularProgressIndicator(color: AppColors.primaryGreen),
             ],
           ),
@@ -276,7 +284,15 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ],
             ),
-            child: Icon(data["icon"], color: AppColors.primaryGreen, size: 52),
+            child: data.containsKey("image")
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      data["image"],
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Icon(data["icon"], color: AppColors.primaryGreen, size: 52),
           ),
           const SizedBox(height: AppConstants.paddingXL),
           Text(
