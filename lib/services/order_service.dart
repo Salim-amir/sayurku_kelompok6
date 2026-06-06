@@ -287,6 +287,24 @@ class OrderService {
     }
   }
 
+  // ── Update Data Kurir (Tanpa mengubah status) ──
+  Future<String?> updateKurirPesanan({
+    required String orderId,
+    required String namaKurir,
+    required String noTelpKurir,
+  }) async {
+    try {
+      await _db.collection(AppConstants.colOrders).doc(orderId).update({
+        'namaKurir': namaKurir,
+        'noTelpKurir': noTelpKurir,
+        'tanggalUpdate': FieldValue.serverTimestamp(),
+      });
+      return null;
+    } catch (e) {
+      return 'Gagal update data kurir: ${e.toString()}';
+    }
+  }
+
   // ── Ambil pesanan berdasarkan status tertentu ──
   Stream<List<Map<String, dynamic>>> getPesananByStatus(
     String userId,
@@ -322,5 +340,15 @@ class OrderService {
     } catch (e) {
       return null;
     }
+  }
+
+  // ── Ambil detail 1 pesanan (Real-time Stream) ──
+  Stream<Map<String, dynamic>?> streamDetailPesanan(String orderId) {
+    return _db.collection(AppConstants.colOrders).doc(orderId).snapshots().map((doc) {
+      if (doc.exists) {
+        return {'id': doc.id, ...doc.data()!};
+      }
+      return null;
+    });
   }
 }

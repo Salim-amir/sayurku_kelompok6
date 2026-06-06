@@ -293,10 +293,12 @@ Widget _buildAppBar(BuildContext context) {
                 int? newQty = int.tryParse(qtyController.text);
                 if (newQty != null && newQty > 0) {
                   final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+                  final satuan = _produkDetail?.satuan ?? widget.produk['satuan'] ?? '';
                   if (newQty > stok) {
                     setState(() => _jumlah = stok);
+                    final msg = stok == 0 ? 'Maaf, stok produk ini sudah habis' : 'Hanya tersedia $stok $satuan';
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Hanya tersedia $stok barang'),
+                      content: Text(msg),
                       backgroundColor: Colors.orange,
                       duration: const Duration(seconds: 2),
                     ));
@@ -367,11 +369,13 @@ Widget _buildAppBar(BuildContext context) {
                 IconButton(
                   onPressed: () {
                     final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+                    final satuan = _produkDetail?.satuan ?? widget.produk['satuan'] ?? '';
                     if (_jumlah < stok) {
                       setState(() => _jumlah++);
                     } else {
+                      final msg = stok == 0 ? 'Maaf, stok produk ini sudah habis' : 'Stok hanya tersisa $stok $satuan';
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Stok hanya tersisa $stok'),
+                        content: Text(msg),
                         backgroundColor: Colors.orange,
                         duration: const Duration(seconds: 1),
                       ));
