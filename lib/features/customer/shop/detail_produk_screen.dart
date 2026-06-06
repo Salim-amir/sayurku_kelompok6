@@ -184,18 +184,22 @@ Widget _buildAppBar(BuildContext context) {
   // ── STOK BADGE ──────────────────────────────────────
   Widget _buildStokBadge() {
     final tersedia = _produkDetail?.tersedia ?? widget.produk['tersedia'] ?? true;
+    final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+    final satuan = _produkDetail?.satuan ?? widget.produk['satuan'] ?? '';
+    final isTersedia = tersedia && stok > 0;
+
     return Row(
       children: [
         Icon(
-          tersedia ? Icons.verified_rounded : Icons.cancel_rounded,
-          color: tersedia ? AppColors.accentGreen : AppColors.error,
+          isTersedia ? Icons.verified_rounded : Icons.cancel_rounded,
+          color: isTersedia ? AppColors.accentGreen : AppColors.error,
           size: 18,
         ),
         const SizedBox(width: 6),
         Text(
-          tersedia ? 'Stok Harian: Tersedia' : 'Stok Habis',
+          isTersedia ? 'Stok Tersedia: $stok $satuan' : 'Stok Habis',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: tersedia ? AppColors.accentGreen : AppColors.error,
+            color: isTersedia ? AppColors.accentGreen : AppColors.error,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -260,9 +264,66 @@ Widget _buildAppBar(BuildContext context) {
     );
   }
 
+  void _showEditQuantityDialog() {
+    final TextEditingController qtyController = TextEditingController(text: _jumlah.toString());
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Ubah Jumlah', style: AppTextStyles.h3),
+          content: TextField(
+            controller: qtyController,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Jumlah',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.inputBackground,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                int? newQty = int.tryParse(qtyController.text);
+                if (newQty != null && newQty > 0) {
+                  final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+                  if (newQty > stok) {
+                    setState(() => _jumlah = stok);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Hanya tersedia $stok barang'),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ));
+                  } else {
+                    setState(() => _jumlah = newQty);
+                  }
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ── BOTTOM BAR ──────────────────────────────────────
   Widget _buildBottomBar(BuildContext context) {
     final tersedia = _produkDetail?.tersedia ?? widget.produk['tersedia'] ?? true;
+    final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+    final isTersedia = tersedia && stok > 0;
+    
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
@@ -291,9 +352,31 @@ Widget _buildAppBar(BuildContext context) {
                   icon: const Icon(Icons.remove_rounded,
                       color: AppColors.textPrimary),
                 ),
-                Text('$_jumlah', style: AppTextStyles.h3),
+                GestureDetector(
+                  onTap: _showEditQuantityDialog,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.inputBorder),
+                    ),
+                    child: Text('$_jumlah', style: AppTextStyles.h3),
+                  ),
+                ),
                 IconButton(
-                  onPressed: () => setState(() => _jumlah++),
+                  onPressed: () {
+                    final stok = _produkDetail?.stok ?? widget.produk['stok'] ?? 0;
+                    if (_jumlah < stok) {
+                      setState(() => _jumlah++);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Stok hanya tersisa $stok'),
+                        backgroundColor: Colors.orange,
+                        duration: const Duration(seconds: 1),
+                      ));
+                    }
+                  },
                   icon: const Icon(Icons.add_rounded,
                       color: AppColors.textPrimary),
                 ),
@@ -303,7 +386,7 @@ Widget _buildAppBar(BuildContext context) {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: tersedia
+              onPressed: isTersedia
                   ? () {
                       final data = {
                         'id': _produkDetail?.id ?? widget.produk['id'],
@@ -311,6 +394,7 @@ Widget _buildAppBar(BuildContext context) {
                         'harga': _produkDetail?.harga ?? widget.produk['harga'],
                         'satuan': _produkDetail?.satuan ?? widget.produk['satuan'],
                         'imageUrl': _produkDetail?.imageUrl ?? widget.produk['imageUrl'],
+                        'stok': _produkDetail?.stok ?? widget.produk['stok'],
                       };
                       CartManager.instance.tambahProduk(data, _jumlah);
                       ScaffoldMessenger.of(context).showSnackBar(

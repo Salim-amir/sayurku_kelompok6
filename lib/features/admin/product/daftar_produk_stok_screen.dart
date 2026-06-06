@@ -20,6 +20,9 @@ class _ProductStockPageState extends State<ProductStockPage> {
   final ProductService _productService = ProductService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  
+  String _selectedStockFilter = 'Semua';
+  final List<String> _stockFilters = ['Semua', 'Stok Habis', 'Stok Menipis', 'Stok Aman'];
 
   @override
   void dispose() {
@@ -36,15 +39,62 @@ class _ProductStockPageState extends State<ProductStockPage> {
     );
   }
 
-  // ─── FUNGSI FILTER PRODUK BERDASARKAN PENCARIAN ─────
+  // ─── FUNGSI FILTER PRODUK BERDASARKAN PENCARIAN & STOK ─────
   List<ProductModel> _filterProducts(List<ProductModel> products) {
-    if (_searchQuery.isEmpty) {
-      return products;
+    var filtered = products;
+
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((product) =>
+              product.nama.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .toList();
     }
-    return products
-        .where((product) =>
-            product.nama.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+
+    if (_selectedStockFilter == 'Stok Habis') {
+      filtered = filtered.where((p) => p.stok == 0).toList();
+    } else if (_selectedStockFilter == 'Stok Menipis') {
+      filtered = filtered.where((p) => p.stok > 0 && p.stok < 10).toList();
+    } else if (_selectedStockFilter == 'Stok Aman') {
+      filtered = filtered.where((p) => p.stok >= 10).toList();
+    }
+
+    return filtered;
+  }
+
+  Widget _buildStockFilterChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: _stockFilters.map((filter) {
+          final isSelected = _selectedStockFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(filter),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedStockFilter = filter);
+                }
+              },
+              selectedColor: AppColors.primaryGreen,
+              labelStyle: AppTextStyles.bodySmall.copyWith(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+              backgroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? AppColors.primaryGreen : AppColors.inputBorder,
+                ),
+              ),
+              showCheckmark: false,
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   @override
@@ -137,6 +187,8 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  _buildStockFilterChips(),
                 ],
               ),
             ),
@@ -144,7 +196,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
 
           // Product List
           StreamBuilder<List<ProductModel>>(
-            stream: _productService.getSemuaProduk(),
+            stream: _productService.getAdminSemuaProduk(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return SliverToBoxAdapter(
@@ -173,7 +225,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
               final allProducts = snapshot.data!;
               final filteredProducts = _filterProducts(allProducts);
 
-              if (filteredProducts.isEmpty && _searchQuery.isNotEmpty) {
+              if (filteredProducts.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Center(
                     child: Padding(
@@ -181,7 +233,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                       child: Column(
                         children: [
                           Icon(
-                            Icons.search_off,
+                            Icons.inventory_2_outlined,
                             size: 60,
                             color: AppColors.textHint,
                           ),
@@ -192,7 +244,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Coba cari dengan kata kunci lain',
+                            'Coba sesuaikan filter atau pencarianmu',
                             style: AppTextStyles.bodySmall,
                           ),
                         ],

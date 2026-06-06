@@ -11,7 +11,16 @@ class ProductService {
   Stream<List<ProductModel>> getSemuaProduk() {
     return _db
         .collection(AppConstants.colProducts)
-        .where('tersedia', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ProductModel.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  // ── Ambil semua produk (untuk Admin, tanpa filter tersedia) ──
+  Stream<List<ProductModel>> getAdminSemuaProduk() {
+    return _db
+        .collection(AppConstants.colProducts)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ProductModel.fromMap(doc.data(), doc.id))
@@ -57,7 +66,6 @@ class ProductService {
   Stream<List<ProductModel>> cariProduk(String keyword) {
     return _db
         .collection(AppConstants.colProducts)
-        .where('tersedia', isEqualTo: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ProductModel.fromMap(doc.data(), doc.id))

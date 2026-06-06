@@ -113,6 +113,7 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                 'satuan': produk.satuan,
                                 'imageUrl': produk.imageUrl,
                                 'tersedia': produk.tersedia,
+                                'stok': produk.stok,
                               },
                             ),
                             transitionsBuilder:
@@ -149,6 +150,26 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                       height: 120,
                                     ),
                                   ),
+                                  if (!(produk.tersedia && produk.stok > 0))
+                                    Positioned.fill(
+                                      child: ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(
+                                            top: Radius.circular(20)),
+                                        child: Container(
+                                          color: Colors.black.withOpacity(0.45),
+                                          child: const Center(
+                                            child: Text(
+                                              'Habis',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   // Badge ranking
                                   Positioned(
                                     top: 8,
@@ -224,11 +245,13 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                           'Rp ${_formatHarga(produk.harga)}',
                                           style:
                                               AppTextStyles.bodyMedium.copyWith(
-                                                  color: AppColors.primaryGreen,
+                                                  color: (produk.tersedia && produk.stok > 0)
+                                                      ? AppColors.primaryGreen
+                                                      : AppColors.textHint,
                                                   fontWeight: FontWeight.w700),
                                         ),
                                         GestureDetector(
-                                          onTap: produk.tersedia
+                                          onTap: (produk.tersedia && produk.stok > 0)
                                               ? () {
                                                   CartManager.instance
                                                       .tambahProduk({
@@ -236,6 +259,7 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                                     'harga': produk.harga,
                                                     'satuan': produk.satuan,
                                                     'imageUrl': produk.imageUrl,
+                                                    'stok': produk.stok,
                                                   }, 1);
 
                                                   ScaffoldMessenger.of(context)
@@ -255,7 +279,7 @@ class _ProdukTerlarisScreenState extends State<ProdukTerlarisScreen> {
                                             width: 30,
                                             height: 30,
                                             decoration: BoxDecoration(
-                                              color: produk.tersedia
+                                              color: (produk.tersedia && produk.stok > 0)
                                                   ? AppColors.primaryGreen
                                                   : AppColors.divider,
                                               borderRadius:
