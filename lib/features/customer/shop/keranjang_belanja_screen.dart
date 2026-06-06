@@ -123,10 +123,12 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
                   final stok = currentQty; // Wait, currentQty is just currentQty. Let's get stok from _keranjang[index] instead inside the dialog or just use the current index? 
                   // Let's pass the item directly instead of currentQty. Actually I can just look up _keranjang[index]['stok'].
                   final int stokLimit = CartManager.instance.items[index]['stok'] ?? 999;
+                  final String satuan = CartManager.instance.items[index]['satuan'] ?? '';
                   if (newQty > stokLimit) {
                     setState(() => CartManager.instance.updateJumlah(index, stokLimit));
+                    final msg = stokLimit == 0 ? 'Maaf, stok produk ini sudah habis' : 'Hanya tersedia $stokLimit $satuan';
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Hanya tersedia $stokLimit barang'),
+                      content: Text(msg),
                       backgroundColor: Colors.orange,
                       duration: const Duration(seconds: 2),
                     ));
@@ -247,11 +249,13 @@ Widget _buildItemKeranjang(int index) {
                     icon: Icons.add_rounded,
                     onTap: () {
                       final stok = item['stok'] ?? 999;
+                      final satuan = item['satuan'] ?? '';
                       if (item['jumlah'] < stok) {
                         setState(() => CartManager.instance.updateJumlah(index, item['jumlah'] + 1));
                       } else {
+                        final msg = stok == 0 ? 'Maaf, stok produk ini sudah habis' : 'Stok hanya tersisa $stok $satuan';
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Stok hanya tersisa $stok'),
+                          content: Text(msg),
                           backgroundColor: Colors.orange,
                           duration: const Duration(seconds: 1),
                         ));

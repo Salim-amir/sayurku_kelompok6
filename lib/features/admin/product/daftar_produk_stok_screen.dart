@@ -124,11 +124,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Kelola ketersediaan sayur segar hari ini dengan mudah dan cepat.',
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
-                  ),
-                  const SizedBox(height: 20),
+
                   
                   // Full-width Search Bar
                   Container(
@@ -523,8 +519,16 @@ class _ProductStockPageState extends State<ProductStockPage> {
               onPressed: () {
                 int? newStock = int.tryParse(stockController.text);
                 if (newStock != null && newStock >= 0) {
-                  _productService.updateStok(product.id, newStock);
                   Navigator.pop(context);
+                  _productService.updateStok(product.id, newStock);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Stok berhasil diperbarui!'), backgroundColor: AppColors.success),
+                  );
+                } else {
+                  FocusScope.of(context).unfocus();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Harap masukkan angka bulat yang valid! (contoh: 10)'), backgroundColor: AppColors.error),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -737,7 +741,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                                 fillColor: AppColors.inputBackground,
                               ),
                               style: AppTextStyles.inputText,
-                              validator: (value) => value == null || value.isEmpty ? 'Harga tidak boleh kosong' : null,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) return 'Harga tidak boleh kosong';
+                                if (int.tryParse(value) == null) return 'Harga harus angka bulat';
+                                return null;
+                              },
                             ),
 
                             const SizedBox(height: 16),
@@ -761,7 +769,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                                       fillColor: AppColors.inputBackground,
                                     ),
                                     style: AppTextStyles.inputText,
-                                    validator: (value) => value == null || value.isEmpty ? 'Stok tidak boleh kosong' : null,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) return 'Stok tidak boleh kosong';
+                                      if (int.tryParse(value) == null) return 'Stok harus angka bulat';
+                                      return null;
+                                    },
                                   ),
                                 ),
                                 Expanded(
@@ -1096,7 +1108,11 @@ class _ProductStockPageState extends State<ProductStockPage> {
                                 fillColor: AppColors.inputBackground,
                               ),
                               style: AppTextStyles.inputText,
-                              validator: (value) => value == null || value.isEmpty ? 'Harga tidak boleh kosong' : null,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) return 'Harga tidak boleh kosong';
+                                if (int.tryParse(value) == null) return 'Harga harus angka bulat';
+                                return null;
+                              },
                             ),
 
                             const SizedBox(height: 16),

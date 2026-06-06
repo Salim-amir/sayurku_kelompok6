@@ -72,9 +72,9 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
     try {
       final picked = await ImagePicker().pickImage(
         source: source,
-        maxWidth: 600, // Diperkecil ukurannya
-        maxHeight: 600, // Diperkecil ukurannya
-        imageQuality: 30, // Dikompres ekstrim tapi tetap bisa dibaca
+        maxWidth: 1080, // Resolusi tinggi untuk screenshot/foto panjang
+        maxHeight: 2048,
+        imageQuality: 85, // Kualitas sangat baik
       );
       if (picked != null) setState(() => _buktiImage = File(picked.path));
     } catch (e) {
@@ -563,7 +563,13 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
                 const SizedBox(height: 24),
                 // Preview area
                 GestureDetector(
-                  onTap: () => _showPickerOptions(),
+                  onTap: () {
+                    if (_buktiImage != null) {
+                      _showImagePreview();
+                    } else {
+                      _showPickerOptions();
+                    }
+                  },
                   child: Container(
                     width: double.infinity,
                     height: _buktiImage != null ? 320 : 200,
@@ -747,6 +753,37 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
                   },
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImagePreview() {
+    if (_buktiImage == null) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.file(
+                _buktiImage!,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+              ),
             ),
           ],
         ),
