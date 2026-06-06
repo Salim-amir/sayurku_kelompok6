@@ -53,6 +53,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   // ── Logika Auto-Login & Cek Memori Onboarding ──
   Future<void> _checkUserSession() async {
+    // Tambahkan delay agar layar loading/splash screen selalu terlihat
+    // untuk pengalaman pengguna (UX) yang lebih konsisten.
+    await Future.delayed(const Duration(seconds: 2));
+
     final authService = AuthService();
     final user = authService.currentUser;
 

@@ -23,6 +23,7 @@ class CartManager {
         'harga': produk['harga'],
         'satuan': produk['satuan'] ?? '',
         'imageUrl': produk['imageUrl'] ?? '',
+        'stok': produk['stok'] ?? 999,
         'jumlah': jumlah,
       });
     }

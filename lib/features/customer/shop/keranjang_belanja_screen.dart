@@ -92,6 +92,62 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
     );
   }
 
+  void _showEditQuantityDialog(int index, int currentQty) {
+    final TextEditingController qtyController = TextEditingController(text: currentQty.toString());
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Ubah Jumlah', style: AppTextStyles.h3),
+          content: TextField(
+            controller: qtyController,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Jumlah',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.inputBackground,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                int? newQty = int.tryParse(qtyController.text);
+                if (newQty != null && newQty > 0) {
+                  final stok = currentQty; // Wait, currentQty is just currentQty. Let's get stok from _keranjang[index] instead inside the dialog or just use the current index? 
+                  // Let's pass the item directly instead of currentQty. Actually I can just look up _keranjang[index]['stok'].
+                  final int stokLimit = CartManager.instance.items[index]['stok'] ?? 999;
+                  if (newQty > stokLimit) {
+                    setState(() => CartManager.instance.updateJumlah(index, stokLimit));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Hanya tersedia $stokLimit barang'),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ));
+                  } else {
+                    setState(() => CartManager.instance.updateJumlah(index, newQty));
+                  }
+                  Navigator.pop(context);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ── ITEM KERANJANG ───────────────────────────────────
 Widget _buildItemKeranjang(int index) {
   final item = _keranjang[index];
@@ -169,26 +225,38 @@ Widget _buildItemKeranjang(int index) {
                             index, item['jumlah'] - 1)),
                   ),
                   // Jumlah
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: AppColors.primaryGreen.withOpacity(0.2)),
+                  GestureDetector(
+                    onTap: () => _showEditQuantityDialog(index, item['jumlah']),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppColors.primaryGreen.withOpacity(0.2)),
+                      ),
+                      child: Text('${item['jumlah']}',
+                          style: AppTextStyles.h3.copyWith(
+                              color: AppColors.primaryGreen)),
                     ),
-                    child: Text('${item['jumlah']}',
-                        style: AppTextStyles.h3.copyWith(
-                            color: AppColors.primaryGreen)),
                   ),
                   // Tombol tambah
                   _buildQtyButton(
                     icon: Icons.add_rounded,
-                    onTap: () => setState(() =>
-                        CartManager.instance.updateJumlah(
-                            index, item['jumlah'] + 1)),
+                    onTap: () {
+                      final stok = item['stok'] ?? 999;
+                      if (item['jumlah'] < stok) {
+                        setState(() => CartManager.instance.updateJumlah(index, item['jumlah'] + 1));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Stok hanya tersisa $stok'),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 1),
+                        ));
+                      }
+                    },
                   ),
                 ],
               ),

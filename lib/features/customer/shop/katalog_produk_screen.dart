@@ -324,8 +324,26 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
         final produkList = snapshot.data ?? [];
         if (produkList.isEmpty) {
           return Center(
-            child: Text('Belum ada produk di kategori ini',
-                style: AppTextStyles.bodyMedium),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 80,
+                  color: AppColors.textHint.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Oops! Kosong',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Belum ada produk di kategori ini.',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+                ),
+              ],
+            ),
           );
         }
         return GridView.builder(
@@ -352,6 +370,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                       'satuan': produk.satuan,
                       'imageUrl': produk.imageUrl,
                       'tersedia': produk.tersedia,
+                      'stok': produk.stok,
                     },
                   ),
                 ),
@@ -379,7 +398,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                           // ✅ Pakai helper auto-detect URL/Base64
                           child: _buildProductImage(produk.imageUrl, height: 120),
                         ),
-                        if (!produk.tersedia)
+                        if (!(produk.tersedia && produk.stok > 0))
                           Positioned.fill(
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(
@@ -423,7 +442,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                                 child: Text(
                                   'Rp ${_formatHarga(produk.harga)}',
                                   style: AppTextStyles.bodyMedium.copyWith(
-                                    color: produk.tersedia
+                                    color: (produk.tersedia && produk.stok > 0)
                                         ? AppColors.primaryGreen
                                         : AppColors.textHint,
                                     fontWeight: FontWeight.w700,
@@ -431,13 +450,14 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: produk.tersedia
+                                onTap: (produk.tersedia && produk.stok > 0)
                                     ? () {
                                         CartManager.instance.tambahProduk({
                                           'nama': produk.nama,
                                           'harga': produk.harga.toInt(),
                                           'satuan': produk.satuan,
                                           'imageUrl': produk.imageUrl,
+                                          'stok': produk.stok,
                                         }, 1);
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -456,7 +476,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                                   width: 30,
                                   height: 30,
                                   decoration: BoxDecoration(
-                                    color: produk.tersedia
+                                    color: (produk.tersedia && produk.stok > 0)
                                         ? AppColors.primaryGreen
                                         : AppColors.divider,
                                     borderRadius: BorderRadius.circular(8),

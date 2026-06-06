@@ -205,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'harga': p.harga,
       'satuan': p.satuan,
       'imageUrl': p.imageUrl,
+      'stok': p.stok,
     }, 1);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -226,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'satuan': p.satuan,
           'imageUrl': p.imageUrl,
           'tersedia': p.tersedia,
+          'stok': p.stok,
         },
       ),
     ),
@@ -655,6 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _terlarisCard(ProductModel p, int rank) {
+    final isAvailable = p.tersedia && p.stok > 0;
     final badgeColors = [
       const Color(0xFFF9A825),
       const Color(0xFF9E9E9E),
@@ -709,6 +712,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                if (!isAvailable)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(18),
+                      ),
+                      child: Container(
+                        color: Colors.black.withOpacity(0.45),
+                        child: const Center(
+                          child: Text(
+                            'Habis',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             Padding(
@@ -738,15 +762,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Rp ${_fmt(p.harga)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2E7D32),
+                        Text(
+                          'Rp ${_fmt(p.harga)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isAvailable
+                                ? const Color(0xFF2E7D32)
+                                : const Color(0xFFAAAAAA),
+                          ),
                         ),
-                      ),
-                      _addBtn(onTap: () => _addToCart(p)),
+                        _addBtn(
+                          onTap: isAvailable ? () => _addToCart(p) : null,
+                          disabled: !isAvailable,
+                        ),
                     ],
                   ),
                 ],
@@ -808,6 +837,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _gridCard(ProductModel p) {
+    final isAvailable = p.tersedia && p.stok > 0;
     return GestureDetector(
       onTap: () => _goDetail(p),
       child: Container(
@@ -832,7 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: _buildProductImage(p.imageUrl, height: 105),
                   ),
                 ),
-                if (!p.tersedia)
+                if (!isAvailable)
                   Positioned.fill(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
@@ -886,15 +916,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: p.tersedia
+                            color: isAvailable
                                 ? const Color(0xFF2E7D32)
                                 : const Color(0xFFAAAAAA),
                           ),
                         ),
                       ),
                       _addBtn(
-                        onTap: p.tersedia ? () => _addToCart(p) : null,
-                        disabled: !p.tersedia,
+                        onTap: isAvailable ? () => _addToCart(p) : null,
+                        disabled: !isAvailable,
                         size: 26,
                       ),
                     ],
