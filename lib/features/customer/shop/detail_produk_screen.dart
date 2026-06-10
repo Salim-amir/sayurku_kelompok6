@@ -29,16 +29,31 @@ class _DetailProdukScreenState extends State<DetailProdukScreen> {
   }
 
   void _loadDetail() async {
-    final id = widget.produk['id'] ?? '';
+    String id = widget.produk['id'] ?? '';
+    
+    // Fallback jika ID kosong (misal item keranjang lama)
     if (id.isEmpty) {
-      setState(() => _isLoading = false);
+      final nama = widget.produk['nama'];
+      if (nama != null && nama.toString().isNotEmpty) {
+        final fallbackProduk = await _productService.getProdukByNama(nama);
+        if (fallbackProduk != null) {
+          id = fallbackProduk.id;
+        }
+      }
+    }
+
+    if (id.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
+
     final detail = await _productService.getDetailProduk(id);
-    setState(() {
-      _produkDetail = detail;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _produkDetail = detail;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -153,6 +168,7 @@ Widget _buildAppBar(BuildContext context) {
         width: width,
         height: height,
         fit: BoxFit.cover,
+        gaplessPlayback: true,
         errorBuilder: (_, __, ___) => _buildImagePlaceholder(width, height),
       );
     }
@@ -163,6 +179,7 @@ Widget _buildAppBar(BuildContext context) {
         width: width,
         height: height,
         fit: BoxFit.cover,
+        gaplessPlayback: true,
         errorBuilder: (_, __, ___) => _buildImagePlaceholder(width, height),
       );
     } catch (_) {
@@ -237,10 +254,10 @@ Widget _buildAppBar(BuildContext context) {
 
   // ── INFORMASI PRODUK ────────────────────────────────
   Widget _buildInformasiProduk() {
-    final deskripsi = _produkDetail != null
-        ? (_produkDetail!.toMap()['deskripsi'] ??
-            'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.')
-        : 'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.';
+    String deskripsi = _produkDetail?.deskripsi ?? widget.produk['deskripsi'] ?? '';
+    if (deskripsi.trim().isEmpty) {
+      deskripsi = 'Produk segar organik dipetik langsung dari petani lokal di pagi hari. Kaya akan vitamin dan mineral. Cocok untuk berbagai masakan sehari-hari.';
+    }
 
     return Container(
       width: double.infinity,
@@ -253,11 +270,13 @@ Widget _buildAppBar(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Informasi Produk', style: AppTextStyles.h3),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             deskripsi,
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textSecondary, height: 1.6),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.6,
+            ),
           ),
         ],
       ),
@@ -400,15 +419,21 @@ Widget _buildAppBar(BuildContext context) {
                         'imageUrl': _produkDetail?.imageUrl ?? widget.produk['imageUrl'],
                         'stok': _produkDetail?.stok ?? widget.produk['stok'],
                       };
-                      CartManager.instance.tambahProduk(data, _jumlah);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                      bool sukses = CartManager.instance.tambahProduk(data, _jumlah);
+                      if (sukses) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text('${data['nama']} ditambahkan ke keranjang!'),
                           backgroundColor: AppColors.primaryGreen,
                           duration: const Duration(seconds: 2),
-                        ),
-                      );
-                      Navigator.pop(context);
+                        ));
+                        Navigator.pop(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Batas stok maksimal tercapai!'),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
+                        ));
+                      }
                     }
                   : null,
               style: ElevatedButton.styleFrom(

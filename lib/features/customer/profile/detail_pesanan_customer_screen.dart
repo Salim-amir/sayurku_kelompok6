@@ -5,6 +5,8 @@ import '../../../core/colors.dart';
 import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
 import '../../../core/cart_manager.dart';
+import '../../../services/product_service.dart';
+import '../../../models/product_model.dart';
 import '../shop/keranjang_belanja_screen.dart';
 
 class DetailPesananCustomerScreen extends StatelessWidget {
@@ -445,23 +447,74 @@ class DetailPesananCustomerScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)));
+                    
+                    bool allAdded = true;
+                    int addedCount = 0;
+                    final productService = ProductService();
+
                     for (var item in items) {
-                      CartManager.instance.tambahProduk({
-                        'id': item['id'] ?? '',
-                        'nama': item['nama'] ?? 'Produk',
-                        'harga': item['harga'] ?? 0,
-                        'satuan': item['satuan'] ?? 'pcs',
-                        'imageUrl': item['imageUrl'] ?? '',
-                        'kategori': item['kategori'] ?? '',
-                      }, item['jumlah'] ?? 1);
+                      final id = item['id'];
+                      final nama = item['nama'];
+                      if ((id == null || id.toString().isEmpty) && (nama == null || nama.toString().isEmpty)) continue;
+                      
+                      try {
+                        ProductModel? productInfo;
+                        if (id != null && id.toString().isNotEmpty) {
+                          productInfo = await productService.getDetailProduk(id.toString());
+                        }
+                        if (productInfo == null && nama != null && nama.toString().isNotEmpty) {
+                          productInfo = await productService.getProdukByNama(nama.toString());
+                        }
+                        
+                        if (productInfo != null && productInfo.tersedia && productInfo.stok > 0) {
+                          int qty = item['jumlah'] ?? 1;
+                          if (qty > productInfo.stok) {
+                             qty = productInfo.stok;
+                             allAdded = false;
+                          }
+                          bool success = CartManager.instance.tambahProduk({
+                            'id': productInfo.id,
+                            'nama': productInfo.nama,
+                            'harga': productInfo.harga,
+                            'satuan': productInfo.satuan,
+                            'imageUrl': productInfo.imageUrl,
+                            'stok': productInfo.stok,
+                          }, qty);
+                          if (!success) allAdded = false;
+                          addedCount++;
+                        } else {
+                          allAdded = false;
+                        }
+                      } catch (e) {
+                        allAdded = false;
+                      }
                     }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KeranjangBelanjaScreen(),
-                      ),
-                    );
+                    
+                    if (context.mounted) Navigator.pop(context);
+
+                    if (addedCount > 0) {
+                      if (!allAdded && context.mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                           content: Text('Beberapa produk disesuaikan/dilewati karena stok terbatas'),
+                           backgroundColor: Colors.orange,
+                         ));
+                      }
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const KeranjangBelanjaScreen(),
+                          ),
+                        );
+                      }
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                           content: Text('Maaf, semua produk dalam pesanan ini sedang habis.'),
+                           backgroundColor: Colors.red,
+                      ));
+                    }
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.primaryGreen),

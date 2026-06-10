@@ -6,6 +6,7 @@ import '../../../core/text_styles.dart';
 import '../../../core/constants.dart';
 import 'riwayat_pesanan_screen.dart';
 import 'dompet_digital_screen.dart';
+import 'detail_pesanan_customer_screen.dart';
 
 class NotifikasiScreen extends StatefulWidget {
   final bool showBackButton;
@@ -222,6 +223,10 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
         icon = Icons.account_balance_wallet_rounded;
         iconColor = AppColors.success;
         break;
+      case 'refund':
+        icon = Icons.currency_exchange_rounded;
+        iconColor = AppColors.success;
+        break;
       case 'promo':
         icon = Icons.local_offer_rounded;
         iconColor = AppColors.warning;
@@ -251,19 +256,60 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
           size: 28,
         ),
       ),
-      // 👇 TIDAK ADA LAGI KATA "RETURN" DI SINI 👇
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
           // 1. Ubah status jadi sudah dibaca (Titik hijau hilang)
           if (!isRead) _tandaiDibaca(notifId);
 
           // 2. Navigasi Cerdas
           if (type == 'order') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RiwayatPesananScreen()),
-            );
-          } else if (type == 'topup') {
+            final pesananId = notif['referenceId'];
+            if (pesananId != null) {
+              try {
+                // Tampilkan loading dialog agar UI tidak terasa 'nge-freeze'
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(
+                    child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                  ),
+                );
+
+                final doc = await FirebaseFirestore.instance
+                    .collection(AppConstants.colOrders)
+                    .doc(pesananId)
+                    .get();
+
+                // Tutup loading dialog
+                if (mounted) Navigator.pop(context);
+
+                if (doc.exists && mounted) {
+                  final pesananData = {
+                    'id': doc.id,
+                    ...doc.data() as Map<String, dynamic>,
+                  };
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DetailPesananCustomerScreen(pesanan: pesananData),
+                    ),
+                  );
+                  return; // Stop here if success
+                }
+              } catch (e) {
+                if (mounted) Navigator.pop(context); // Tutup loading jika error
+                // Fallback will execute
+              }
+            }
+            
+            // Fallback to history
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RiwayatPesananScreen()),
+              );
+            }
+          } else if (type == 'topup' || type == 'refund') {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const DompetDigitalScreen()),

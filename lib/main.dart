@@ -13,6 +13,7 @@ import 'features/customer/profile/alamat_screen.dart';
 import 'features/customer/profile/ganti_password_screen.dart';
 import 'features/admin/dashboard/dashboard_admin_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/cart_manager.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -33,6 +34,8 @@ void main() async {
     badge: true,
     sound: true,
   );
+
+  await CartManager.instance.init();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   runApp(const MyApp());

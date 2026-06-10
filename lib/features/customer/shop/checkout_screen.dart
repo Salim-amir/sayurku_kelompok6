@@ -28,7 +28,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = false;
 final AddressService _addressService = AddressService();
-AddressModel? _alamatUtama;
+AddressModel? _selectedAlamat;
 
 @override
 void initState() {
@@ -39,7 +39,9 @@ void initState() {
 void _loadAlamatUtama() async {
   final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
   final alamat = await _addressService.getAlamatUtama(userId);
-  setState(() => _alamatUtama = alamat);
+  if (_selectedAlamat == null && mounted) {
+    setState(() => _selectedAlamat = alamat);
+  }
 }
 int get _subtotal => CartManager.instance.totalHarga;
 int get _totalPembayaran => _subtotal + _ongkosKirim;
@@ -97,16 +99,26 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
 
   // ── ALAMAT PENGIRIMAN ───────────────────────────────
   Widget _buildAlamatPengiriman() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+  return GestureDetector(
+    onTap: () async {
+      final selected = await Navigator.push<AddressModel>(
+        context,
+        MaterialPageRoute(builder: (_) => const AlamatScreen(isSelectionMode: true)),
+      );
+      if (selected != null && mounted) {
+        setState(() => _selectedAlamat = selected);
+      }
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -120,11 +132,13 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
             ),
             TextButton(
               onPressed: () async {
-                await Navigator.push(
+                final selected = await Navigator.push<AddressModel>(
                   context,
-                  MaterialPageRoute(builder: (_) => const AlamatScreen()),
+                  MaterialPageRoute(builder: (_) => const AlamatScreen(isSelectionMode: true)),
                 );
-                _loadAlamatUtama();
+                if (selected != null && mounted) {
+                  setState(() => _selectedAlamat = selected);
+                }
               },
               child: Text('Ubah',
                   style: AppTextStyles.link.copyWith(fontSize: 13)),
@@ -132,7 +146,7 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
           ],
         ),
         const SizedBox(height: 12),
-        _alamatUtama == null
+        _selectedAlamat == null
             ? Text('Belum ada alamat pengiriman',
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textSecondary))
@@ -140,19 +154,20 @@ int get _totalPembayaran => _subtotal + _ongkosKirim;
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_alamatUtama!.namaPenerima}   (${_alamatUtama!.nomorHp})',
+                    '${_selectedAlamat!.namaPenerima}   (${_selectedAlamat!.nomorHp})',
                     style: AppTextStyles.bodyMedium
                         .copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _alamatUtama!.fullAddress,
+                    _selectedAlamat!.fullAddress,
                     style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary, height: 1.5),
                   ),
                 ],
               ),
-      ],
+        ],
+      ),
     ),
   );
 }
@@ -517,7 +532,7 @@ onPressed: _isLoading
     : () async {
         // ── VALIDASI ──────────────────────────────
         // 1. Cek alamat
-        if (_alamatUtama == null) {
+        if (_selectedAlamat == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Kamu belum punya alamat pengiriman! Tambahkan dulu.'),
@@ -562,10 +577,10 @@ onPressed: _isLoading
                         children: [
                           Text('Alamat Pengiriman',
                               style: AppTextStyles.bodySmall),
-                          Text(_alamatUtama!.namaPenerima,
+                          Text(_selectedAlamat!.namaPenerima,
                               style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w700)),
-                          Text(_alamatUtama!.fullAddress,
+                          Text(_selectedAlamat!.fullAddress,
                               style: AppTextStyles.bodySmall),
                         ],
                       ),
@@ -662,7 +677,7 @@ onPressed: _isLoading
             totalHarga: _subtotal.toDouble(),
             ongkosKirim: _ongkosKirim.toDouble(),
             metodePembayaran: _metodePembayaran,
-            alamatPengiriman: _alamatUtama!.fullAddress,
+            alamatPengiriman: _selectedAlamat!.fullAddress,
           );
           final double finalTotalBayar = _totalPembayaran.toDouble();
           setState(() => _isLoading = false);

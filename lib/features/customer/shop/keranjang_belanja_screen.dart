@@ -6,6 +6,7 @@ import '../../../../core/cart_manager.dart';
 import 'checkout_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_produk_screen.dart';
+import '../../../../services/product_service.dart';
 
 class KeranjangBelanjaScreen extends StatefulWidget {
   const KeranjangBelanjaScreen({super.key});
@@ -19,10 +20,42 @@ class _KeranjangBelanjaScreenState extends State<KeranjangBelanjaScreen> {
   int get _totalHarga => CartManager.instance.totalHarga;
   int get _totalProduk => CartManager.instance.totalProduk;
 
-  @override
+    @override
     void initState() {
       super.initState();
       CartManager.instance.jumlahNotifier.addListener(_refreshKeranjang);
+      _syncStockWithLive();
+    }
+
+    void _syncStockWithLive() async {
+      try {
+        final stream = ProductService().getSemuaProduk();
+        final list = await stream.first;
+        if (!mounted) return;
+        bool changed = false;
+        for (var i = 0; i < CartManager.instance.items.length; i++) {
+          try {
+            final p = list.firstWhere((e) => e.nama == CartManager.instance.items[i]['nama']);
+            if (CartManager.instance.items[i]['stok'] != p.stok) {
+              CartManager.instance.items[i]['stok'] = p.stok;
+              changed = true;
+            }
+            if (CartManager.instance.items[i]['harga'] != p.harga) {
+              CartManager.instance.items[i]['harga'] = p.harga;
+              changed = true;
+            }
+            if (CartManager.instance.items[i]['deskripsi'] != p.deskripsi) {
+              CartManager.instance.items[i]['deskripsi'] = p.deskripsi;
+              changed = true;
+            }
+            if (CartManager.instance.items[i]['id'] != p.id) {
+              CartManager.instance.items[i]['id'] = p.id;
+              changed = true;
+            }
+          } catch (e) {}
+        }
+        if (changed && mounted) setState(() {});
+      } catch (e) {}
     }
 
     @override
@@ -166,6 +199,8 @@ Widget _buildItemKeranjang(int index) {
           'harga': item['harga'],
           'satuan': item['satuan'],
           'imageUrl': item['imageUrl'] ?? '',
+          'stok': item['stok'] ?? 0,
+          'deskripsi': item['deskripsi'],
           'tersedia': true,
         },
       ),
@@ -227,21 +262,25 @@ Widget _buildItemKeranjang(int index) {
                             index, item['jumlah'] - 1)),
                   ),
                   // Jumlah
-                  GestureDetector(
-                    onTap: () => _showEditQuantityDialog(index, item['jumlah']),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: AppColors.primaryGreen.withOpacity(0.2)),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showEditQuantityDialog(index, item['jumlah']),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: AppColors.primaryGreen.withOpacity(0.2)),
+                        ),
+                        child: Text('${item['jumlah']}',
+                            style: AppTextStyles.h3.copyWith(
+                                color: AppColors.primaryGreen),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       ),
-                      child: Text('${item['jumlah']}',
-                          style: AppTextStyles.h3.copyWith(
-                              color: AppColors.primaryGreen)),
                     ),
                   ),
                   // Tombol tambah

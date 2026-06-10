@@ -268,6 +268,7 @@ class OrderService {
           'title': title,
           'message': message,
           'type': 'order',
+          'referenceId': orderId,
           'isRead': false,
           'timestamp': FieldValue.serverTimestamp(),
         });

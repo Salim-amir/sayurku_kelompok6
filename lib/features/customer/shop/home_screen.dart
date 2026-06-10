@@ -200,20 +200,28 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   void _addToCart(ProductModel p) {
-    CartManager.instance.tambahProduk({
+    bool sukses = CartManager.instance.tambahProduk({
+      'id': p.id,
       'nama': p.nama,
       'harga': p.harga,
       'satuan': p.satuan,
       'imageUrl': p.imageUrl,
       'stok': p.stok,
     }, 1);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+    
+    if (sukses) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('${p.nama} ditambahkan ke keranjang'),
         backgroundColor: AppColors.primaryGreen,
         duration: const Duration(seconds: 1),
-      ),
-    );
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Batas stok maksimal tercapai!'),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 1),
+      ));
+    }
   }
 
   void _goDetail(ProductModel p) => Navigator.push(
@@ -228,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'imageUrl': p.imageUrl,
           'tersedia': p.tersedia,
           'stok': p.stok,
+          'deskripsi': p.deskripsi,
         },
       ),
     ),
@@ -1128,19 +1137,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 right: -3,
                 top: -3,
                 child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                  decoration: BoxDecoration(
                     color: Colors.red,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Text(
-                      '$jumlah',
+                      jumlah > 99 ? '99+' : '$jumlah',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

@@ -62,6 +62,20 @@ class ProductService {
     return null;
   }
 
+  // ── Ambil detail 1 produk by Nama (untuk Fallback Beli Lagi) ──
+  Future<ProductModel?> getProdukByNama(String nama) async {
+    final query = await _db
+        .collection(AppConstants.colProducts)
+        .where('nama', isEqualTo: nama)
+        .limit(1)
+        .get();
+    if (query.docs.isNotEmpty) {
+      final doc = query.docs.first;
+      return ProductModel.fromMap(doc.data(), doc.id);
+    }
+    return null;
+  }
+
   // ── Cari produk berdasarkan nama (untuk Search Bar) ──
   Stream<List<ProductModel>> cariProduk(String keyword) {
     return _db
