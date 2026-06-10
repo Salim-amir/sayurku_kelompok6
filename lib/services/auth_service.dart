@@ -60,7 +60,21 @@ class AuthService {
 
       return LoginResult(role: role);
     } on FirebaseAuthException catch (e) {
-      return LoginResult(error: e.message);
+      String errorMessage = e.message ?? 'Terjadi kesalahan saat masuk.';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'Akun tidak ditemukan. Silakan periksa kembali email Anda.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Kata sandi salah. Silakan coba lagi.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Format email tidak valid.';
+      } else if (e.code == 'invalid-credential') {
+        errorMessage = 'Email atau kata sandi yang Anda masukkan salah.';
+      } else if (e.code == 'user-disabled') {
+        errorMessage = 'Akun ini telah dinonaktifkan.';
+      } else if (e.code == 'too-many-requests') {
+        errorMessage = 'Terlalu banyak percobaan masuk. Silakan coba lagi nanti.';
+      }
+      return LoginResult(error: errorMessage);
     } catch (e) {
       return LoginResult(error: 'Terjadi kesalahan sistem: ${e.toString()}');
     }
