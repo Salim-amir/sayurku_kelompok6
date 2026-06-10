@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../core/constants.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../core/cart_manager.dart';
 
 // ─── Model Hasil Login ─────────────────────────────────────────────────────
 /// Membawa dua informasi sekaligus:
@@ -209,6 +210,7 @@ class AuthService {
     try {
       await _auth.signOut();
       await _googleSignIn.signOut();
+      CartManager.instance.kosongkanKeranjang();
       print("Berhasil logout dari Firebase dan Google!");
     } catch (e) {
       print("Error saat logout: ${e.toString()}");

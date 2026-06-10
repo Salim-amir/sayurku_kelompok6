@@ -74,14 +74,18 @@ class AddressService {
     required String addressId,
   }) async {
     try {
+      final batch = _db.batch();
+      
       // 1. Reset semua alamat jadi non-primary
       final allDocs = await _addressCol(userId).get();
       for (var doc in allDocs.docs) {
-        await doc.reference.update({'isPrimary': false});
+        batch.update(doc.reference, {'isPrimary': false});
       }
 
       // 2. Set yang dipilih jadi primary
-      await _addressCol(userId).doc(addressId).update({'isPrimary': true});
+      batch.update(_addressCol(userId).doc(addressId), {'isPrimary': true});
+      
+      await batch.commit();
       return null;
     } catch (e) {
       return 'Gagal mengatur alamat utama: ${e.toString()}';

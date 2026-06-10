@@ -8,7 +8,8 @@ import '../../../models/address_model.dart';
 import '../../../services/address_service.dart';
 
 class AlamatScreen extends StatefulWidget {
-  const AlamatScreen({super.key});
+  final bool isSelectionMode;
+  const AlamatScreen({super.key, this.isSelectionMode = false});
 
   @override
   State<AlamatScreen> createState() => _AlamatScreenState();
@@ -111,8 +112,16 @@ class _AlamatScreenState extends State<AlamatScreen> {
 
   // ── ALAMAT CARD ─────────────────────────────────────
   Widget _buildAlamatCard(AddressModel alamat) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+    return GestureDetector(
+      onTap: () {
+        if (widget.isSelectionMode) {
+          Navigator.pop(context, alamat);
+        } else {
+          _showFormAlamat(context, alamat: alamat);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -230,6 +239,7 @@ class _AlamatScreenState extends State<AlamatScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -307,14 +317,17 @@ class _AlamatScreenState extends State<AlamatScreen> {
     final kotaCtrl = TextEditingController(text: alamat?.kota ?? '');
     final posCtrl = TextEditingController(text: alamat?.kodePos ?? '');
 
+    bool isSubmitting = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        // viewInsets.bottom = tinggi keyboard agar konten naik
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
-        return Padding(
+        return StatefulBuilder(
+          builder: (ctx, setStateModal) {
+            final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+            return Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
           child: Container(
             constraints: BoxConstraints(
@@ -465,31 +478,51 @@ class _AlamatScreenState extends State<AlamatScreen> {
                           width: double.infinity,
                           height: AppConstants.buttonHeight,
                           child: ElevatedButton.icon(
-                            onPressed: () => _submitAlamat(
-                              ctx: ctx,
-                              isEdit: isEdit,
-                              alamat: alamat,
-                              labelCtrl: labelCtrl,
-                              namaCtrl: namaCtrl,
-                              hpCtrl: hpCtrl,
-                              alamatCtrl: alamatCtrl,
-                              kecCtrl: kecCtrl,
-                              kotaCtrl: kotaCtrl,
-                              posCtrl: posCtrl,
-                            ),
-                            icon: Icon(
-                              isEdit
-                                  ? Icons.save_rounded
-                                  : Icons.add_location_alt_rounded,
-                              color: AppColors.white,
-                              size: 20,
-                            ),
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    setStateModal(() => isSubmitting = true);
+                                    await _submitAlamat(
+                                      ctx: ctx,
+                                      isEdit: isEdit,
+                                      alamat: alamat,
+                                      labelCtrl: labelCtrl,
+                                      namaCtrl: namaCtrl,
+                                      hpCtrl: hpCtrl,
+                                      alamatCtrl: alamatCtrl,
+                                      kecCtrl: kecCtrl,
+                                      kotaCtrl: kotaCtrl,
+                                      posCtrl: posCtrl,
+                                    );
+                                    if (ctx.mounted) {
+                                      setStateModal(() => isSubmitting = false);
+                                    }
+                                  },
+                            icon: isSubmitting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(
+                                    isEdit
+                                        ? Icons.save_rounded
+                                        : Icons.add_location_alt_rounded,
+                                    color: AppColors.white,
+                                    size: 20,
+                                  ),
                             label: Text(
-                              isEdit ? 'Simpan Perubahan' : 'Simpan Alamat',
+                              isSubmitting
+                                  ? 'Menyimpan...'
+                                  : (isEdit ? 'Simpan Perubahan' : 'Simpan Alamat'),
                               style: AppTextStyles.buttonPrimary,
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryGreen,
+                              disabledBackgroundColor: AppColors.primaryGreen.withOpacity(0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
@@ -506,6 +539,7 @@ class _AlamatScreenState extends State<AlamatScreen> {
             ),
           ),
         );
+      });
       },
     );
   }

@@ -48,13 +48,13 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
   void _selectNominal(int nominal) {
     setState(() {
       _selectedNominal = nominal;
-      _nominalController.text = nominal.toString();
+      _nominalController.text = _formatHarga(nominal);
     });
   }
 
   int get _nominal {
     if (_selectedNominal != null) return _selectedNominal!;
-    return int.tryParse(_nominalController.text) ?? 0;
+    return int.tryParse(_nominalController.text.replaceAll('.', '')) ?? 0;
   }
 
   void _lanjutKonfirmasi() {
@@ -288,7 +288,24 @@ class _IsiSaldoScreenState extends State<IsiSaldoScreen>
                 TextField(
                   controller: _nominalController,
                   keyboardType: TextInputType.number,
-                  onChanged: (_) => setState(() => _selectedNominal = null),
+                  onChanged: (value) {
+                    setState(() => _selectedNominal = null);
+                    String rawValue = value.replaceAll('.', '');
+                    if (rawValue.isEmpty) {
+                      _nominalController.text = '';
+                      return;
+                    }
+                    int parsed = int.tryParse(rawValue) ?? 0;
+                    if (parsed > 10000000) {
+                      parsed = 10000000;
+                      _showSnackbar('Maksimal isi saldo adalah Rp 10.000.000', AppColors.warning);
+                    }
+                    String formatted = _formatHarga(parsed);
+                    _nominalController.value = TextEditingValue(
+                      text: formatted,
+                      selection: TextSelection.collapsed(offset: formatted.length),
+                    );
+                  },
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: AppTextStyles.h2,
                   decoration: InputDecoration(

@@ -371,6 +371,7 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                       'imageUrl': produk.imageUrl,
                       'tersedia': produk.tersedia,
                       'stok': produk.stok,
+                      'deskripsi': produk.deskripsi,
                     },
                   ),
                 ),
@@ -452,24 +453,28 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                               GestureDetector(
                                 onTap: (produk.tersedia && produk.stok > 0)
                                     ? () {
-                                        CartManager.instance.tambahProduk({
+                                        bool sukses = CartManager.instance.tambahProduk({
+                                          'id': produk.id,
                                           'nama': produk.nama,
                                           'harga': produk.harga.toInt(),
                                           'satuan': produk.satuan,
                                           'imageUrl': produk.imageUrl,
                                           'stok': produk.stok,
                                         }, 1);
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                '${produk.nama} ditambahkan ke keranjang!'),
-                                            backgroundColor:
-                                                AppColors.primaryGreen,
-                                            duration:
-                                                const Duration(seconds: 2),
-                                          ),
-                                        );
+                                        
+                                        if (sukses) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            content: Text('${produk.nama} ditambahkan ke keranjang!'),
+                                            backgroundColor: AppColors.primaryGreen,
+                                            duration: const Duration(seconds: 1),
+                                          ));
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            content: Text('Batas stok maksimal tercapai!'),
+                                            backgroundColor: Colors.orange,
+                                            duration: const Duration(seconds: 1),
+                                          ));
+                                        }
                                       }
                                     : null,
                                 child: Container(
@@ -549,15 +554,15 @@ class _KatalogProdukScreenState extends State<KatalogProdukScreen> {
                 right: -2,
                 top: -2,
                 child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                  decoration: BoxDecoration(
                     color: Colors.red,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Text(
-                      '$jumlah',
+                      jumlah > 99 ? '99+' : '$jumlah',
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
