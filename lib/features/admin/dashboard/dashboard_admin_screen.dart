@@ -592,6 +592,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             double revenueTotalFiltered = 0;
             List<Map<String, dynamic>> unreadNotifs = [];
             final now = DateTime.now();
+            final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
             List<double> chartData = _chartFilter == 'Mingguan'
                 ? List.filled(7, 0.0)
                 : _chartFilter == 'Bulanan'
@@ -630,7 +631,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       date.day == now.day)
                     revenueToday += harga;
                   if (_chartFilter == 'Mingguan') {
-                    if (now.difference(date).inDays < 7) {
+                    if (date.isAfter(startOfWeek) || date.isAtSameMomentAs(startOfWeek)) {
                       revenueTotalFiltered += harga;
                       int dayIndex = date.weekday - 1;
                       chartData[dayIndex] += harga;
@@ -823,17 +824,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: _buildSectionTitle(
-                            'Grafik Penjualan',
-                            Icons.analytics,
-                          ),
-                        ),
-                        _buildChartToggle(),
-                      ],
+                    _buildSectionTitle(
+                      'Grafik Penjualan',
+                      Icons.analytics,
+                    ),
+                    const SizedBox(height: 12),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: _buildChartToggle(),
                     ),
                     const SizedBox(height: 16),
                     _buildInteractiveChart(chartData, revenueTotalFiltered),
