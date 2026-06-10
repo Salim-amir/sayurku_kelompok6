@@ -109,7 +109,7 @@ class _ProductStockPageState extends State<ProductStockPage> {
         automaticallyImplyLeading: false,
         title: Text(
           'Manajemen Produk',
-          style: AppTextStyles.h2.copyWith(color: AppColors.primaryGreen),
+          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGreen),
         ),
         centerTitle: false,
       ),
